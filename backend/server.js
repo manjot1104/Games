@@ -78,7 +78,7 @@ const storage = multer.diskStorage({
   },
   filename: (_, file, cb) => {
     const ext = path.extname(file.originalname || '');
-    const name = `${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`;
+    const name = ${Date.now()}-${Math.round(Math.random() * 1e6)}${ext};
     console.log('Multer filename:', name);
     cb(null, name);
   },
@@ -110,8 +110,8 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   // public URL for the image (proxy-safe) + relative path for future-proofing
   const proto = (req.get('x-forwarded-proto') || req.protocol || 'https').split(',')[0].trim();
   const host = (req.get('x-forwarded-host') || req.get('host'));
-  const rel = `/static/uploads/${req.file.filename}`;
-  const url = `${proto}://${host}${rel}`;
+  const rel = /static/uploads/${req.file.filename};
+  const url = ${proto}://${host}${rel};
   console.log('Generated URL:', url);
   res.json({ ok: true, url, path: rel });
 });
@@ -154,9 +154,9 @@ async function ensureUser(auth0Id, email, name) {
   );
 
   if (user.isNew) {
-    console.log(`Created new user: ${auth0Id} with email: ${email}`);
+    console.log(Created new user: ${auth0Id} with email: ${email});
   } else {
-    console.log(`Found existing user: ${auth0Id} with email: ${email}`);
+    console.log(Found existing user: ${auth0Id} with email: ${email});
   }
 
   return user;
@@ -497,7 +497,7 @@ app.post('/api/me/game-log', requireAuth, async (req, res) => {
     const beta = 3;   // prior 'virtual' incorrect
     const bayes = (r.correctSum + alpha) / (r.totalSum + alpha + beta); // 0..1
 
-    // 3) Recency Exponential Moving Average on *this game's* accuracy.
+    // 3) Recency Exponential Moving Average on this game's accuracy.
     //    Good games nudge it up fast; bad games nudge it down fast.
     const thisGameAcc = total > 0 ? (correct / total) * 100 : 0;
     const k = 0.2; // smoothing factor (0.1 conservative, 0.3 snappier)
@@ -890,7 +890,22 @@ async function startServer() {
   try {
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB');
-    app.listen(port, '0.0.0.0', () => console.log(`API listening on 0.0.0.0:${port}`));
+    app.listen(port, '0.0.0.0', () => console.log(API listening on 0.0.0.0:${port}));
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
+
+const port = process.env.PORT || 4000;
+
+async function startServer() {
+  try {
+    await mongoose.connect(mongoUri);
+    console.log('Connected to MongoDB');
+    app.listen(port, '0.0.0.0', () => console.log(API listening on 0.0.0.0:${port}));
   } catch (error) {
     console.error('MongoDB connection error:', error);
     process.exit(1);
