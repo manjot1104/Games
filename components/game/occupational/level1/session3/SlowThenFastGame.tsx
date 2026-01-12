@@ -87,13 +87,16 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const currentBlinkInterval = speedMode === 'slow' ? SLOW_BLINK_INTERVAL : FAST_BLINK_INTERVAL;
 
   // Blink animation loop
+  // Initial instruction - only once
+  useEffect(() => {
+    try {
+      Speech.speak(`Tap when the circle lights up. After ${TAPS_TO_SWITCH} taps, the speed will switch!`, { rate: 0.78 });
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
   useEffect(() => {
     if (done) return;
-    if (score === 0) {
-      try {
-        Speech.speak(`Tap when the circle lights up. After ${TAPS_TO_SWITCH} taps, the speed will switch!`, { rate: 0.78 });
-      } catch {}
-    }
 
     const blinkLoop = () => {
       // Turn on (light up)

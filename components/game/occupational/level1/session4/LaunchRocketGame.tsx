@@ -187,13 +187,7 @@ const LaunchRocketGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           }, 2500);
         } else {
           setTimeout(() => {
-            setRound((r) => {
-              const nextRound = r + 1;
-              try {
-                Speech.speak('Press and hold to fill the fuel bar. Release when full to launch!', { rate: 0.78 });
-              } catch {}
-              return nextRound;
-            });
+            setRound((r) => r + 1);
             setFuelProgress(0);
             setIsLaunching(false);
             isLaunchingRef.current = false;
@@ -366,9 +360,9 @@ const LaunchRocketGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           </View>
 
           {/* Rocket */}
-          <Animated.View style={[styles.rocketContainer, rocketStyle]}>
+          <Animated.View style={[styles.rocketContainer, rocketStyle]} pointerEvents="none">
             <View style={styles.rocket}>
-              <Text style={styles.rocketEmoji}>🚀</Text>
+              <Text style={styles.rocketEmoji} selectable={false}>🚀</Text>
             </View>
           </Animated.View>
 
@@ -502,15 +496,21 @@ const styles = StyleSheet.create({
   rocketContainer: {
     position: 'absolute',
     alignItems: 'center',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
   },
   rocket: {
     width: 80,
     height: 120,
     justifyContent: 'center',
     alignItems: 'center',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
   },
   rocketEmoji: {
     fontSize: 80,
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
   },
   flashOverlay: {
     position: 'absolute',

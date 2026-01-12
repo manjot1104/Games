@@ -14,7 +14,8 @@
       "EXPO_PUBLIC_AUTH0_CLIENT_ID_WEB": "pK2uzbNONOHaPUPWbD9s7Y3qx6nYntEW",
       "AUTH0_DOMAIN": "child-wellness.us.auth0.com",
       "AUTH0_CLIENT_ID_NATIVE": "mVqiDhhSeBZ3BGUddxCvqheVb0VJcaGC",
-      "AUTH0_CLIENT_ID_WEB": "pK2uzbNONOHaPUPWbD9s7Y3qx6nYntEW"
+      "AUTH0_CLIENT_ID_WEB": "pK2uzbNONOHaPUPWbD9s7Y3qx6nYntEW",
+      "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_RyBRdT9vru0wg0"
     },
     "ios": {
       "supportsTablet": true,

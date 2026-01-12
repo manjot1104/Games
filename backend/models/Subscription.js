@@ -50,7 +50,7 @@ const SubscriptionSchema = new Schema(
     // Subscription status
     status: {
       type: String,
-      enum: ['trial', 'active', 'expired', 'cancelled', 'past_due'],
+      enum: ['trial', 'created', 'active', 'expired', 'cancelled', 'past_due'],
       default: 'trial',
     },
     

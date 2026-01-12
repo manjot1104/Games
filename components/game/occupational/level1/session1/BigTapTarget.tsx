@@ -1,12 +1,15 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
+import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const COLORS = ['#22C55E', '#3B82F6', '#F59E0B', '#F472B6', '#8B5CF6', '#06B6D4'];
@@ -50,9 +53,13 @@ interface BigTapTargetProps {
 }
 
 export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
+  const router = useRouter();
   const [score, setScore] = useState(0);
   const [targetsLeft, setTargetsLeft] = useState(12);
   const [done, setDone] = useState(false);
+  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [color, setColor] = useState(COLORS[0]);
   const [sparkleKey, setSparkleKey] = useState(0);
   // soft pop reinforcement
@@ -89,12 +96,45 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
     setTargetsLeft((t) => {
       const next = t - 1;
       if (next <= 0) {
-        runOnJS(setDone)(true);
+        runOnJS(finishGame)();
       } else {
         runOnJS(spawnTarget)();
       }
       return next;
     });
+  };
+
+  const finishGame = async () => {
+    const total = 12;
+    const finalScore = score + 1; // +1 because we just tapped
+    const xp = finalScore * 15;
+    const accuracy = (finalScore / total) * 100;
+
+    const stats = { correct: finalScore, total, xp };
+    
+    // Set all states together FIRST in same render cycle (like CatchTheBouncingStar)
+    // Use React's automatic batching - all these updates happen together
+    setFinalStats(stats);
+    setDone(true);
+    setShowCongratulations(true);
+    
+    Speech.speak('Amazing work! You completed the game!', { rate: 0.78 });
+    
+    // Log game in background (don't wait for it)
+    try {
+      const result = await logGameAndAward({
+        type: 'big-tap-target',
+        correct: finalScore,
+        total,
+        accuracy,
+        xpAwarded: xp,
+        skillTags: ['motor-control', 'hand-eye-coordination', 'targeting'],
+      });
+      setLogTimestamp(result?.last?.at ?? null);
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (error) {
+      console.error('Failed to log game:', error);
+    }
   };
 
   useEffect(() => {
@@ -119,77 +159,31 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
     opacity: opacity.value,
   }));
 
-  if (done) {
+  // Show congratulations screen FIRST when game finishes (like CatchTheBouncingStar)
+  // This is the ONLY completion screen - no ResultCard needed
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <TouchableOpacity
-          onPress={() => {
-            try {
-              Speech.stop();
-            } catch (e) {
-              // Ignore errors
-            }
-            onBack();
-          }}
-          style={styles.backButton}
-        >
-          <LinearGradient
-            colors={['#1E293B', '#0F172A']}
-            style={styles.backButtonGradient}
-          >
-            <Text style={styles.backButtonText}>← Back</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-        <View style={styles.completion}>
-          <Animated.Text 
-            style={styles.bigEmoji}
-            entering={FadeIn.duration(600).delay(200)}
-          >
-            🎉✨🌟
-          </Animated.Text>
-          <Text style={styles.title}>Amazing Tapping! 🎯</Text>
-          <Text style={styles.subtitle}>You popped {score} beautiful bubbles! 🫧</Text>
-          <View style={styles.statsBox}>
-            <Text style={styles.statsText}>Perfect Score: {score}/12 ⭐</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.primaryButton} 
-            onPress={() => {
-              setScore(0);
-              setTargetsLeft(12);
-              setDone(false);
-              spawnTarget();
-            }}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#22C55E', '#16A34A']}
-              style={styles.primaryButtonGradient}
-            >
-              <Text style={styles.primaryButtonText}>🎮 Play Again</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => {
-              try {
-                Speech.stop();
-              } catch (e) {
-                // Ignore errors
-              }
-              onBack();
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.secondaryButtonText}>← Back to Sessions</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed for OT games)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (
@@ -403,85 +397,11 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 0 },
   },
-  completion: {
+  resultContainer: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-  },
-  bigEmoji: {
-    fontSize: 80,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#78350F',
-    marginBottom: 8,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#92400E',
-    marginBottom: 20,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  statsBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
-  },
-  statsText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#78350F',
-  },
-  primaryButton: {
-    borderRadius: 16,
-    marginBottom: 12,
-    overflow: 'hidden',
-    shadowColor: '#22C55E',
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
-  primaryButtonGradient: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
     alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontWeight: '900',
-    fontSize: 18,
-    letterSpacing: 0.5,
-  },
-  secondaryButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  secondaryButtonText: {
-    color: '#0F172A',
-    fontWeight: '800',
-    fontSize: 16,
+    padding: 24,
   },
 });
 

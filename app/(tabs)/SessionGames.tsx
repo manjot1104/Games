@@ -82,27 +82,70 @@ import RoadRollerGame from '@/components/game/RoadRollerGame';
 import StartStopLineGame from '@/components/game/StartStopLineGame';
 import TrainTrackLineGame from '@/components/game/TrainTrackLineGame';
 
-// Occupational Therapy Level 3 Session 1: Tap with Rhythm
-import BeatMatchTapGame from '@/components/game/occupational/level3/session1/BeatMatchTapGame';
-import CopyMyRhythmGame from '@/components/game/occupational/level3/session1/CopyMyRhythmGame';
-import InstrumentChoiceGame from '@/components/game/occupational/level3/session1/InstrumentChoiceGame';
-import LoudSoftRhythmGame from '@/components/game/occupational/level3/session1/LoudSoftRhythmGame';
-import StopGoDrumGame from '@/components/game/occupational/level3/session1/StopGoDrumGame';
+// Occupational Therapy Level 3 Session 1: Tap with Rhythm (Drum Beats) - uses Session 3 games
+// Occupational Therapy Level 3 Session 2: Big vs Small Movements - uses Session 4 games
 
-// Occupational Therapy Level 3 Session 2: Big vs Small Movements
-import BigPathTraceGame from '@/components/game/occupational/level3/session2/BigPathTraceGame';
-import BigSwipeSmallSwipeGame from '@/components/game/occupational/level3/session2/BigSwipeSmallSwipeGame';
-import BigTapSmallTapGame from '@/components/game/occupational/level3/session2/BigTapSmallTapGame';
-import BigThrowSmallThrowGame from '@/components/game/occupational/level3/session2/BigThrowSmallThrowGame';
-import StretchPinchGame from '@/components/game/occupational/level3/session2/StretchPinchGame';
+// Occupational Therapy Level 3 Session 3: Tap with Rhythm (Drum Beats)
+import DoubleBeatCopyGame from '@/components/game/occupational/level3/session3/DoubleBeatCopyGame';
+import FastBeatChallengeGame from '@/components/game/occupational/level3/session3/FastBeatChallengeGame';
+import PauseAndTapGame from '@/components/game/occupational/level3/session3/PauseAndTapGame';
+import SingleBeatTapGame from '@/components/game/occupational/level3/session3/SingleBeatTapGame';
+import SlowBeatCalmModeGame from '@/components/game/occupational/level3/session3/SlowBeatCalmModeGame';
+// Occupational Therapy Level 3 Session 3: Fast vs Slow Movements
+import FastRabbitRunGame from '@/components/game/occupational/level3/session3/FastRabbitRunGame';
+import MusicSpeedControlGame from '@/components/game/occupational/level3/session3/MusicSpeedControlGame';
+import SlowTurtleMoveGame from '@/components/game/occupational/level3/session3/SlowTurtleMoveGame';
+import SpeedMatchGame from '@/components/game/occupational/level3/session3/SpeedMatchGame';
+import TrafficLightGame from '@/components/game/occupational/level3/session3/TrafficLightGame';
+
+// Occupational Therapy Level 3 Session 4: Big vs Small Movements
+import BalloonInflateGameOT from '@/components/game/occupational/level3/session4/BalloonInflateGame';
+import BigSmallSwitchGame from '@/components/game/occupational/level3/session4/BigSmallSwitchGame';
+import BigTapGame from '@/components/game/occupational/level3/session4/BigTapGame';
+import CompareAndMoveGame from '@/components/game/occupational/level3/session4/CompareAndMoveGame';
+import SmallDotTouchGame from '@/components/game/occupational/level3/session4/SmallDotTouchGame';
+// Occupational Therapy Level 3 Session 4: Up-Down Gestures
+import BallDropGame from '@/components/game/occupational/level3/session4/BallDropGame';
+import BalloonUpGame from '@/components/game/occupational/level3/session4/BalloonUpGame';
+import ElevatorGame from '@/components/game/occupational/level3/session4/ElevatorGame';
+import JumpArrowGame from '@/components/game/occupational/level3/session4/JumpArrowGame';
+import RainCatchGame from '@/components/game/occupational/level3/session4/RainCatchGame';
+
+// Occupational Therapy Level 3 Session 5: Left-Right Swipes
+import AnimalRunGame from '@/components/game/occupational/level3/session5/AnimalRunGame';
+import ArrowMatchGame from '@/components/game/occupational/level3/session5/ArrowMatchGame';
+import CarTurnGame from '@/components/game/occupational/level3/session5/CarTurnGame';
+import CatchTheBallGame from '@/components/game/occupational/level3/session5/CatchTheBallGame';
+import MirrorSwipeGame from '@/components/game/occupational/level3/session5/MirrorSwipeGame';
+
+// Occupational Therapy Level 3 Session 6: Jump Imitation (Tap Twice)
+import DoubleTapOnlyGame from '@/components/game/occupational/level3/session6/DoubleTapOnlyGame';
+import FrogJumpGame from '@/components/game/occupational/level3/session6/FrogJumpGame';
+import JumpCountGame from '@/components/game/occupational/level3/session6/JumpCountGame';
+import ObstacleJumpGame from '@/components/game/occupational/level3/session6/ObstacleJumpGame';
+import RhythmJumpGame from '@/components/game/occupational/level3/session6/RhythmJumpGame';
+
+// Occupational Therapy Level 3 Session 7: Swinging Movement Imitation
+import FanMotionGame from '@/components/game/occupational/level3/session7/FanMotionGame';
+import MonkeySwingGame from '@/components/game/occupational/level3/session7/MonkeySwingGame';
+import MusicSwingGame from '@/components/game/occupational/level3/session7/MusicSwingGame';
+import PendulumCopyGame from '@/components/game/occupational/level3/session7/PendulumCopyGame';
+import RopeSwingTimingGame from '@/components/game/occupational/level3/session7/RopeSwingTimingGame';
+
+// Occupational Therapy Level 3 Session 8: Whole Body Map
+import BodyFlashGame from '@/components/game/occupational/level3/session8/BodyFlashGame';
+import BodyPuzzleGame from '@/components/game/occupational/level3/session8/BodyPuzzleGame';
+import FollowTheBodyGame from '@/components/game/occupational/level3/session8/FollowTheBodyGame';
+import ShouldersTapGame from '@/components/game/occupational/level3/session8/ShouldersTapGame';
+import TouchHeadGame from '@/components/game/occupational/level3/session8/TouchHeadGame';
 
 
 // Speech Therapy Level 2 Session 3 (Airflow Games)
+import { BalloonInflateGame } from '@/components/game/speech/level2/session3/BalloonInflateGame';
+import { BlowOutTheCandleGame } from '@/components/game/speech/level2/session3/BlowOutTheCandleGame';
 import { BlowTheBubbleGame } from '@/components/game/speech/level2/session3/BlowTheBubbleGame';
 import { MoveTheFeatherGame } from '@/components/game/speech/level2/session3/MoveTheFeatherGame';
 import { WindmillSpinGame } from '@/components/game/speech/level2/session3/WindmillSpinGame';
-import { BlowOutTheCandleGame } from '@/components/game/speech/level2/session3/BlowOutTheCandleGame';
-import { BalloonInflateGame } from '@/components/game/speech/level2/session3/BalloonInflateGame';
 
 // Occupational Therapy Level 1 Session 1
 import { BigTapTarget } from '@/components/game/occupational/level1/session1/BigTapTarget';
@@ -116,6 +159,7 @@ import MultipleSmallTargetsGame from '@/components/game/occupational/level1/sess
 import SmallCircleTapGame from '@/components/game/occupational/level1/session2/SmallCircleTapGame';
 import TapOnlySmallTargetGame from '@/components/game/occupational/level1/session2/TapOnlySmallTargetGame'; // Level 2 Game 1: Small Circle Tap
 import TrackThenTapSmallObjectGame from '@/components/game/occupational/level1/session2/TrackThenTapSmallObjectGame';
+import ShrinkingTargetGame from '@/components/game/ShrinkingTargetGame';
 
 // Occupational Therapy Level 1 Session 3
 import RaceTheDotGame from '@/components/game/occupational/level1/session3/RaceTheDotGame';
@@ -314,6 +358,46 @@ type GameKey =
   | 'stretch-pinch'
   | 'big-path-trace'
   | 'big-throw-small-throw'
+  | 'single-beat-tap'
+  | 'double-beat-copy'
+  | 'pause-and-tap'
+  | 'fast-beat-challenge'
+  | 'slow-beat-calm-mode'
+  | 'slow-turtle-move'
+  | 'fast-rabbit-run'
+  | 'speed-match'
+  | 'traffic-light-game'
+  | 'music-speed-control'
+  | 'big-tap-l3s4'
+  | 'small-dot-touch'
+  | 'big-small-switch'
+  | 'balloon-inflate-l3s4'
+  | 'compare-and-move'
+  | 'balloon-up'
+  | 'ball-drop'
+  | 'elevator-game'
+  | 'jump-arrow'
+  | 'rain-catch'
+  | 'car-turn'
+  | 'arrow-match'
+  | 'animal-run'
+  | 'mirror-swipe'
+  | 'catch-the-ball'
+  | 'frog-jump'
+  | 'jump-count'
+  | 'double-tap-only'
+  | 'rhythm-jump'
+  | 'obstacle-jump'
+  | 'pendulum-copy'
+  | 'monkey-swing'
+  | 'fan-motion'
+  | 'rope-swing-timing'
+  | 'music-swing'
+  | 'touch-head'
+  | 'shoulders-tap'
+  | 'body-puzzle'
+  | 'follow-the-body'
+  | 'body-flash'
   | 'rainbow-curve-trace'
   | 'drive-car-curvy-road'
   | 'trace-smiling-mouth'
@@ -951,29 +1035,105 @@ export default function SessionGamesScreen() {
   const isStartStopLineAvailable =
     therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 1;
 
-  // Level 3 Session 1 games - Occupational Therapy (Tap with Rhythm)
-  const isBeatMatchTapAvailable =
+  // Level 3 Session 1 games - Occupational Therapy (Tap with Rhythm - Drum Beats)
+  const isSingleBeatTapAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
-  const isCopyMyRhythmAvailable =
+  const isDoubleBeatCopyAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
-  const isStopGoDrumAvailable =
+  const isPauseAndTapAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
-  const isLoudSoftRhythmAvailable =
+  const isFastBeatChallengeAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
-  const isInstrumentChoiceAvailable =
+  const isSlowBeatCalmModeAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 1;
 
   // Level 3 Session 2 games - Occupational Therapy (Big vs Small Movements)
-  const isBigSwipeSmallSwipeAvailable =
+  const isBigTapL3S4Available =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
-  const isBigTapSmallTapAvailable =
+  const isSmallDotTouchAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
-  const isStretchPinchAvailable =
+  const isBigSmallSwitchAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
-  const isBigPathTraceAvailable =
+  const isBalloonInflateL3S4Available =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
-  const isBigThrowSmallThrowAvailable =
+  const isCompareAndMoveAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 2;
+
+  // Level 3 Session 3: Fast vs Slow Movements
+  const isSlowTurtleMoveAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 3;
+
+  const isFastRabbitRunAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 3;
+
+  const isSpeedMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 3;
+
+  const isTrafficLightAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 3;
+
+  const isMusicSpeedControlAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 3;
+
+  // Level 3 Session 4: Up-Down Gestures
+  const isBalloonUpAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
+  const isBallDropAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
+  const isElevatorGameAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
+  const isJumpArrowAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
+  const isRainCatchAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 4;
+
+  // Level 3 Session 5: Left-Right Swipes
+  const isCarTurnAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 5;
+  const isArrowMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 5;
+  const isAnimalRunAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 5;
+  const isMirrorSwipeAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 5;
+  const isCatchTheBallAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 5;
+
+  // Level 3 Session 6: Jump Imitation (Tap Twice)
+  const isFrogJumpAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 6;
+  const isJumpCountAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 6;
+  const isDoubleTapOnlyAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 6;
+  const isRhythmJumpAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 6;
+  const isObstacleJumpAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 6;
+
+  // Level 3 Session 7: Swinging Movement Imitation
+  const isPendulumCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 7;
+  const isMonkeySwingAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 7;
+  const isFanMotionAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 7;
+  const isRopeSwingTimingAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 7;
+  const isMusicSwingAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 7;
+
+  // Level 3 Session 8: Whole Body Map
+  const isTouchHeadAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 8;
+  const isShouldersTapAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 8;
+  const isBodyPuzzleAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 8;
+  const isFollowTheBodyAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 8;
+  const isBodyFlashAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 8;
 
   // Level 2 Session 3 games - Speech Therapy (Airflow Games)
   const isBlowTheBubbleAvailable =
@@ -2281,85 +2441,331 @@ export default function SessionGamesScreen() {
     },
     // Occupational Therapy Level 3 Session 1: Tap with Rhythm
     {
-      id: 'beat-match-tap',
-      title: 'Beat Match Tap',
+      id: 'single-beat-tap',
+      title: 'Single Beat Tap',
       emoji: '🥁',
-      description: 'Tap when drum plays! Start with 1 beat per second, then get faster. Build rhythm and timing skills.',
-      color: '#8B5CF6',
-      available: isBeatMatchTapAvailable,
+      description: 'Screen pe drum dikhta hai, ek beat aati hai → child ko ek tap karna hota hai. Develops timing, focus, and cause-effect understanding.',
+      color: '#F97316',
+      available: isSingleBeatTapAvailable,
     },
     {
-      id: 'copy-my-rhythm',
-      title: 'Copy My Rhythm',
-      emoji: '🎵',
-      description: 'Listen to 3-5 beats pattern, then tap the same pattern! Build auditory memory and rhythm copying.',
+      id: 'double-beat-copy',
+      title: 'Double Beat Copy',
+      emoji: '🥁🥁',
+      description: 'Drum 2 baar bajta hai, child ko 2 taps karne hote hain. Builds rhythm understanding and hand coordination.',
       color: '#3B82F6',
-      available: isCopyMyRhythmAvailable,
+      available: isDoubleBeatCopyAvailable,
     },
     {
-      id: 'stop-go-drum',
-      title: 'Stop/Go Drum',
-      emoji: '🛑',
-      description: 'Tap only while drum is playing; freeze when silent! Build impulse control and auditory attention.',
-      color: '#EF4444',
-      available: isStopGoDrumAvailable,
+      id: 'pause-and-tap',
+      title: 'Pause & Tap',
+      emoji: '⏸️🥁',
+      description: 'Beat aane ke baad short pause hota hai, phir tap. Develops impulse control and listening skills.',
+      color: '#8B5CF6',
+      available: isPauseAndTapAvailable,
     },
     {
-      id: 'loud-soft-rhythm',
-      title: 'Loud/Soft Rhythm',
-      emoji: '🔊',
-      description: 'Big button for loud beats, small button for soft beats! Build volume discrimination and motor control.',
-      color: '#F59E0B',
-      available: isLoudSoftRhythmAvailable,
+      id: 'fast-beat-challenge',
+      title: 'Fast Beat Challenge',
+      emoji: '⚡🥁',
+      description: 'Beat thodi fast hoti hai. Builds reaction speed and motor planning.',
+      color: '#DC2626',
+      available: isFastBeatChallengeAvailable,
     },
     {
-      id: 'instrument-choice',
-      title: 'Instrument Choice',
-      emoji: '🎶',
-      description: 'Choose which instrument played (drum/bell/clap) then tap! Build sound identification and choice-making.',
+      id: 'slow-beat-calm-mode',
+      title: 'Slow Beat Calm Mode',
+      emoji: '🧘🥁',
+      description: 'Very slow drum beats. Develops calmness and controlled movement.',
       color: '#10B981',
-      available: isInstrumentChoiceAvailable,
+      available: isSlowBeatCalmModeAvailable,
     },
     // Occupational Therapy Level 3 Session 2: Big vs Small Movements
     {
-      id: 'big-swipe-small-swipe',
-      title: 'Big Swipe vs Small Swipe',
+      id: 'big-tap-l3s4',
+      title: 'Big Tap',
       emoji: '👆',
-      description: 'Long swipe fills big bar, short swipe fills small bar! Build range of motion and movement control.',
-      color: '#8B5CF6',
-      available: isBigSwipeSmallSwipeAvailable,
-    },
-    {
-      id: 'big-tap-small-tap',
-      title: 'Big Tap vs Small Tap',
-      emoji: '👋',
-      description: 'Tap big circle when "BIG" appears, tiny circle when "SMALL"! Build size discrimination and motor precision.',
+      description: 'Screen shows BIG circle → child needs to tap or swipe anywhere on full screen. Develops large muscle movement and spatial awareness.',
       color: '#3B82F6',
-      available: isBigTapSmallTapAvailable,
+      available: isBigTapL3S4Available,
     },
     {
-      id: 'stretch-pinch',
-      title: 'Stretch vs Pinch',
-      emoji: '🤏',
-      description: '"Make it BIG" (zoom out), "Make it SMALL" (pinch)! Build two-finger coordination and size control.',
+      id: 'small-dot-touch',
+      title: 'Small Dot Touch',
+      emoji: '👆',
+      description: 'Touch the small dot on screen. Develops precision and finger control.',
       color: '#F59E0B',
-      available: isStretchPinchAvailable,
+      available: isSmallDotTouchAvailable,
     },
     {
-      id: 'big-path-trace',
-      title: 'Big Path Trace',
-      emoji: '🛤️',
-      description: 'Trace wide road vs thin road! Difficulty changes with path width. Build precision and adaptability.',
+      id: 'big-small-switch',
+      title: 'Big-Small Switch',
+      emoji: '🔄',
+      description: 'Sometimes big, sometimes small object appears on screen. Develops size differentiation and visual-motor skills.',
+      color: '#8B5CF6',
+      available: isBigSmallSwitchAvailable,
+    },
+    {
+      id: 'balloon-inflate-l3s4',
+      title: 'Balloon Inflate',
+      emoji: '🎈',
+      description: 'Swipe to make balloon big or small. Develops pressure control and hand strength awareness.',
       color: '#EF4444',
-      available: isBigPathTraceAvailable,
+      available: isBalloonInflateL3S4Available,
     },
     {
-      id: 'big-throw-small-throw',
-      title: 'Big Throw vs Small Throw',
-      emoji: '⚾',
-      description: 'Drag to "throw" object far vs near! Long drag = far, short drag = near. Build movement range awareness.',
+      id: 'compare-and-move',
+      title: 'Compare & Move',
+      emoji: '🔄',
+      description: 'Big object requires big swipe, small object requires small swipe. Develops decision making and body scaling.',
       color: '#10B981',
-      available: isBigThrowSmallThrowAvailable,
+      available: isCompareAndMoveAvailable,
+    },
+    // Occupational Therapy Level 3 Session 3: Fast vs Slow Movements
+    {
+      id: 'slow-turtle-move',
+      title: 'Slow Turtle Move',
+      emoji: '🐢',
+      description: 'Move the turtle with slow swipe. Develops patience and controlled motion.',
+      color: '#10B981',
+      available: isSlowTurtleMoveAvailable,
+    },
+    {
+      id: 'fast-rabbit-run',
+      title: 'Fast Rabbit Run',
+      emoji: '🐰',
+      description: 'Run the rabbit with fast swipe. Develops speed coordination and energy control.',
+      color: '#F59E0B',
+      available: isFastRabbitRunAvailable,
+    },
+    {
+      id: 'speed-match',
+      title: 'Speed Match',
+      emoji: '⚡🐢',
+      description: 'Screen shows instruction: FAST or SLOW. Match the speed with your swipe! Develops listening and movement sync.',
+      color: '#3B82F6',
+      available: isSpeedMatchAvailable,
+    },
+    {
+      id: 'traffic-light-game',
+      title: 'Traffic Light Game',
+      emoji: '🚦',
+      description: 'Green = fast, Yellow = slow. Follow the traffic light rules! Develops rule following and response inhibition.',
+      color: '#EF4444',
+      available: isTrafficLightAvailable,
+    },
+    {
+      id: 'music-speed-control',
+      title: 'Music Speed Control',
+      emoji: '🎵',
+      description: 'Music slow → slow movement, Music fast → fast movement. Develops auditory-motor integration.',
+      color: '#8B5CF6',
+      available: isMusicSpeedControlAvailable,
+    },
+    // Level 3 Session 4: Up-Down Gestures
+    {
+      id: 'balloon-up',
+      title: 'Balloon Up',
+      emoji: '🎈',
+      description: 'Swipe up to lift the balloon! Develops direction awareness and shoulder movement.',
+      color: '#3B82F6',
+      available: isBalloonUpAvailable,
+    },
+    {
+      id: 'ball-drop',
+      title: 'Ball Drop',
+      emoji: '⚽',
+      description: 'Swipe down to drop the ball! Develops vertical movement understanding.',
+      color: '#F59E0B',
+      available: isBallDropAvailable,
+    },
+    {
+      id: 'elevator-game',
+      title: 'Elevator Game',
+      emoji: '🛗',
+      description: 'Up = top floor, Down = ground. Develops concept clarity (up/down).',
+      color: '#6366F1',
+      available: isElevatorGameAvailable,
+    },
+    {
+      id: 'jump-arrow',
+      title: 'Jump Arrow',
+      emoji: '⬆️',
+      description: 'Arrow upar aaye → swipe up! Develops visual response.',
+      color: '#FCD34D',
+      available: isJumpArrowAvailable,
+    },
+    {
+      id: 'rain-catch',
+      title: 'Rain Catch',
+      emoji: '🌧️',
+      description: 'Hands up to catch rain drops! Develops whole arm coordination.',
+      color: '#60A5FA',
+      available: isRainCatchAvailable,
+    },
+    // Level 3 Session 5: Left-Right Swipes
+    {
+      id: 'car-turn',
+      title: 'Car Turn',
+      emoji: '🚗',
+      description: 'Swipe left or right to turn the car! Develops direction discrimination.',
+      color: '#3B82F6',
+      available: isCarTurnAvailable,
+    },
+    {
+      id: 'arrow-match',
+      title: 'Arrow Match',
+      emoji: '⬅️',
+      description: 'Left arrow = left swipe! Develops visual-motor link.',
+      color: '#F59E0B',
+      available: isArrowMatchAvailable,
+    },
+    {
+      id: 'animal-run',
+      title: 'Animal Run',
+      emoji: '🐕',
+      description: 'Animal idhar-udhar bhagna! Develops bilateral coordination.',
+      color: '#8B5CF6',
+      available: isAnimalRunAvailable,
+    },
+    {
+      id: 'mirror-swipe',
+      title: 'Mirror Swipe',
+      emoji: '🪞',
+      description: 'Left swipe shows right animation! Develops brain flexibility.',
+      color: '#EC4899',
+      available: isMirrorSwipeAvailable,
+    },
+    {
+      id: 'catch-the-ball',
+      title: 'Catch the Ball',
+      emoji: '⚽',
+      description: 'Ball left se aaye → left swipe! Develops reaction + direction.',
+      color: '#EF4444',
+      available: isCatchTheBallAvailable,
+    },
+    // Level 3 Session 6: Jump Imitation (Tap Twice)
+    {
+      id: 'frog-jump',
+      title: 'Frog Jump',
+      emoji: '🐸',
+      description: '2 taps = jump! Do baar tap karo frog ko jump karane ke liye!',
+      color: '#22C55E',
+      available: isFrogJumpAvailable,
+    },
+    {
+      id: 'jump-count',
+      title: 'Jump Count',
+      emoji: '🔢',
+      description: 'Jump only when "2" appears! Sirf 2 pe jump karo!',
+      color: '#3B82F6',
+      available: isJumpCountAvailable,
+    },
+    {
+      id: 'double-tap-only',
+      title: 'Double Tap Only',
+      emoji: '👆',
+      description: 'Single tap ignore hota hai! Sirf double tap se jump hoga!',
+      color: '#EF4444',
+      available: isDoubleTapOnlyAvailable,
+    },
+    {
+      id: 'rhythm-jump',
+      title: 'Rhythm Jump',
+      emoji: '🎵',
+      description: 'Tap-tap rhythm se jump! Beat ko suno aur same rhythm mein tap karo!',
+      color: '#8B5CF6',
+      available: isRhythmJumpAvailable,
+    },
+    {
+      id: 'obstacle-jump',
+      title: 'Obstacle Jump',
+      emoji: '🪨',
+      description: 'Rock aaye → double tap se jump karo! Obstacle se bachne ke liye planning karo!',
+      color: '#F59E0B',
+      available: isObstacleJumpAvailable,
+    },
+    // Level 3 Session 7: Swinging Movement Imitation
+    {
+      id: 'pendulum-copy',
+      title: 'Pendulum Copy',
+      emoji: '🔄',
+      description: 'Side-to-side swing copy! Demo dekh kar same swing karo!',
+      color: '#3B82F6',
+      available: isPendulumCopyAvailable,
+    },
+    {
+      id: 'monkey-swing',
+      title: 'Monkey Swing',
+      emoji: '🐵',
+      description: 'Liana pe swing karo! Monkey ko diagonal swing karao!',
+      color: '#F59E0B',
+      available: isMonkeySwingAvailable,
+    },
+    {
+      id: 'fan-motion',
+      title: 'Fan Motion',
+      emoji: '🌀',
+      description: 'Circular swing gesture! Fan ko complete circle mein swing karao!',
+      color: '#22C55E',
+      available: isFanMotionAvailable,
+    },
+    {
+      id: 'rope-swing-timing',
+      title: 'Rope Swing Timing',
+      emoji: '🪢',
+      description: 'Right moment pe swipe! Rope peak pe ho tab swipe karo!',
+      color: '#EF4444',
+      available: isRopeSwingTimingAvailable,
+    },
+    {
+      id: 'music-swing',
+      title: 'Music Swing',
+      emoji: '🎵',
+      description: 'Music ke sath swing! Beat ko follow karo aur same rhythm mein swing karo!',
+      color: '#8B5CF6',
+      available: isMusicSwingAvailable,
+    },
+    // Level 3 Session 8: Whole Body Map
+    {
+      id: 'touch-head',
+      title: 'Touch Head',
+      emoji: '👤',
+      description: 'Head highlight hota hai! Head ko touch karo jab woh highlight ho!',
+      color: '#3B82F6',
+      available: isTouchHeadAvailable,
+    },
+    {
+      id: 'shoulders-tap',
+      title: 'Shoulders Tap',
+      emoji: '💪',
+      description: 'Shoulders touch karna! Highlighted shoulder ko touch karo!',
+      color: '#F59E0B',
+      available: isShouldersTapAvailable,
+    },
+    {
+      id: 'body-puzzle',
+      title: 'Body Puzzle',
+      emoji: '🧩',
+      description: 'Body parts ko sahi jagah lagana! Drag karke sahi place pe rakho!',
+      color: '#22C55E',
+      available: isBodyPuzzleAvailable,
+    },
+    {
+      id: 'follow-the-body',
+      title: 'Follow the Body',
+      emoji: '👥',
+      description: 'Character jo touch kare wahi repeat! Demo dekh kar same body part touch karo!',
+      color: '#8B5CF6',
+      available: isFollowTheBodyAvailable,
+    },
+    {
+      id: 'body-flash',
+      title: 'Body Flash',
+      emoji: '⚡',
+      description: 'Quick body part flash! Body part jaldi se flash hoga, usko tap karo!',
+      color: '#EF4444',
+      available: isBodyFlashAvailable,
     },
   ];
 
@@ -2442,9 +2848,9 @@ export default function SessionGamesScreen() {
     return <TapOnlySmallTargetGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  // if (currentGame === 'shrinking-target') {
-  //   return <ShrinkingTargetGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'shrinking-target') {
+    return <ShrinkingTargetGame onBack={() => setCurrentGame('menu')} />;
+  }
 
   if (currentGame === 'track-then-tap') {
     return <TrackThenTapSmallObjectGame onBack={() => setCurrentGame('menu')} />;
@@ -3027,45 +3433,171 @@ export default function SessionGamesScreen() {
   }
 
   // Level 3 Session 1 games - Tap with Rhythm
-  if (currentGame === 'beat-match-tap') {
-    return <BeatMatchTapGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'single-beat-tap') {
+    return <SingleBeatTapGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'copy-my-rhythm') {
-    return <CopyMyRhythmGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'double-beat-copy') {
+    return <DoubleBeatCopyGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'stop-go-drum') {
-    return <StopGoDrumGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'pause-and-tap') {
+    return <PauseAndTapGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'loud-soft-rhythm') {
-    return <LoudSoftRhythmGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'fast-beat-challenge') {
+    return <FastBeatChallengeGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'instrument-choice') {
-    return <InstrumentChoiceGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'slow-beat-calm-mode') {
+    return <SlowBeatCalmModeGame onBack={() => setCurrentGame('menu')} />;
   }
 
   // Level 3 Session 2 games - Big vs Small Movements
-  if (currentGame === 'big-swipe-small-swipe') {
-    return <BigSwipeSmallSwipeGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'big-tap-l3s4') {
+    return <BigTapGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'big-tap-small-tap') {
-    return <BigTapSmallTapGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'small-dot-touch') {
+    return <SmallDotTouchGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'stretch-pinch') {
-    return <StretchPinchGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'big-small-switch') {
+    return <BigSmallSwitchGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'big-path-trace') {
-    return <BigPathTraceGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'balloon-inflate-l3s4') {
+    return <BalloonInflateGameOT onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'big-throw-small-throw') {
-    return <BigThrowSmallThrowGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'compare-and-move') {
+    return <CompareAndMoveGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 4: Up-Down Gestures
+  if (currentGame === 'balloon-up') {
+    return <BalloonUpGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'ball-drop') {
+    return <BallDropGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'elevator-game') {
+    return <ElevatorGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jump-arrow') {
+    return <JumpArrowGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'rain-catch') {
+    return <RainCatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 5: Left-Right Swipes
+  if (currentGame === 'car-turn') {
+    return <CarTurnGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'arrow-match') {
+    return <ArrowMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'animal-run') {
+    return <AnimalRunGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'mirror-swipe') {
+    return <MirrorSwipeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'catch-the-ball') {
+    return <CatchTheBallGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 6: Jump Imitation (Tap Twice)
+  if (currentGame === 'frog-jump') {
+    return <FrogJumpGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jump-count') {
+    return <JumpCountGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'double-tap-only') {
+    return <DoubleTapOnlyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'rhythm-jump') {
+    return <RhythmJumpGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'obstacle-jump') {
+    return <ObstacleJumpGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 7: Swinging Movement Imitation
+  if (currentGame === 'pendulum-copy') {
+    return <PendulumCopyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'monkey-swing') {
+    return <MonkeySwingGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'fan-motion') {
+    return <FanMotionGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'rope-swing-timing') {
+    return <RopeSwingTimingGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'music-swing') {
+    return <MusicSwingGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 8: Whole Body Map
+  if (currentGame === 'touch-head') {
+    return <TouchHeadGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'shoulders-tap') {
+    return <ShouldersTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'body-puzzle') {
+    return <BodyPuzzleGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'follow-the-body') {
+    return <FollowTheBodyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'body-flash') {
+    return <BodyFlashGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 3: Fast vs Slow Movements
+  if (currentGame === 'slow-turtle-move') {
+    return <SlowTurtleMoveGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'fast-rabbit-run') {
+    return <FastRabbitRunGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'speed-match') {
+    return <SpeedMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'traffic-light-game') {
+    return <TrafficLightGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'music-speed-control') {
+    return <MusicSpeedControlGame onBack={() => setCurrentGame('menu')} />;
   }
 
   // ---------- Menu UI ----------
@@ -3282,17 +3814,65 @@ export default function SessionGamesScreen() {
                   if (game.id === 'rain-drop-slide') setCurrentGame('rain-drop-slide');
                   if (game.id === 'start-stop-line') setCurrentGame('start-stop-line');
                   // Level 3 Session 1 games
-                  if (game.id === 'beat-match-tap') setCurrentGame('beat-match-tap');
-                  if (game.id === 'copy-my-rhythm') setCurrentGame('copy-my-rhythm');
-                  if (game.id === 'stop-go-drum') setCurrentGame('stop-go-drum');
-                  if (game.id === 'loud-soft-rhythm') setCurrentGame('loud-soft-rhythm');
-                  if (game.id === 'instrument-choice') setCurrentGame('instrument-choice');
+                  if (game.id === 'single-beat-tap') setCurrentGame('single-beat-tap');
+                  if (game.id === 'double-beat-copy') setCurrentGame('double-beat-copy');
+                  if (game.id === 'pause-and-tap') setCurrentGame('pause-and-tap');
+                  if (game.id === 'fast-beat-challenge') setCurrentGame('fast-beat-challenge');
+                  if (game.id === 'slow-beat-calm-mode') setCurrentGame('slow-beat-calm-mode');
                   // Level 3 Session 2 games
-                  if (game.id === 'big-swipe-small-swipe') setCurrentGame('big-swipe-small-swipe');
-                  if (game.id === 'big-tap-small-tap') setCurrentGame('big-tap-small-tap');
-                  if (game.id === 'stretch-pinch') setCurrentGame('stretch-pinch');
-                  if (game.id === 'big-path-trace') setCurrentGame('big-path-trace');
-                  if (game.id === 'big-throw-small-throw') setCurrentGame('big-throw-small-throw');
+                  if (game.id === 'big-tap-l3s4') setCurrentGame('big-tap-l3s4');
+                  if (game.id === 'small-dot-touch') setCurrentGame('small-dot-touch');
+                  if (game.id === 'big-small-switch') setCurrentGame('big-small-switch');
+                  if (game.id === 'balloon-inflate-l3s4') setCurrentGame('balloon-inflate-l3s4');
+                  if (game.id === 'compare-and-move') setCurrentGame('compare-and-move');
+                  // Level 3 Session 4: Up-Down Gestures
+                  if (game.id === 'balloon-up') setCurrentGame('balloon-up');
+                  if (game.id === 'ball-drop') setCurrentGame('ball-drop');
+                  if (game.id === 'elevator-game') setCurrentGame('elevator-game');
+                  if (game.id === 'jump-arrow') setCurrentGame('jump-arrow');
+                  if (game.id === 'rain-catch') setCurrentGame('rain-catch');
+                  // Level 3 Session 5: Left-Right Swipes
+                  if (game.id === 'car-turn') setCurrentGame('car-turn');
+                  if (game.id === 'arrow-match') setCurrentGame('arrow-match');
+                  if (game.id === 'animal-run') setCurrentGame('animal-run');
+                  if (game.id === 'mirror-swipe') setCurrentGame('mirror-swipe');
+                  if (game.id === 'catch-the-ball') setCurrentGame('catch-the-ball');
+                  // Level 3 Session 6: Jump Imitation (Tap Twice)
+                  if (game.id === 'frog-jump') setCurrentGame('frog-jump');
+                  if (game.id === 'jump-count') setCurrentGame('jump-count');
+                  if (game.id === 'double-tap-only') setCurrentGame('double-tap-only');
+                  if (game.id === 'rhythm-jump') setCurrentGame('rhythm-jump');
+                  if (game.id === 'obstacle-jump') setCurrentGame('obstacle-jump');
+                  // Level 3 Session 7: Swinging Movement Imitation
+                  if (game.id === 'pendulum-copy') setCurrentGame('pendulum-copy');
+                  if (game.id === 'monkey-swing') setCurrentGame('monkey-swing');
+                  if (game.id === 'fan-motion') setCurrentGame('fan-motion');
+                  if (game.id === 'rope-swing-timing') setCurrentGame('rope-swing-timing');
+                  if (game.id === 'music-swing') setCurrentGame('music-swing');
+                  // Level 3 Session 8: Whole Body Map
+                  if (game.id === 'touch-head') setCurrentGame('touch-head');
+                  if (game.id === 'shoulders-tap') setCurrentGame('shoulders-tap');
+                  if (game.id === 'body-puzzle') setCurrentGame('body-puzzle');
+                  if (game.id === 'follow-the-body') setCurrentGame('follow-the-body');
+                  if (game.id === 'body-flash') setCurrentGame('body-flash');
+                  // Level 3 Session 3: Fast vs Slow Movements
+                  if (game.id === 'slow-turtle-move') setCurrentGame('slow-turtle-move');
+                  if (game.id === 'fast-rabbit-run') setCurrentGame('fast-rabbit-run');
+                  if (game.id === 'speed-match') setCurrentGame('speed-match');
+                  if (game.id === 'traffic-light-game') setCurrentGame('traffic-light-game');
+                  if (game.id === 'music-speed-control') setCurrentGame('music-speed-control');
+                  // Level 3 Session 3: Tap with Rhythm (Drum Beats)
+                  if (game.id === 'single-beat-tap') setCurrentGame('single-beat-tap');
+                  if (game.id === 'double-beat-copy') setCurrentGame('double-beat-copy');
+                  if (game.id === 'pause-and-tap') setCurrentGame('pause-and-tap');
+                  if (game.id === 'fast-beat-challenge') setCurrentGame('fast-beat-challenge');
+                  if (game.id === 'slow-beat-calm-mode') setCurrentGame('slow-beat-calm-mode');
+                  // Level 3 Session 4: Big vs Small Movements
+                  if (game.id === 'big-tap-l3s4') setCurrentGame('big-tap-l3s4');
+                  if (game.id === 'small-dot-touch') setCurrentGame('small-dot-touch');
+                  if (game.id === 'big-small-switch') setCurrentGame('big-small-switch');
+                  if (game.id === 'balloon-inflate-l3s4') setCurrentGame('balloon-inflate-l3s4');
+                  if (game.id === 'compare-and-move') setCurrentGame('compare-and-move');
                 }}
                 activeOpacity={0.8}
               >

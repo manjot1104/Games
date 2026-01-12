@@ -190,6 +190,14 @@ const DragBallToGoalGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
     });
 
+  // Initial instruction - only once
+  useEffect(() => {
+    try {
+      Speech.speak('Press the ball and drag it to the goal box. Release when it\'s inside!', { rate: 0.78 });
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
   // Initialize positions
   useEffect(() => {
     // Randomize goal position slightly
@@ -198,9 +206,6 @@ const DragBallToGoalGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     goalX.value = goalXPos;
     goalY.value = goalYPos;
 
-    try {
-      Speech.speak('Press the ball and drag it to the goal box. Release when it\'s inside!', { rate: 0.78 });
-    } catch {}
     // Randomize start position slightly
     const startXPos = 10 + Math.random() * 10; // 10-20%
     const startYPos = 40 + Math.random() * 20; // 40-60%
@@ -208,7 +213,7 @@ const DragBallToGoalGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     startY.value = startYPos;
     ballX.value = startXPos;
     ballY.value = startYPos;
-  }, [round]);
+  }, [round, goalX, goalY, startX, startY, ballX, ballY]);
 
   const handleBack = useCallback(() => {
     stopAllSpeech();
@@ -269,6 +274,11 @@ const DragBallToGoalGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               xpAwarded={finalStats.xp}
               accuracy={accuracyPct}
               logTimestamp={logTimestamp}
+              onHome={() => {
+                stopAllSpeech();
+                cleanupSounds();
+                onBack?.();
+              }}
               onPlayAgain={() => {
                 setRound(1);
                 setScore(0);

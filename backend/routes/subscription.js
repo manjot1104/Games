@@ -20,14 +20,27 @@ router.get('/test', (req, res) => {
 // Keys should be in environment variables: RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET
 // If keys are not set, Razorpay will still initialize but API calls will fail
 let razorpay;
+const keyId = process.env.RAZORPAY_KEY_ID;
+const keySecret = process.env.RAZORPAY_KEY_SECRET;
+const hasKeys = keyId && keySecret && keyId.trim() !== '' && keySecret.trim() !== '';
+
+console.log('[SUBSCRIPTION ROUTER] Initializing Razorpay...');
+console.log('[SUBSCRIPTION ROUTER] RAZORPAY_KEY_ID:', keyId ? (keyId.substring(0, 10) + '...') : 'NOT SET');
+console.log('[SUBSCRIPTION ROUTER] RAZORPAY_KEY_SECRET:', keySecret ? 'SET (hidden)' : 'NOT SET');
+console.log('[SUBSCRIPTION ROUTER] Has valid keys:', hasKeys);
+
 try {
   razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || '',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || '',
+    key_id: keyId || '',
+    key_secret: keySecret || '',
   });
-  console.log('[SUBSCRIPTION ROUTER] Razorpay initialized (keys may be empty for localhost)');
+  if (hasKeys) {
+    console.log('[SUBSCRIPTION ROUTER] ✅ Razorpay initialized with valid keys');
+  } else {
+    console.log('[SUBSCRIPTION ROUTER] ⚠️ Razorpay initialized but keys are missing (localhost mode)');
+  }
 } catch (error) {
-  console.error('[SUBSCRIPTION ROUTER] Failed to initialize Razorpay:', error);
+  console.error('[SUBSCRIPTION ROUTER] ❌ Failed to initialize Razorpay:', error);
   // Create a dummy instance to prevent module load failure
   razorpay = { plans: {}, customers: {}, subscriptions: {}, payments: {} };
 }
@@ -183,15 +196,59 @@ async function checkSubscriptionStatus(auth0Id) {
   const now = new Date();
   const isTrialActive = subscription.isTrialActive();
   const isTrialExpired = subscription.isTrialExpired();
-  const isPaidActive = subscription.status === 'active' && 
-                       subscription.subscriptionEndDate && 
-                       subscription.subscriptionEndDate > now;
+  
+  // For paid subscriptions, verify that payment actually exists
+  // If status is 'active' but no payment found, it's invalid - reset to 'created' or 'expired'
+  let isPaidActive = false;
+  if (subscription.status === 'active' && subscription.subscriptionEndDate && subscription.subscriptionEndDate > now) {
+    // Check if there's actually a payment for this subscription
+    if (subscription.razorpaySubscriptionId) {
+      const { Payment } = await import('../models/Payment.js');
+      const payment = await Payment.findOne({
+        razorpaySubscriptionId: subscription.razorpaySubscriptionId,
+        status: { $in: ['captured', 'authorized'] }, // Only successful payments
+      });
+      
+      if (payment) {
+        isPaidActive = true;
+      } else {
+        // Subscription marked as 'active' but no payment found - this is invalid
+        console.warn(`[SUBSCRIPTION STATUS] Subscription ${subscription._id} is marked 'active' but no payment found. Resetting to 'created'.`);
+        subscription.status = 'created';
+        subscription.subscriptionEndDate = null;
+        subscription.nextBillingDate = null;
+        await subscription.save().catch(err => {
+          console.error('[SUBSCRIPTION STATUS] Failed to reset invalid subscription:', err);
+        });
+      }
+    } else {
+      // No Razorpay subscription ID - can't be a valid paid subscription
+      console.warn(`[SUBSCRIPTION STATUS] Subscription ${subscription._id} is marked 'active' but has no Razorpay subscription ID. Resetting.`);
+      subscription.status = 'expired';
+      subscription.subscriptionEndDate = null;
+      await subscription.save().catch(err => {
+        console.error('[SUBSCRIPTION STATUS] Failed to reset invalid subscription:', err);
+      });
+    }
+  }
   
   const hasAccess = isTrialActive || isPaidActive;
   
+  // Determine the actual status to return
+  // If trial has expired but status is still 'trial', return 'expired'
+  let actualStatus = subscription.status;
+  if (isTrialExpired && subscription.status === 'trial') {
+    actualStatus = 'expired';
+    // Optionally update the database status (async, don't wait)
+    subscription.status = 'expired';
+    subscription.save().catch(err => {
+      console.error('[SUBSCRIPTION STATUS] Failed to update expired trial status:', err);
+    });
+  }
+  
   return {
     hasAccess,
-    status: subscription.status,
+    status: actualStatus,
     isTrial: isTrialActive,
     isActive: hasAccess,
     trialEndDate: subscription.trialEndDate,
@@ -241,11 +298,39 @@ router.post('/create-subscription', async (req, res) => {
       });
     }
     
+    // If there's an existing 'created' subscription with Razorpay ID, cancel it first
+    // This handles cases where previous subscription creation failed or has past start_at
+    if (subscription.status === 'created' && subscription.razorpaySubscriptionId) {
+      console.log(`[CREATE SUBSCRIPTION] Found existing 'created' subscription ${subscription.razorpaySubscriptionId} - cancelling to create fresh one`);
+      try {
+        // Cancel the old subscription in Razorpay
+        await razorpay.subscriptions.cancel(subscription.razorpaySubscriptionId);
+        console.log(`[CREATE SUBSCRIPTION] Cancelled old subscription ${subscription.razorpaySubscriptionId}`);
+      } catch (error) {
+        // If already cancelled or doesn't exist, continue
+        console.log(`[CREATE SUBSCRIPTION] Could not cancel old subscription (may already be cancelled): ${error.message}`);
+      }
+      // Clear the old subscription ID so we can create a new one
+      subscription.razorpaySubscriptionId = null;
+      subscription.razorpayPlanId = null;
+      await subscription.save();
+    }
+    
     // Check if Razorpay keys are configured
-    const hasRazorpayKeys = process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET;
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const hasRazorpayKeys = keyId && keySecret && keyId.trim() !== '' && keySecret.trim() !== '';
+    
+    // Debug logging
+    console.log('[CREATE SUBSCRIPTION] Checking Razorpay keys...');
+    console.log('[CREATE SUBSCRIPTION] RAZORPAY_KEY_ID exists:', !!keyId);
+    console.log('[CREATE SUBSCRIPTION] RAZORPAY_KEY_ID value:', keyId ? (keyId.substring(0, 10) + '...') : 'NOT SET');
+    console.log('[CREATE SUBSCRIPTION] RAZORPAY_KEY_SECRET exists:', !!keySecret);
+    console.log('[CREATE SUBSCRIPTION] Has valid keys:', hasRazorpayKeys);
     
     if (!hasRazorpayKeys) {
       console.log('[CREATE SUBSCRIPTION] Razorpay keys not configured - returning mock response for localhost development');
+      console.log('[CREATE SUBSCRIPTION] Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in backend/.env file');
       // For localhost development without Razorpay keys, return mock data
       return res.json({
         ok: true,
@@ -257,6 +342,8 @@ router.post('/create-subscription', async (req, res) => {
         mock: true, // Flag to indicate this is a mock response
       });
     }
+    
+    console.log('[CREATE SUBSCRIPTION] Razorpay keys found - proceeding with real subscription creation');
     
     // Create Razorpay plan if it doesn't exist (idempotent)
     let planId = process.env.RAZORPAY_PLAN_ID;
@@ -300,32 +387,40 @@ router.post('/create-subscription', async (req, res) => {
     }
     
     // Create Razorpay subscription
+    // Note: Subscription is created in 'created' state, will become 'active' only after first payment
+    // Set start_at to current time + 30 seconds to ensure it's always in the future
+    // This prevents "start time is past" errors while allowing immediate payment
+    const now = Math.floor(Date.now() / 1000);
+    const startAt = now + 30; // 30 seconds from now - enough buffer for checkout to open
+    
     const razorpaySubscription = await razorpay.subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
       total_count: 12, // 12 months = 1 year (or set to null for indefinite)
-      start_at: Math.floor(Date.now() / 1000) + 60, // Start 1 minute from now
+      start_at: startAt, // Set to 2 minutes from now to avoid past time errors
       notes: {
         auth0Id,
         userId: user._id.toString(),
       },
     });
     
+    console.log(`[CREATE SUBSCRIPTION] Created subscription with start_at: ${new Date(startAt * 1000).toISOString()}`);
+    
+    console.log(`[CREATE SUBSCRIPTION] Created Razorpay subscription ${razorpaySubscription.id} with status: ${razorpaySubscription.status}`);
+    
     // Update subscription in database
+    // IMPORTANT: Do NOT set status to 'active' here - it should only be active after payment is verified
+    // Razorpay subscription starts as 'created' and becomes 'active' after first payment
     subscription.razorpaySubscriptionId = razorpaySubscription.id;
     subscription.razorpayPlanId = planId;
-    subscription.status = 'active';
-    subscription.subscriptionStartDate = new Date(razorpaySubscription.created_at * 1000);
-    
-    // Calculate next billing date (1 month from start)
-    const nextBilling = new Date(razorpaySubscription.created_at * 1000);
-    nextBilling.setMonth(nextBilling.getMonth() + 1);
-    subscription.nextBillingDate = nextBilling;
-    
-    // Set subscription end date (for access checking)
-    subscription.subscriptionEndDate = nextBilling;
+    subscription.status = 'created'; // Set to 'created' - will become 'active' only after payment verification
+    subscription.subscriptionStartDate = null; // Will be set after payment
+    subscription.nextBillingDate = null; // Will be set after payment
+    subscription.subscriptionEndDate = null; // Will be set after payment - NO ACCESS until payment verified
     
     await subscription.save();
+    
+    console.log(`[CREATE SUBSCRIPTION] Subscription saved with status 'created' - waiting for payment verification`);
     
     console.log(`Created Razorpay subscription ${razorpaySubscription.id} for user ${auth0Id}`);
     
@@ -382,49 +477,63 @@ router.post('/verify-payment', async (req, res) => {
     
     // Fetch payment details from Razorpay
     const payment = await razorpay.payments.fetch(razorpay_payment_id);
+    console.log(`[VERIFY PAYMENT] Payment fetched: ${razorpay_payment_id}, status: ${payment.status}`);
     
     // Update subscription
     const subscription = await Subscription.findOne({
       razorpaySubscriptionId: razorpay_subscription_id,
     });
     
-    if (subscription) {
-      subscription.status = 'active';
-      subscription.subscriptionStartDate = new Date(payment.created_at * 1000);
-      
-      // Calculate next billing date (1 month from payment)
-      const nextBilling = new Date(payment.created_at * 1000);
-      nextBilling.setMonth(nextBilling.getMonth() + 1);
-      subscription.nextBillingDate = nextBilling;
-      subscription.subscriptionEndDate = nextBilling;
-      
-      await subscription.save();
+    if (!subscription) {
+      console.error(`[VERIFY PAYMENT] Subscription not found for Razorpay ID: ${razorpay_subscription_id}`);
+      return res.status(404).json({
+        ok: false,
+        error: 'Subscription not found',
+      });
     }
     
+    console.log(`[VERIFY PAYMENT] Found subscription ${subscription._id}, current status: ${subscription.status}`);
+    
+    // Update subscription to active
+    subscription.status = 'active';
+    subscription.subscriptionStartDate = new Date(payment.created_at * 1000);
+    
+    // Calculate next billing date (1 month from payment)
+    const nextBilling = new Date(payment.created_at * 1000);
+    nextBilling.setMonth(nextBilling.getMonth() + 1);
+    subscription.nextBillingDate = nextBilling;
+    subscription.subscriptionEndDate = nextBilling;
+    
+    await subscription.save();
+    console.log(`[VERIFY PAYMENT] Subscription ${subscription._id} updated to 'active', end date: ${subscription.subscriptionEndDate}`);
+    
     // Record payment
-    await Payment.findOneAndUpdate(
+    const paymentRecord = await Payment.findOneAndUpdate(
       { razorpayPaymentId: razorpay_payment_id },
       {
-        userId: subscription?.userId,
-        auth0Id: subscription?.auth0Id || auth0Id,
-        subscriptionId: subscription?._id,
+        userId: subscription.userId,
+        auth0Id: subscription.auth0Id || auth0Id,
+        subscriptionId: subscription._id,
         razorpayPaymentId: razorpay_payment_id,
         razorpaySubscriptionId: razorpay_subscription_id,
         amount: payment.amount,
         amountInRupees: payment.amount / 100,
         currency: payment.currency,
-        status: payment.status,
+        status: payment.status === 'captured' ? 'captured' : 'authorized', // Ensure proper status
         method: payment.method,
-        paidAt: payment.captured_at ? new Date(payment.captured_at * 1000) : null,
+        paidAt: payment.captured_at ? new Date(payment.captured_at * 1000) : new Date(),
         webhookReceived: false,
       },
       { upsert: true, new: true }
     );
     
+    console.log(`[VERIFY PAYMENT] Payment record saved: ${paymentRecord._id}, status: ${paymentRecord.status}`);
+    
     res.json({
       ok: true,
       message: 'Payment verified successfully',
-      subscriptionStatus: subscription?.status,
+      subscriptionStatus: subscription.status,
+      hasAccess: true,
     });
   } catch (error) {
     console.error('Failed to verify payment:', error);
@@ -546,6 +655,136 @@ router.get('/status', async (req, res) => {
     res.status(500).json({
       ok: false,
       error: error.message || 'Failed to get subscription status',
+    });
+  }
+});
+
+/**
+ * POST /api/subscription/sync-status
+ * Manually sync subscription status from Razorpay
+ * Useful when payment is successful but status wasn't updated
+ */
+router.post('/sync-status', async (req, res) => {
+  try {
+    const auth0Id = req.auth0Id;
+    if (!auth0Id) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    
+    const subscription = await Subscription.findOne({ auth0Id });
+    
+    if (!subscription || !subscription.razorpaySubscriptionId) {
+      return res.status(404).json({
+        ok: false,
+        error: 'No subscription found to sync',
+      });
+    }
+    
+    console.log(`[SYNC STATUS] Syncing subscription ${subscription.razorpaySubscriptionId} from Razorpay`);
+    
+    // Fetch subscription details from Razorpay
+    const razorpaySubscription = await razorpay.subscriptions.fetch(subscription.razorpaySubscriptionId);
+    console.log(`[SYNC STATUS] Razorpay subscription status: ${razorpaySubscription.status}`);
+    
+    // Check if subscription is active in Razorpay
+    if (razorpaySubscription.status === 'active' || razorpaySubscription.status === 'authenticated') {
+      // Check if there's a payment
+      if (razorpaySubscription.notes && razorpaySubscription.notes.auth0Id === auth0Id) {
+        // Update subscription status
+        subscription.status = 'active';
+        
+        // Set dates if not already set
+        if (!subscription.subscriptionStartDate) {
+          subscription.subscriptionStartDate = new Date(razorpaySubscription.created_at * 1000);
+        }
+        
+        // Calculate next billing date
+        const startTime = razorpaySubscription.current_start 
+          ? new Date(razorpaySubscription.current_start * 1000)
+          : new Date(razorpaySubscription.created_at * 1000);
+        const nextBilling = new Date(startTime);
+        nextBilling.setMonth(nextBilling.getMonth() + 1);
+        subscription.nextBillingDate = nextBilling;
+        subscription.subscriptionEndDate = nextBilling;
+        
+        await subscription.save();
+        console.log(`[SYNC STATUS] Subscription ${subscription._id} synced to 'active'`);
+        
+        return res.json({
+          ok: true,
+          message: 'Subscription status synced successfully',
+          status: 'active',
+        });
+      }
+    }
+    
+    // If subscription is still in created/pending state, check for payments
+    if (razorpaySubscription.status === 'created' || razorpaySubscription.status === 'pending') {
+      // Try to find payments for this subscription
+      try {
+        const payments = await razorpay.payments.all({
+          'subscription_id': subscription.razorpaySubscriptionId,
+        });
+        
+        if (payments.items && payments.items.length > 0) {
+          const successfulPayment = payments.items.find(p => p.status === 'captured' || p.status === 'authorized');
+          
+          if (successfulPayment) {
+            console.log(`[SYNC STATUS] Found successful payment ${successfulPayment.id}, activating subscription`);
+            
+            subscription.status = 'active';
+            subscription.subscriptionStartDate = new Date(successfulPayment.created_at * 1000);
+            
+            const nextBilling = new Date(successfulPayment.created_at * 1000);
+            nextBilling.setMonth(nextBilling.getMonth() + 1);
+            subscription.nextBillingDate = nextBilling;
+            subscription.subscriptionEndDate = nextBilling;
+            
+            await subscription.save();
+            
+            // Also record the payment
+            const { Payment } = await import('../models/Payment.js');
+            await Payment.findOneAndUpdate(
+              { razorpayPaymentId: successfulPayment.id },
+              {
+                userId: subscription.userId,
+                auth0Id: subscription.auth0Id,
+                subscriptionId: subscription._id,
+                razorpayPaymentId: successfulPayment.id,
+                razorpaySubscriptionId: subscription.razorpaySubscriptionId,
+                amount: successfulPayment.amount,
+                amountInRupees: successfulPayment.amount / 100,
+                currency: successfulPayment.currency,
+                status: successfulPayment.status === 'captured' ? 'captured' : 'authorized',
+                method: successfulPayment.method,
+                paidAt: successfulPayment.captured_at ? new Date(successfulPayment.captured_at * 1000) : new Date(),
+              },
+              { upsert: true, new: true }
+            );
+            
+            return res.json({
+              ok: true,
+              message: 'Subscription activated from payment history',
+              status: 'active',
+            });
+          }
+        }
+      } catch (error) {
+        console.error('[SYNC STATUS] Error fetching payments:', error);
+      }
+    }
+    
+    return res.json({
+      ok: true,
+      message: 'Subscription status checked',
+      razorpayStatus: razorpaySubscription.status,
+      currentStatus: subscription.status,
+    });
+  } catch (error) {
+    console.error('Failed to sync subscription status:', error);
+    res.status(500).json({
+      ok: false,
+      error: error.message || 'Failed to sync subscription status',
     });
   }
 });

@@ -1,4 +1,7 @@
+import { SparkleBurst } from '@/components/game/FX';
+import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -6,14 +9,12 @@ import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Platform,
     Pressable,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import Animated, {
     Easing,
@@ -23,8 +24,6 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 
 const POP_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
 const TOTAL_TARGETS = 12; // Total targets to tap
@@ -59,9 +58,10 @@ const usePopSound = () => {
 
   const play = useCallback(async () => {
     try {
-      if (Platform.OS === 'web') return;
       await ensureSound();
-      if (soundRef.current) await soundRef.current.replayAsync();
+      if (soundRef.current) {
+        await soundRef.current.replayAsync();
+      }
     } catch {}
   }, [ensureSound]);
 
@@ -88,13 +88,29 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const COLORS = ['#3B82F6', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#F472B6', '#06B6D4', '#EC4899'];
 
-  // Generate random position for target
+  // Generate random position for target - ensures target stays within bounds
   const generateRandomPosition = useCallback(() => {
-    const margin = 15; // percentage margin from edges
-    const x = margin + Math.random() * (100 - margin * 2);
-    const y = margin + Math.random() * (100 - margin * 2);
-    return { x, y };
-  }, []);
+    // Calculate safe margin as percentage based on target size
+    // We need margin = (target radius + padding) as percentage
+    // Since we translate by -currentSize/2, we need at least currentSize/2 + padding margin
+    // Using a conservative approach: ensure at least 25% margin from edges
+    // This accounts for the largest target size (180px) and ensures it never goes outside
+    const minMargin = 25; // Minimum 25% margin from edges
+    
+    // For larger targets, increase margin proportionally
+    const sizeBasedMargin = Math.max(minMargin, (currentSize / 4) + 15); // Scale margin with size
+    const safeMargin = Math.min(sizeBasedMargin, 35); // Cap at 35% to keep target visible
+    
+    // Generate position within safe bounds
+    const x = safeMargin + Math.random() * (100 - safeMargin * 2);
+    const y = safeMargin + Math.random() * (100 - safeMargin * 2);
+    
+    // Additional safety: clamp to 20-80% range to ensure target is always fully visible
+    const clampedX = Math.max(20, Math.min(80, x));
+    const clampedY = Math.max(20, Math.min(80, y));
+    
+    return { x: clampedX, y: clampedY };
+  }, [currentSize]);
 
   // Spawn new target
   const spawnTarget = useCallback(() => {
@@ -107,6 +123,37 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     scale.value = withTiming(1, { duration: 300, easing: Easing.out(Easing.ease) });
     opacity.value = withTiming(1, { duration: 300 });
   }, [generateRandomPosition, scale, opacity]);
+
+  // End game - defined before handleTap to avoid initialization error
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_TARGETS;
+      const xp = finalScore * 12; // 12 XP per target
+      const accuracy = (finalScore / total) * 100;
+
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+
+      try {
+        await recordGame(xp);
+        const result = await logGameAndAward({
+          type: 'shrinkingTarget',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['graded-motor-control', 'progressive-precision', 'adaptability'],
+        });
+        setLogTimestamp(result?.last?.at ?? null);
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (e) {
+        console.error('Failed to log shrinking target game:', e);
+      }
+
+      Speech.speak('Excellent precision!', { rate: 0.78 });
+    },
+    [router],
+  );
 
   // Handle target tap
   const handleTap = useCallback(async () => {
@@ -169,46 +216,34 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     } catch {}
   }, [done]);
 
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_TARGETS;
-      const xp = finalScore * 12; // 12 XP per target
-      const accuracy = (finalScore / total) * 100;
-
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'shrinkingTarget',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['graded-motor-control', 'progressive-precision', 'adaptability'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log shrinking target game:', e);
-      }
-
-      Speech.speak('Excellent precision!', { rate: 0.78 });
-    },
-    [router],
-  );
-
   // Initialize first target
   useEffect(() => {
     try {
       Speech.speak('Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you.', { rate: 0.78 });
     } catch {}
     spawnTarget();
-  }, []);
+    
+    // Cleanup: Stop speech when component unmounts
+    return () => {
+      try {
+        Speech.stop();
+      } catch (e) {
+        // Ignore errors
+      }
+      stopAllSpeech();
+      cleanupSounds();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   const handleBack = useCallback(() => {
+    try {
+      Speech.stop();
+    } catch (e) {
+      // Ignore errors
+    }
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 
@@ -228,48 +263,33 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
     return (
       <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <LinearGradient
-            colors={['#FFFFFF', '#FEF3C7']}
-            style={styles.resultCard}
-          >
-            <Text style={{ fontSize: 72, marginBottom: 20 }}>🎯✨</Text>
-            <Text style={styles.resultTitle}>Amazing Precision! 🎉</Text>
-            <Text style={styles.resultSubtitle}>
-              You tapped {finalStats.correct} out of {finalStats.total} targets! ⭐
-            </Text>
-            <Text style={styles.resultSubtitle}>
-              Final size: {currentSize.toFixed(0)}px
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setScore(0);
-                setCurrentSize(INITIAL_SIZE);
-                setMissCount(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                spawnTarget();
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </LinearGradient>
-        </ScrollView>
+        <LinearGradient
+          colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.resultContainer}>
+          <ResultCard
+            correct={finalStats.correct}
+            total={finalStats.total}
+            xpAwarded={finalStats.xp}
+            accuracy={accuracyPct}
+            logTimestamp={logTimestamp}
+            onHome={() => {
+              stopAllSpeech();
+              cleanupSounds();
+              onBack?.();
+            }}
+            onPlayAgain={() => {
+              setScore(0);
+              setCurrentSize(INITIAL_SIZE);
+              setMissCount(0);
+              setDone(false);
+              setFinalStats(null);
+              setLogTimestamp(null);
+              spawnTarget();
+            }}
+          />
+        </View>
       </SafeAreaView>
     );
   }
@@ -566,6 +586,12 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: 'center',
     fontSize: 15,
+  },
+  resultContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
   },
 });
 

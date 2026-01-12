@@ -118,8 +118,6 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       withTiming(1, { duration: 200, easing: Easing.in(Easing.ease) }),
     );
     setShowGoal(true);
-
-    Speech.speak(isFastMode ? 'Tap fast to race to the goal!' : 'Tap to keep the dot moving slowly!', { rate: 0.78 });
   }, [isFastMode, pathProgress, dotScale, dotOpacity, dotX, dotY, goalScale]);
 
   // Handle tap - move dot forward

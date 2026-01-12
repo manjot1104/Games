@@ -275,6 +275,11 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               xpAwarded={finalStats.xp}
               accuracy={accuracyPct}
               logTimestamp={logTimestamp}
+              onHome={() => {
+                stopAllSpeech();
+                cleanupSounds();
+                onBack?.();
+              }}
               onPlayAgain={() => {
                 setRound(1);
                 setScore(0);

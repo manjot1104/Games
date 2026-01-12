@@ -28,8 +28,9 @@ const WARNING_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_f
 const TOTAL_ROUNDS = 8;
 const BAR_SIZE = 80;
 const PATH_LENGTH = 60; // % of screen
-const MAX_SPEED = 2; // % per frame (too fast threshold)
-const SLOW_TARGET = 0.5; // % per frame (target speed)
+const MAX_SPEED = 35; // % per second (too fast threshold) - "TOO FAST!" shows above 35%
+const SLOW_TARGET = 15; // % per second (target speed) - "FAST" shows above 15%
+const MIN_TIME_DELTA = 20; // Minimum 20ms between speed checks to avoid false positives
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
@@ -95,6 +96,7 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const screenHeight = useRef(600);
   const lastPosition = useRef({ x: 20, time: Date.now() });
   const lastWarningTime = useRef(0);
+  const smoothedSpeedRef = useRef(0);
 
   // End game function (defined before use)
   const endGame = useCallback(
@@ -146,34 +148,46 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       barX.value = clampedX;
       barY.value = pathY.value;
 
-      // Calculate speed
+      // Calculate speed (only if enough time has passed to avoid false positives)
       const now = Date.now();
       const timeDelta = now - lastPosition.current.time;
-      if (timeDelta > 0) {
+      if (timeDelta >= MIN_TIME_DELTA) {
         const distanceDelta = Math.abs(barX.value - lastPosition.current.x);
-        const speedValue = (distanceDelta / timeDelta) * 1000; // % per second
-        setSpeed(speedValue);
+        
+        // Only calculate speed if there's actual movement (avoid false readings from tiny movements)
+        if (distanceDelta > 0.1) { // Minimum 0.1% movement required
+          const speedValue = (distanceDelta / timeDelta) * 1000; // % per second
+          
+          // Use more aggressive smoothing to avoid spikes (80% previous, 20% new - more lenient)
+          smoothedSpeedRef.current = smoothedSpeedRef.current * 0.8 + speedValue * 0.2;
+          setSpeed(smoothedSpeedRef.current);
 
-        if (speedValue > MAX_SPEED) {
-          // Too fast!
-          if (!isTooFast) {
-            setIsTooFast(true);
-            const now = Date.now();
-            if (now - lastWarningTime.current > 1000) {
-              lastWarningTime.current = now;
-              try {
-                playWarning();
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                Speech.speak('Too fast!', { rate: 0.78 });
-              } catch {}
+          // Check if too fast (using smoothed speed)
+          if (smoothedSpeedRef.current > MAX_SPEED) {
+            // Too fast!
+            if (!isTooFast) {
+              setIsTooFast(true);
+              if (now - lastWarningTime.current > 2000) { // Increased to 2 seconds to reduce voice spam
+                lastWarningTime.current = now;
+                try {
+                  playWarning();
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                  // Removed Speech.speak to reduce voice lag - only visual/haptic feedback
+                } catch {}
+              }
             }
+          } else {
+            setIsTooFast(false);
           }
         } else {
+          // Very small movement - decay speed smoothly
+          smoothedSpeedRef.current = smoothedSpeedRef.current * 0.9; // Decay speed when not moving
+          setSpeed(smoothedSpeedRef.current);
           setIsTooFast(false);
         }
+        
+        lastPosition.current = { x: barX.value, time: now };
       }
-
-      lastPosition.current = { x: barX.value, time: now };
 
       // Calculate progress
       const pathLength = pathEndX.value - pathStartX.value;
@@ -202,6 +216,7 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               setRound((r) => r + 1);
               setProgress(0);
               setSpeed(0);
+              smoothedSpeedRef.current = 0;
               setIsTooFast(false);
               barX.value = withSpring(startX.value, { damping: 10, stiffness: 100 });
               setRoundActive(true);
@@ -219,20 +234,26 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         barX.value = withSpring(startX.value, { damping: 10, stiffness: 100 });
         setProgress(0);
         setSpeed(0);
+        smoothedSpeedRef.current = 0;
         setIsTooFast(false);
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Drag slowly to the end!', { rate: 0.78 });
+          // Removed Speech.speak to reduce voice lag - only haptic feedback
         } catch {}
       }
     });
 
-  // Initialize path
+  // Initial instruction - only once
   useEffect(() => {
     try {
       Speech.speak('Drag the bar slowly along the path. Watch the speed meter!', { rate: 0.78 });
     } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  // Initialize path
+  useEffect(() => {
     // Horizontal path
     pathStartX.value = 15;
     pathEndX.value = 85;
@@ -242,8 +263,9 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     barY.value = pathY.value;
     setProgress(0);
     setSpeed(0);
+    smoothedSpeedRef.current = 0;
     setIsTooFast(false);
-  }, [round]);
+  }, [round, pathStartX, pathEndX, pathY, startX, barX, barY]);
 
   const handleBack = useCallback(() => {
     stopAllSpeech();
@@ -324,6 +346,7 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 setLogTimestamp(null);
                 setProgress(0);
                 setSpeed(0);
+                smoothedSpeedRef.current = 0;
                 setRoundActive(true);
                 barX.value = startX.value;
               }}

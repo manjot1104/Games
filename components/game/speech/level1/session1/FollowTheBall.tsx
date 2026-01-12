@@ -14,14 +14,14 @@ import * as Speech from 'expo-speech';
 import React, { useEffect, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedReaction,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSpring,
-  withTiming,
+    Easing,
+    runOnJS,
+    useAnimatedReaction,
+    useAnimatedStyle,
+    useSharedValue,
+    withRepeat,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,19 +29,95 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DEFAULT_TTS_RATE = 0.75;
 let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
+let webSpeechSynthesis: SpeechSynthesis | null = null;
+let webUtterance: SpeechSynthesisUtterance | null = null;
+let webTTSActivated = false; // Track if TTS has been activated by user interaction
+
+// Initialize web speech synthesis
+if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  webSpeechSynthesis = window.speechSynthesis;
+}
+
+// Wake up speech synthesis on web (required for browser autoplay policy)
+function activateWebTTS(callback?: () => void) {
+  if (Platform.OS === 'web' && webSpeechSynthesis) {
+    if (!webTTSActivated) {
+      try {
+        // Speak a silent utterance to activate TTS (browser requires user interaction)
+        const silentUtterance = new SpeechSynthesisUtterance('');
+        silentUtterance.volume = 0;
+        silentUtterance.onend = () => {
+          webTTSActivated = true;
+          if (callback) callback();
+        };
+        webSpeechSynthesis.speak(silentUtterance);
+      } catch (e) {
+        console.warn('Failed to activate web TTS:', e);
+        webTTSActivated = true; // Mark as activated even if it fails
+        if (callback) callback();
+      }
+    } else {
+      // Already activated, call callback immediately
+      if (callback) callback();
+    }
+  } else {
+    // Not web, call callback immediately
+    if (callback) callback();
+  }
+}
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
   scheduledSpeechTimers = [];
   try {
-    Speech.stop();
+    if (Platform.OS === 'web' && webSpeechSynthesis) {
+      webSpeechSynthesis.cancel();
+      webUtterance = null;
+    } else {
+      Speech.stop();
+    }
   } catch { }
 }
 
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
   try {
     clearScheduledSpeech();
-    Speech.speak(text, { rate });
+    
+    if (Platform.OS === 'web' && webSpeechSynthesis) {
+      // If TTS is not activated yet, activate it first then speak
+      if (!webTTSActivated) {
+        activateWebTTS(() => {
+          // TTS is now activated, speak the text
+          if (webSpeechSynthesis) {
+            webUtterance = new SpeechSynthesisUtterance(text);
+            webUtterance.rate = Math.max(0.5, Math.min(2, rate * 1.33));
+            webUtterance.pitch = 1;
+            webUtterance.volume = 1;
+            webUtterance.onerror = (e) => {
+              console.warn('Web TTS error:', e);
+            };
+            webSpeechSynthesis.speak(webUtterance);
+          }
+        });
+      } else {
+        // TTS is already activated, speak directly
+        webUtterance = new SpeechSynthesisUtterance(text);
+        // Convert rate: expo-speech uses 0-1, browser uses 0.1-10, default 1
+        // Map 0.75 (default) to ~0.75, scale appropriately
+        webUtterance.rate = Math.max(0.5, Math.min(2, rate * 1.33)); // Scale to browser range
+        webUtterance.pitch = 1;
+        webUtterance.volume = 1;
+        
+        webUtterance.onerror = (e) => {
+          console.warn('Web TTS error:', e);
+        };
+        
+        webSpeechSynthesis.speak(webUtterance);
+      }
+    } else {
+      // Use expo-speech for native platforms
+      Speech.speak(text, { rate });
+    }
   } catch (e) {
     console.warn('speak error', e);
   }
@@ -145,6 +221,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   const [soundOn, setSoundOn] = useState(true);
   const [hapticsOn, setHapticsOn] = useState(false);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
+  const [showStartOverlay, setShowStartOverlay] = useState(true);
 
   const ballAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: ballScale.value }],
@@ -190,7 +268,7 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   // Start a new round
   const startRound = (roundNumber?: number) => {
     const activeRound = roundNumber ?? round;
-    if (isPaused) return;
+    if (isPaused || showStartOverlay) return; // Don't start if overlay is showing
     setPhase('moving');
     setFeedbackToast(null);
     setShowFeedback(false);
@@ -204,7 +282,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
 
     // TTS: Announce new round
     if (activeRound === 1) {
-      speakIfEnabled('Welcome! Watch the ball with your eyes. When it glows, tap it!');
+      // Initial welcome message is handled by start overlay
+      // Don't repeat it here
     } else {
       speakIfEnabled(`Round ${activeRound}. Watch the ball!`);
     }
@@ -293,8 +372,32 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     }, durationMs);
   };
 
+  // Handle start overlay tap - activate TTS and start game
+  const handleStartTap = () => {
+    if (!userInteracted) {
+      setUserInteracted(true);
+      setShowStartOverlay(false);
+      
+      // Activate TTS first, then play welcome message and start round
+      activateWebTTS(() => {
+        // TTS is now activated, wait a bit then play welcome message
+        setTimeout(() => {
+          // Use direct speak to ensure it plays (soundOn check is in speakIfEnabled)
+          if (soundOn) {
+            speak('Welcome! Watch the ball with your eyes. When it glows, tap it!', DEFAULT_TTS_RATE);
+          }
+          // Start the first round after TTS starts playing
+          setTimeout(() => {
+            startRound(1);
+          }, 1000);
+        }, 100);
+      });
+    }
+  };
+
   // Handle tap on ball
   const handleBallTap = () => {
+    
     if (phase === 'moving') {
       // Tapped too early
       tappedWhileMovingRef.current = true;
@@ -530,7 +633,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   }, []);
 
   useEffect(() => {
-    startRound(1);
+    // Don't start round immediately - wait for user to tap start overlay
+    // startRound(1) will be called after handleStartTap
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       if (roundTimeoutRef.current) clearTimeout(roundTimeoutRef.current);
@@ -937,6 +1041,28 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
         {phase === 'feedback' && !feedbackToast && (
           <SparkleBurst key={sparkleKey} visible color="#FCD34D" />
         )}
+
+        {/* Start Overlay - shown before first interaction */}
+        {showStartOverlay && (
+          <TouchableOpacity
+            style={styles.startOverlay}
+            onPress={handleStartTap}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={['rgba(59, 130, 246, 0.95)', 'rgba(37, 99, 235, 0.95)']}
+              style={styles.startOverlayGradient}
+            >
+              <View style={styles.startOverlayContent}>
+                <Text style={styles.startOverlayEmoji}>👆</Text>
+                <Text style={styles.startOverlayTitle}>Tap to Start!</Text>
+                <Text style={styles.startOverlaySubtitle}>
+                  Listen to instructions and play the game
+                </Text>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -1289,6 +1415,44 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 14,
     marginTop: 16,
+  },
+  startOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  startOverlayGradient: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  startOverlayContent: {
+    alignItems: 'center',
+    padding: 32,
+  },
+  startOverlayEmoji: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  startOverlayTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  startOverlaySubtitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#E0E7FF',
+    textAlign: 'center',
+    paddingHorizontal: 24,
   },
 });
 

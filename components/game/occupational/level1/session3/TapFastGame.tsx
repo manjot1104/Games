@@ -21,10 +21,11 @@ import {
 } from 'react-native';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
-const BLINK_INTERVAL = 400; // 0.4 seconds - rapid blinking
-const TOTAL_TAPS_REQUIRED = 20; // Total taps to complete game
+const BLINK_INTERVAL = 600; // 0.6 seconds - rapid blinking
+const LIT_DURATION = 300; // How long circle stays lit (orange)
+const TOTAL_TAPS_REQUIRED = 15; // Total taps to complete game
 const CIRCLE_SIZE = 180;
-const RESPONSE_WINDOW = 600; // 600ms window to tap after blink
+const RESPONSE_WINDOW = 500; // 500ms window to tap after blink
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
@@ -75,37 +76,40 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const glowAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
+  // Initial instruction - only once
+  useEffect(() => {
+    try {
+      Speech.speak('Watch the circle! When it turns orange and says TAP, tap it quickly!', { rate: 0.78 });
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
   // Rapid blink animation loop
   useEffect(() => {
     if (done) return;
-    if (score === 0) {
-      try {
-        Speech.speak('The circle blinks rapidly. Tap quickly to match the pace!', { rate: 0.78 });
-      } catch {}
-    }
 
     const blinkLoop = () => {
       const now = Date.now();
       setLastBlinkTime(now);
       
-      // Turn on (light up)
+      // Turn on (light up) - orange color
       setIsLit(true);
       Animated.sequence([
         Animated.timing(glowAnim, {
           toValue: 1,
-          duration: 100,
+          duration: 50,
           easing: Easing.out(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(glowAnim, {
-          toValue: 0.6,
-          duration: BLINK_INTERVAL - 300,
+          toValue: 0.8,
+          duration: LIT_DURATION - 100,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(glowAnim, {
           toValue: 0,
-          duration: 100,
+          duration: 50,
           easing: Easing.in(Easing.ease),
           useNativeDriver: false,
         }),
@@ -120,6 +124,41 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     return () => clearInterval(interval);
   }, [done, glowAnim]);
+
+  // End game - defined before handleTap to avoid initialization error
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_TAPS_REQUIRED;
+      const xp = finalScore * 10; // 10 XP per tap
+      const accuracy = (finalScore / total) * 100;
+      const avgResponseTime = responseTimes.length > 0
+        ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+        : 0;
+
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+
+      try {
+        await recordGame(xp);
+        const result = await logGameAndAward({
+          type: 'tapFast',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['fast-motor-activation', 'quick-reaction', 'proprioceptive-timing'],
+          meta: { avgResponseTime },
+        });
+        setLogTimestamp(result?.last?.at ?? null);
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (e) {
+        console.error('Failed to log tap fast game:', e);
+      }
+
+      Speech.speak('Great speed!', { rate: 0.78 });
+    },
+    [router, responseTimes],
+  );
 
   // Handle circle tap
   const handleTap = useCallback(async () => {
@@ -166,43 +205,13 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         await playSuccess();
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       } catch {}
-    }
-  }, [done, isLit, lastBlinkTime, scaleAnim, playSuccess]);
-
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_TAPS_REQUIRED;
-      const xp = finalScore * 10; // 10 XP per tap
-      const accuracy = (finalScore / total) * 100;
-      const avgResponseTime = responseTimes.length > 0
-        ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
-        : 0;
-
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-
+    } else {
+      // Wrong tap - tapped when not lit
       try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'tapFast',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['fast-motor-activation', 'quick-reaction', 'proprioceptive-timing'],
-          meta: { avgResponseTime },
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log tap fast game:', e);
-      }
-
-      Speech.speak('Great speed!', { rate: 0.78 });
-    },
-    [router, responseTimes],
-  );
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      } catch {}
+    }
+  }, [done, isLit, lastBlinkTime, scaleAnim, playSuccess, endGame]);
 
   const handleBack = useCallback(() => {
     stopAllSpeech();
@@ -255,6 +264,11 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               xpAwarded={finalStats.xp}
               accuracy={accuracyPct}
               logTimestamp={logTimestamp}
+              onHome={() => {
+                stopAllSpeech();
+                cleanupSounds();
+                onBack?.();
+              }}
               onPlayAgain={() => {
                 setScore(0);
                 setDone(false);
@@ -284,7 +298,7 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Taps: {score}/{TOTAL_TAPS_REQUIRED} • ⚡ Fast pace!
         </Text>
         <Text style={styles.helper}>
-          The circle blinks rapidly. Tap quickly to match the pace!
+          Watch the circle! When it turns orange and shows "TAP", tap it quickly! ⚡
         </Text>
       </View>
 
@@ -320,12 +334,16 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   height: CIRCLE_SIZE,
                   borderRadius: CIRCLE_SIZE / 2,
                   backgroundColor: isLit ? '#F59E0B' : '#EF4444',
+                  borderWidth: isLit ? 4 : 2,
+                  borderColor: isLit ? '#FCD34D' : '#DC2626',
                 },
               ]}
             >
               <View style={styles.circleInner} />
               {isLit && (
-                <Text style={styles.tapText}>TAP!</Text>
+                <View style={styles.tapTextContainer}>
+                  <Text style={styles.tapText}>TAP!</Text>
+                </View>
               )}
             </View>
           </Animated.View>
@@ -344,7 +362,7 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Skills: fast motor activation • quick reaction • proprioceptive timing
         </Text>
         <Text style={styles.footerSub}>
-          React quickly! This builds fast motor responses and timing control.
+          Tap when the circle is orange! This builds fast motor responses and timing control.
         </Text>
       </View>
     </SafeAreaView>
@@ -437,14 +455,21 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
-  tapText: {
+  tapTextContainer: {
     position: 'absolute',
-    fontSize: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  tapText: {
+    fontSize: 32,
     fontWeight: '900',
     color: '#fff',
-    textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 6,
+    letterSpacing: 2,
   },
   sparkleContainer: {
     position: 'absolute',

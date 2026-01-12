@@ -400,7 +400,14 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           <ResultCard
             correct={finalStats.correct}
             total={finalStats.total}
-            xp={finalStats.xp}
+            xpAwarded={finalStats.xp}
+            accuracy={(finalStats.correct / finalStats.total) * 100}
+            logTimestamp={logTimestamp}
+            onHome={() => {
+              stopAllSpeech();
+              cleanupSounds();
+              onBack?.();
+            }}
             onPlayAgain={() => {
               setDone(false);
               setRound(1);
@@ -409,8 +416,6 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               setLogTimestamp(null);
               startRound();
             }}
-            onBack={handleBack}
-            timestamp={logTimestamp || undefined}
           />
         </ScrollView>
       </SafeAreaView>

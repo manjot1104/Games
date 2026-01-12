@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -14,11 +14,10 @@ import {
     Platform,
     Pressable,
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
@@ -69,6 +68,7 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [roundActive, setRoundActive] = useState(false);
   const [balloonPopped, setBalloonPopped] = useState(false);
 
@@ -132,9 +132,16 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const total = TOTAL_ROUNDS;
       const accuracy = (finalHits / total) * 100;
 
-      setFinalStats({ correct: finalHits, total, xp });
+      const stats = { correct: finalHits, total, xp };
+      
+      // Set all states together (like CatchTheBouncingStar)
+      setFinalStats(stats);
       setDone(true);
+      setShowCongratulations(true);
+      
+      Speech.speak('Amazing work! You completed the game!', { rate: 0.78 });
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -164,9 +171,6 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         if (justHit) setHits((h) => h + 1);
         setRound(nextRound);
         setTimeout(() => {
-          try {
-            Speech.speak('Watch the slow balloon and tap it before it reaches the other side!', { rate: 0.78 });
-          } catch {}
           startRound();
         }, 600);
       }
@@ -238,54 +242,31 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     onBack?.();
   }, [onBack]);
 
-  // ---------- Result screen ----------
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.backChip}
-        >
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <LinearGradient
-            colors={['#FFFFFF', '#FEF3C7']}
-            style={styles.resultCard}
-          >
-            <Text style={{ fontSize: 72, marginBottom: 20 }}>🎈✨</Text>
-            <Text style={styles.resultTitle}>Great Tracking! 🎯</Text>
-            <Text style={styles.resultSubtitle}>
-              You popped the balloon {finalStats.correct} out of {finalStats.total} times! ⭐
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setHits(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                startRound();
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </LinearGradient>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Great Tracking!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   const balloonStyle = {
@@ -396,6 +377,29 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 14,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    zIndex: 100,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  backButtonGradient: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+    letterSpacing: 0.5,
   },
   headerBlock: {
     marginTop: 72,

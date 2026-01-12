@@ -82,14 +82,17 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
+  // Initial instruction - only once
+  useEffect(() => {
+    try {
+      Speech.speak('Wait for the circle to light up, then tap! Tap only when it\'s glowing.', { rate: 0.78 });
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
   // Blink animation loop
   useEffect(() => {
     if (done) return;
-    if (score === 0) {
-      try {
-        Speech.speak('Wait for the circle to light up, then tap! Tap only when it\'s glowing.', { rate: 0.78 });
-      } catch {}
-    }
 
     const blinkLoop = () => {
       // Turn on (light up)
@@ -296,6 +299,11 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               xpAwarded={finalStats.xp}
               accuracy={accuracyPct}
               logTimestamp={logTimestamp}
+              onHome={() => {
+                stopAllSpeech();
+                cleanupSounds();
+                onBack?.();
+              }}
               onPlayAgain={() => {
                 setScore(0);
                 setBlinkInterval(INITIAL_BLINK_INTERVAL);

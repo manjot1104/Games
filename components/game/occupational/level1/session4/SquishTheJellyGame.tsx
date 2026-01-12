@@ -197,13 +197,7 @@ const SquishTheJellyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           }, 1000);
         } else {
           setTimeout(() => {
-            setRound((r) => {
-              const nextRound = r + 1;
-              try {
-                Speech.speak('Press and hold to compress the jelly. Release to let it spring back!', { rate: 0.78 });
-              } catch {}
-              return nextRound;
-            });
+            setRound((r) => r + 1);
             setCompression(1);
             setRoundActive(true);
           }, 1000);
@@ -358,7 +352,7 @@ const SquishTheJellyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           disabled={!roundActive || done || isSplatted}
         >
           {/* Jelly blob */}
-          <Animated.View style={[styles.jellyContainer, jellyStyle]}>
+          <Animated.View style={[styles.jellyContainer, jellyStyle]} pointerEvents="none">
             <View
               style={[
                 styles.jelly,
@@ -367,7 +361,7 @@ const SquishTheJellyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 },
               ]}
             >
-              <Text style={styles.jellyEmoji}>
+              <Text style={styles.jellyEmoji} selectable={false}>
                 {isSplatted ? '💥' : '🍮'}
               </Text>
             </View>
@@ -471,6 +465,8 @@ const styles = StyleSheet.create({
   jellyContainer: {
     position: 'absolute',
     alignItems: 'center',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
   },
   jelly: {
     width: 140,
@@ -483,9 +479,13 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     shadowOffset: { width: 0, height: 8 },
     elevation: 8,
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
   },
   jellyEmoji: {
     fontSize: 80,
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
   },
   splatContainer: {
     position: 'absolute',

@@ -168,13 +168,7 @@ const GrowTheBalloonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           }, 2500);
         } else {
           setTimeout(() => {
-            setRound((r) => {
-              const nextRound = r + 1;
-              try {
-                Speech.speak('Press and hold to inflate the balloon. Release when it\'s big to make it float!', { rate: 0.78 });
-              } catch {}
-              return nextRound;
-            });
+            setRound((r) => r + 1);
             setInflateProgress(0);
             setIsFloating(false);
             isFloatingRef.current = false;
@@ -286,6 +280,11 @@ const GrowTheBalloonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               xpAwarded={finalStats.xp}
               accuracy={accuracyPct}
               logTimestamp={logTimestamp}
+              onHome={() => {
+                stopAllSpeech();
+                cleanupSounds();
+                onBack?.();
+              }}
               onPlayAgain={() => {
                 setRound(1);
                 setScore(0);
@@ -339,9 +338,7 @@ const GrowTheBalloonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   backgroundColor: inflateProgress > 0.5 ? '#EF4444' : '#F87171',
                 },
               ]}
-            >
-              <Text style={styles.balloonEmoji}>🎈</Text>
-            </View>
+            />
             {/* Balloon string */}
             <View style={styles.balloonString} />
           </Animated.View>
@@ -361,16 +358,16 @@ const GrowTheBalloonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               </Text>
             </View>
           )}
-
-          {/* Instruction */}
-          {!isPressed && !isFloating && (
-            <View style={styles.instructionBox}>
-              <Text style={styles.instructionText}>
-                Press and hold to inflate! 💨
-              </Text>
-            </View>
-          )}
         </Pressable>
+
+        {/* Instruction - below button */}
+        {!isPressed && !isFloating && (
+          <View style={styles.instructionBox}>
+            <Text style={styles.instructionText}>
+              Press and hold to inflate! 💨
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.footerBox}>
@@ -487,8 +484,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   instructionBox: {
-    position: 'absolute',
-    top: '70%',
+    marginTop: 24,
     backgroundColor: 'rgba(59, 130, 246, 0.9)',
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -498,6 +494,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
+    alignSelf: 'center',
   },
   instructionText: {
     color: '#fff',

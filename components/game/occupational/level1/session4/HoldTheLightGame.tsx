@@ -159,6 +159,38 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     updateProgress();
   }, [roundActive, done, bulbGlow, flickerOpacity, playFlicker]);
 
+  // End game - defined before handlePressOut to avoid initialization error
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_ROUNDS;
+      const xp = finalScore * 17; // 17 XP per perfect hold
+      const accuracy = (finalScore / total) * 100;
+
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+      setRoundActive(false);
+
+      try {
+        await recordGame(xp);
+        const result = await logGameAndAward({
+          type: 'holdTheLight',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['timing-modulation', 'sustained-attention', 'fine-motor-precision'],
+        });
+        setLogTimestamp(result?.last?.at ?? null);
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (e) {
+        console.error('Failed to log hold the light game:', e);
+      }
+
+      Speech.speak('Perfect lighting!', { rate: 0.78 });
+    },
+    [router],
+  );
+
   // Handle release
   const handlePressOut = useCallback(async () => {
     if (!isPressedRef.current) return;
@@ -236,14 +268,17 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, [bulbGlow, bulbScale, sparkleX, sparkleY, playSuccess, endGame]);
 
+  // Initial instruction - only once
+  useEffect(() => {
+    try {
+      Speech.speak('Press and hold to make the bulb glow brighter. Release at full brightness!', { rate: 0.78 });
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
   // Reset round state
   useEffect(() => {
     if (roundActive && !done) {
-      if (round === 1 || score === 0) {
-        try {
-          Speech.speak('Press and hold to make the bulb glow brighter. Release at full brightness!', { rate: 0.78 });
-        } catch {}
-      }
       setGlowProgress(0);
       glowProgressRef.current = 0;
       setIsPressed(false);
@@ -255,38 +290,6 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       flickerOpacity.value = 1;
     }
   }, [round, roundActive, done, score]);
-
-  // End game
-  const endGame = useCallback(
-    async (finalScore: number) => {
-      const total = TOTAL_ROUNDS;
-      const xp = finalScore * 17; // 17 XP per perfect hold
-      const accuracy = (finalScore / total) * 100;
-
-      setFinalStats({ correct: finalScore, total, xp });
-      setDone(true);
-      setRoundActive(false);
-
-      try {
-        await recordGame(xp);
-        const result = await logGameAndAward({
-          type: 'holdTheLight',
-          correct: finalScore,
-          total,
-          accuracy,
-          xpAwarded: xp,
-          skillTags: ['timing-modulation', 'sustained-attention', 'fine-motor-precision'],
-        });
-        setLogTimestamp(result?.last?.at ?? null);
-        router.setParams({ refreshStats: Date.now().toString() });
-      } catch (e) {
-        console.error('Failed to log hold the light game:', e);
-      }
-
-      Speech.speak('Perfect lighting!', { rate: 0.78 });
-    },
-    [router],
-  );
 
   const handleBack = useCallback(() => {
     stopAllSpeech();

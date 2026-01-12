@@ -87,13 +87,16 @@ const TapWithSoundGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const currentBeatInterval = beatMode === 'slow' ? SLOW_BEAT_INTERVAL : FAST_BEAT_INTERVAL;
 
   // Beat loop - plays sound and lights up circle
+  // Initial instruction - only once
+  useEffect(() => {
+    try {
+      Speech.speak('Listen to the drum beat and tap with it! Start slow, then tap fast.', { rate: 0.78 });
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
   useEffect(() => {
     if (done) return;
-    if (score === 0) {
-      try {
-        Speech.speak('Listen to the drum beat and tap with it! Start slow, then tap fast.', { rate: 0.78 });
-      } catch {}
-    }
 
     const playBeat = () => {
       const now = Date.now();

@@ -1,5 +1,6 @@
-import { cancelSubscription, createSubscription, getSubscriptionStatus, verifyPayment, type SubscriptionStatus } from '@/utils/api';
+import { cancelSubscription, createSubscription, getSubscriptionStatus, syncSubscriptionStatus, verifyPayment, type SubscriptionStatus } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -44,24 +45,39 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   const handleSubscribe = async () => {
+    if (loading) {
+      console.log('Subscription already in progress, ignoring duplicate click');
+      return;
+    }
+
     setLoading(true);
     
     try {
+      console.log('[PAYWALL] Starting subscription process...');
+      
       // Step 1: Create subscription on backend
       const subscriptionData = await createSubscription();
-      console.log('Subscription created:', subscriptionData);
+      console.log('[PAYWALL] Subscription created:', subscriptionData);
+
+      // Validate response
+      if (!subscriptionData) {
+        throw new Error('Invalid response from server');
+      }
 
       // Check if user has free access (shouldn't create subscription)
       if ((subscriptionData as any).hasFreeAccess) {
-        Alert.alert('Info', 'You have free access. No subscription needed.');
-        setLoading(false);
+        console.log('[PAYWALL] User has free access');
+        setLoading(false); // Reset loading immediately
         loadStatus();
         onSuccess?.();
+        Alert.alert('Info', 'You have free access. No subscription needed.');
         return;
       }
 
       // Check if this is a mock response (localhost development without Razorpay keys)
       if ((subscriptionData as any).mock) {
+        console.log('[PAYWALL] Mock subscription response detected');
+        setLoading(false); // Reset loading immediately
         Alert.alert(
           'Development Mode',
           'Razorpay keys are not configured. This is a mock subscription for localhost development. In production, configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your backend .env file.',
@@ -69,7 +85,6 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
             {
               text: 'OK',
               onPress: () => {
-                setLoading(false);
                 // In development, we can still refresh status
                 loadStatus();
               },
@@ -79,12 +94,20 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
         return;
       }
 
+      // Validate subscription data has required fields
+      if (!subscriptionData.subscriptionId) {
+        console.error('[PAYWALL] Missing subscriptionId in response:', subscriptionData);
+        throw new Error('Invalid subscription data received from server. Please try again.');
+      }
+
       // Step 2: Open Razorpay checkout
       if (Platform.OS === 'web') {
         // Web: Use Razorpay Checkout
+        console.log('[PAYWALL] Opening Razorpay checkout for web...');
         await openRazorpayWebCheckout(subscriptionData);
       } else {
         // Mobile: Show message for now
+        console.log('[PAYWALL] Mobile platform detected');
         Alert.alert(
           'Mobile Checkout',
           'Mobile checkout requires @razorpay/react-native package. Please use web version for subscription.',
@@ -92,8 +115,17 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
         );
       }
     } catch (error: any) {
-      console.error('Subscription error:', error);
-      Alert.alert('Error', error.message || 'Failed to create subscription. Please try again.');
+      console.error('[PAYWALL] Subscription error:', error);
+      const errorMessage = error.message || 'Failed to create subscription. Please try again.';
+      Alert.alert('Error', errorMessage, [
+        {
+          text: 'OK',
+          onPress: () => {
+            setLoading(false);
+          },
+        },
+      ]);
+      // Ensure loading is reset even if alert is dismissed
       setLoading(false);
     }
   };
@@ -109,54 +141,139 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
       return;
     }
 
-    function openCheckout() {
-      const options = {
-        key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '', // Your Razorpay key
-        subscription_id: subscriptionData.subscriptionId,
-        name: 'Therapy Progress',
-        description: 'Monthly subscription for Therapy Progress access',
-        image: '', // Optional: your logo URL
-        prefill: {
-          email: '', // Get from user profile
-          contact: '', // Get from user profile
-        },
-        theme: {
-          color: '#8B5CF6',
-        },
-        handler: async function (response: any) {
-          // Payment successful
-          try {
-            await verifyPayment({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_subscription_id: response.razorpay_subscription_id,
-              razorpay_signature: response.razorpay_signature,
-            });
+    // Validate subscription data
+    if (!subscriptionData || !subscriptionData.subscriptionId) {
+      console.error('Invalid subscription data:', subscriptionData);
+      Alert.alert('Error', 'Invalid subscription data. Please try again.');
+      setLoading(false);
+      return;
+    }
 
-            Alert.alert('Success', 'Subscription activated successfully!', [
-              {
-                text: 'OK',
-                onPress: () => {
-                  loadStatus();
-                  onSuccess?.();
-                },
-              },
-            ]);
-          } catch (err: any) {
-            console.error('Payment verification error:', err);
-            Alert.alert('Error', 'Payment verification failed. Please contact support.');
-          } finally {
-            setLoading(false);
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            setLoading(false);
+    // Validate Razorpay key - check both process.env and app.json extra
+    const extra = (Constants as any).expoConfig?.extra ?? {};
+    const razorpayKey = (process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID as string) || (extra.EXPO_PUBLIC_RAZORPAY_KEY_ID as string) || '';
+    console.log('[PAYWALL] Checking Razorpay key...');
+    console.log('[PAYWALL] EXPO_PUBLIC_RAZORPAY_KEY_ID from process.env:', process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID ? (process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID.substring(0, 10) + '...') : 'NOT SET');
+    console.log('[PAYWALL] EXPO_PUBLIC_RAZORPAY_KEY_ID from app.json extra:', extra.EXPO_PUBLIC_RAZORPAY_KEY_ID ? (extra.EXPO_PUBLIC_RAZORPAY_KEY_ID.substring(0, 10) + '...') : 'NOT SET');
+    console.log('[PAYWALL] Final EXPO_PUBLIC_RAZORPAY_KEY_ID:', razorpayKey ? (razorpayKey.substring(0, 10) + '...') : 'NOT SET');
+    
+    if (!razorpayKey) {
+      console.error('[PAYWALL] Razorpay key is missing');
+      console.error('[PAYWALL] Please set EXPO_PUBLIC_RAZORPAY_KEY_ID in root .env file');
+      Alert.alert(
+        'Configuration Error',
+        'Razorpay payment gateway is not configured. Please set EXPO_PUBLIC_RAZORPAY_KEY_ID in your .env file and restart the app.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setLoading(false);
+            },
           },
-        },
-      };
+        ]
+      );
+      setLoading(false);
+      return;
+    }
+    
+    console.log('[PAYWALL] Razorpay key found - proceeding with checkout');
 
-      const razorpay = new (window as any).Razorpay(options);
-      razorpay.open();
+    function openCheckout() {
+      try {
+        // Check if Razorpay is available
+        if (!(window as any).Razorpay) {
+          throw new Error('Razorpay SDK not loaded');
+        }
+
+        const options = {
+          key: razorpayKey,
+          subscription_id: subscriptionData.subscriptionId,
+          name: 'Therapy Progress',
+          description: 'Monthly subscription for Therapy Progress access',
+          image: '', // Optional: your logo URL
+          prefill: {
+            email: '', // Get from user profile
+            contact: '', // Get from user profile
+          },
+          theme: {
+            color: '#8B5CF6',
+          },
+          handler: async function (response: any) {
+            // Payment successful
+            try {
+              console.log('[PAYWALL] Payment response received:', response);
+              console.log('[PAYWALL] Verifying payment...');
+              
+              const verificationResult = await verifyPayment({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_subscription_id: response.razorpay_subscription_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+
+              console.log('[PAYWALL] Payment verification result:', verificationResult);
+
+              // Wait a moment for backend to process
+              await new Promise(resolve => setTimeout(resolve, 1000));
+
+              // Try to sync status from Razorpay in case verification didn't update it
+              try {
+                console.log('[PAYWALL] Syncing subscription status from Razorpay...');
+                await syncSubscriptionStatus();
+              } catch (syncError) {
+                console.warn('[PAYWALL] Status sync failed (may be normal):', syncError);
+              }
+
+              // Reload subscription status
+              console.log('[PAYWALL] Reloading subscription status...');
+              await loadStatus();
+
+              Alert.alert('Success', 'Subscription activated successfully!', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    setLoading(false);
+                    // Call onSuccess callback to refresh parent component
+                    onSuccess?.();
+                  },
+                },
+              ]);
+            } catch (err: any) {
+              console.error('[PAYWALL] Payment verification error:', err);
+              Alert.alert('Error', err.message || 'Payment verification failed. Please contact support.');
+              setLoading(false);
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              console.log('Razorpay modal dismissed');
+              setLoading(false);
+            },
+          },
+        };
+
+        console.log('Opening Razorpay checkout with options:', {
+          key: razorpayKey.substring(0, 10) + '...',
+          subscription_id: subscriptionData.subscriptionId,
+        });
+
+        const razorpay = new (window as any).Razorpay(options);
+        
+        // Add error handler
+        razorpay.on('payment.failed', function (response: any) {
+          console.error('Payment failed:', response);
+          Alert.alert(
+            'Payment Failed',
+            response.error?.description || 'Your payment could not be processed. Please try again.'
+          );
+          setLoading(false);
+        });
+
+        razorpay.open();
+      } catch (error: any) {
+        console.error('Error opening Razorpay checkout:', error);
+        Alert.alert('Error', error.message || 'Failed to open payment gateway. Please try again.');
+        setLoading(false);
+      }
     }
 
     // Check if Razorpay is already loaded
@@ -166,9 +283,16 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
       // Load Razorpay script
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = openCheckout;
+      script.onload = () => {
+        console.log('Razorpay script loaded successfully');
+        // Small delay to ensure Razorpay is fully initialized
+        setTimeout(() => {
+          openCheckout();
+        }, 100);
+      };
       script.onerror = () => {
-        Alert.alert('Error', 'Failed to load Razorpay checkout. Please try again.');
+        console.error('Failed to load Razorpay script');
+        Alert.alert('Error', 'Failed to load Razorpay checkout. Please check your internet connection and try again.');
         setLoading(false);
       };
       document.body.appendChild(script);
@@ -218,10 +342,7 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
     );
   }
 
-  const isTrialExpired = status?.isTrial && !status?.isActive;
-  const daysRemaining = status?.trialEndDate
-    ? Math.ceil((new Date(status.trialEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    : 0;
+  // PRODUCTION MODE: No trial - payment required immediately
 
   return (
     <SafeAreaView style={styles.container}>
@@ -237,31 +358,16 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
 
         {/* Content */}
         <View style={styles.content}>
-          {/* Status Card */}
-          {status?.isTrial && status?.isActive && (
-            <View style={[styles.card, styles.trialCard]}>
-              <Ionicons name="gift" size={48} color="#10B981" />
-              <Text style={styles.cardTitle}>Free Trial Active</Text>
-              <Text style={styles.cardSubtitle}>
-                {daysRemaining > 0
-                  ? `${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} remaining`
-                  : 'Trial ending soon'}
-              </Text>
-              <Text style={styles.cardDescription}>
-                Your free trial ends on {formatDate(status.trialEndDate)}
-              </Text>
-            </View>
-          )}
-
-          {isTrialExpired && (
+          {/* No Access Message - Production Mode (No Trial) */}
+          {!status?.hasAccess && (
             <View style={[styles.card, styles.expiredCard]}>
-              <Ionicons name="time-outline" size={48} color="#EF4444" />
-              <Text style={styles.cardTitle}>Trial Expired</Text>
+              <Ionicons name="lock-closed" size={48} color="#EF4444" />
+              <Text style={styles.cardTitle}>Subscription Required</Text>
               <Text style={styles.cardSubtitle}>
-                Your free trial ended on {formatDate(status.trialEndDate)}
+                Subscribe to access all Therapy Progress features
               </Text>
               <Text style={styles.cardDescription}>
-                Subscribe now to continue accessing Therapy Progress
+                Choose a plan below to get started. Payment required immediately - no trial period.
               </Text>
             </View>
           )}
@@ -330,6 +436,31 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
               By subscribing, you agree to our Terms of Service and Privacy Policy.
               Subscription auto-renews monthly. Cancel anytime.
             </Text>
+
+            {/* Manual Sync Button - for cases where payment succeeded but status not updated */}
+            {status?.razorpaySubscriptionId && status?.status === 'created' && (
+              <TouchableOpacity
+                style={[styles.syncButton]}
+                onPress={async () => {
+                  try {
+                    setLoading(true);
+                    console.log('[PAYWALL] Manually syncing subscription status...');
+                    await syncSubscriptionStatus();
+                    await loadStatus();
+                    Alert.alert('Success', 'Subscription status synced. Please refresh the page.');
+                  } catch (error: any) {
+                    console.error('[PAYWALL] Sync error:', error);
+                    Alert.alert('Error', error.message || 'Failed to sync status. Please contact support.');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+              >
+                <Ionicons name="refresh" size={16} color="#8B5CF6" />
+                <Text style={styles.syncButtonText}>Sync Payment Status</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Active Subscription Info */}
@@ -539,5 +670,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#EF4444',
     fontWeight: '600',
+  },
+  syncButton: {
+    marginTop: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+  },
+  syncButtonText: {
+    fontSize: 14,
+    color: '#8B5CF6',
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });

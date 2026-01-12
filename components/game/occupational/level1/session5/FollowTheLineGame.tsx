@@ -233,9 +233,6 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               objectX.value = withSpring(lineStartX.value, { damping: 10, stiffness: 100 });
               objectY.value = withSpring(lineStartY.value, { damping: 10, stiffness: 100 });
               setRoundActive(true);
-              try {
-                Speech.speak('Drag the object along the thick line from start to end. Stay on the line!', { rate: 0.78 });
-              } catch {}
             }, 1500);
           }
           return newScore;
@@ -259,32 +256,36 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
     });
 
+  // Initial instruction - only once
+  useEffect(() => {
+    try {
+      Speech.speak('Drag the object along the thick line from start to end. Stay on the line!', { rate: 0.78 });
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
   // Initialize line path
   useEffect(() => {
-    if (round === 1) {
-      try {
-        Speech.speak('Drag the object along the thick line from start to end. Stay on the line!', { rate: 0.78 });
-      } catch {}
-    }
     // Random line direction (horizontal, vertical, or diagonal)
+    // Ensure positions are well within bounds to prevent overflow
     const direction = Math.floor(Math.random() * 3);
     if (direction === 0) {
-      // Horizontal
-      lineStartX.value = 15;
+      // Horizontal - ensure markers are visible
+      lineStartX.value = 20; // Moved in from edge
       lineStartY.value = 40 + Math.random() * 20;
-      lineEndX.value = 85;
+      lineEndX.value = 80; // Moved in from edge
       lineEndY.value = lineStartY.value;
     } else if (direction === 1) {
-      // Vertical
+      // Vertical - ensure markers are visible
       lineStartX.value = 40 + Math.random() * 20;
-      lineStartY.value = 20;
+      lineStartY.value = 25; // Moved down from top
       lineEndX.value = lineStartX.value;
-      lineEndY.value = 80;
+      lineEndY.value = 75; // Moved up from bottom
     } else {
-      // Diagonal
-      lineStartX.value = 15;
+      // Diagonal - ensure markers are visible
+      lineStartX.value = 20; // Moved in from edge
       lineStartY.value = 30;
-      lineEndX.value = 85;
+      lineEndX.value = 80; // Moved in from edge
       lineEndY.value = 70;
     }
 
@@ -311,18 +312,20 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }));
 
   const lineStyle = useAnimatedStyle(() => {
-    const angle = Math.atan2(
-      lineEndY.value - lineStartY.value,
-      lineEndX.value - lineStartX.value
-    ) * (180 / Math.PI);
-    const length = Math.sqrt(
-      Math.pow(lineEndX.value - lineStartX.value, 2) + Math.pow(lineEndY.value - lineStartY.value, 2)
-    );
+    const dx = lineEndX.value - lineStartX.value;
+    const dy = lineEndY.value - lineStartY.value;
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    // Calculate exact distance from START center to END center
+    const length = Math.sqrt(dx * dx + dy * dy);
+    // Line should be exactly from START marker center to END marker center
+    // Ensure it doesn't extend beyond markers
     return {
       left: `${lineStartX.value}%`,
       top: `${lineStartY.value}%`,
-      width: `${length}%`,
+      width: `${Math.max(0, length)}%`,
+      height: LINE_WIDTH,
       transform: [{ rotate: `${angle}deg` }],
+      transformOrigin: 'left center',
     };
   });
 
@@ -331,15 +334,18 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       lineEndY.value - lineStartY.value,
       lineEndX.value - lineStartX.value
     ) * (180 / Math.PI);
-    const totalLength = Math.sqrt(
-      Math.pow(lineEndX.value - lineStartX.value, 2) + Math.pow(lineEndY.value - lineStartY.value, 2)
-    );
+    const dx = lineEndX.value - lineStartX.value;
+    const dy = lineEndY.value - lineStartY.value;
+    const totalLength = Math.sqrt(dx * dx + dy * dy);
     const length = totalLength * progress;
+    // Progress line should also be exactly from START to current progress point
     return {
       left: `${lineStartX.value}%`,
       top: `${lineStartY.value}%`,
       width: `${length}%`,
+      height: LINE_WIDTH,
       transform: [{ rotate: `${angle}deg` }],
+      transformOrigin: 'left center',
     };
   });
 
@@ -431,7 +437,8 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 {
                   left: `${lineStartX.value}%`,
                   top: `${lineStartY.value}%`,
-                  transform: [{ translateX: -15 }, { translateY: -15 }],
+                  transform: [{ translateX: -30 }, { translateY: -15 }],
+                  zIndex: 5,
                 },
               ]}
             >
@@ -445,8 +452,9 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 {
                   left: `${lineEndX.value}%`,
                   top: `${lineEndY.value}%`,
-                  transform: [{ translateX: -15 }, { translateY: -15 }],
+                  transform: [{ translateX: -30 }, { translateY: -15 }],
                   backgroundColor: '#22C55E',
+                  zIndex: 5,
                 },
               ]}
             >
@@ -544,10 +552,15 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
     marginBottom: 16,
+    overflow: 'hidden',
+    paddingHorizontal: 20,
+    paddingVertical: 30,
   },
   gestureArea: {
     flex: 1,
     position: 'relative',
+    width: '100%',
+    height: '100%',
   },
   lineBackground: {
     position: 'absolute',

@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, Easing, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Animated, Easing, Platform, Pressable, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type ShapePosition = "left" | "right";
 
@@ -51,6 +51,7 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Glow animation for red circle
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -142,9 +143,16 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     if (round >= 8) {
       const finalCorrect = stars + (isCorrect ? 1 : 0);
       const xp = finalCorrect * 15;
-      setFinalStats({ correct: finalCorrect, total: 8, xp });
+      const stats = { correct: finalCorrect, total: 8, xp };
+      
+      // Set all states together FIRST (like CatchTheBouncingStar)
+      setFinalStats(stats);
       setDone(true);
+      setShowCongratulations(true);
+      
+      Speech.speak('Amazing work! You completed the game!', { rate: 0.78 });
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -243,56 +251,31 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     };
   }, []);
 
-  // Game finished screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // Congratulations screen FIRST (like CatchTheBouncingStar)
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={{
-            position: 'absolute',
-            top: 50,
-            left: 16,
-            zIndex: 10,
-            backgroundColor: '#111827',
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            borderRadius: 20,
-          }}
-        >
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <LinearGradient
-            colors={['#FFFFFF', '#FEF2F2']}
-            style={{ width: '100%', maxWidth: 400, borderRadius: 28, padding: 32, alignItems: 'center', marginTop: 16, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 20, shadowOffset: { width: 0, height: 10 }, elevation: 10 }}
-          >
-            <Text style={{ fontSize: 72, marginBottom: 20 }}>🎉✨</Text>
-            <Text style={{ fontSize: 32, fontWeight: '900', color: '#991B1B', marginBottom: 12, textShadowColor: 'rgba(255, 255, 255, 0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 }}>Game Complete! 🎯</Text>
-            <Text style={{ fontSize: 18, color: '#64748B', marginBottom: 24, textAlign: 'center', fontWeight: '600' }}>
-              You tapped correctly {finalStats.correct} out of {finalStats.total} times! ⭐
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setStars(0);
-                setRedPosition('left');
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-              }}
-            />
-            <Text style={{ color: '#22C55E', fontWeight: '600', marginTop: 16, textAlign: 'center' }}>Saved! XP updated ✅</Text>
-          </LinearGradient>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Game Complete!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (

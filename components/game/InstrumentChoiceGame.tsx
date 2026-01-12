@@ -26,7 +26,7 @@ export const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
 
   // Track all speech timers
-  const speechTimersRef = useRef<Array<NodeJS.Timeout>>([]);
+  const speechTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Animations
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -100,6 +100,34 @@ export const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack
     speechTimersRef.current.push(timer1);
   }, [playInstrument]);
 
+  const finishGame = useCallback(async () => {
+    setPhase('finished');
+    
+    const total = correct + wrong;
+    const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+    const xp = correct * 15;
+
+    setFinalStats({ correct, total, accuracy, xp });
+
+    try {
+      const result = await logGameAndAward({
+        type: 'quiz' as any, // Using quiz type as closest match
+        correct,
+        total,
+        accuracy,
+        xpAwarded: xp,
+        skillTags: ['sound-discrimination', 'auditory-identification', 'instrument-recognition'],
+        meta: { rounds: round },
+      });
+      setLogTimestamp(result?.last?.at ?? null);
+      router.setParams({ refreshStats: Date.now().toString() });
+    } catch (e) {
+      console.error('Failed to save game:', e);
+    }
+
+    Speech.speak('Amazing! You identified all the instruments!');
+  }, [correct, wrong, round, router]);
+
   const handleInstrumentChoice = useCallback((chosenInstrument: Instrument) => {
     if (phase !== 'choosing' || !currentInstrument) return;
 
@@ -141,35 +169,7 @@ export const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack
         finishGame();
       }
     }, 1500);
-  }, [phase, currentInstrument, round, startRound, scaleAnim]);
-
-  const finishGame = useCallback(async () => {
-    setPhase('finished');
-    
-    const total = correct + wrong;
-    const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-    const xp = correct * 15;
-
-    setFinalStats({ correct, total, accuracy, xp });
-
-    try {
-      const result = await logGameAndAward({
-        type: 'instrument-choice',
-        correct,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['sound-discrimination', 'auditory-identification', 'instrument-recognition'],
-        meta: { rounds: round },
-      });
-      setLogTimestamp(result?.last?.at ?? null);
-      router.setParams({ refreshStats: Date.now().toString() });
-    } catch (e) {
-      console.error('Failed to save game:', e);
-    }
-
-    Speech.speak('Amazing! You identified all the instruments!');
-  }, [correct, wrong, round, router]);
+  }, [phase, currentInstrument, round, startRound, scaleAnim, finishGame]);
 
   const startGame = useCallback(() => {
     setRound(1);

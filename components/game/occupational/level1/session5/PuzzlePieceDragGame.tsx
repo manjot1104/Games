@@ -27,7 +27,7 @@ const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.
 const TOTAL_ROUNDS = 8;
 const PIECE_SIZE = 100;
 const OUTLINE_SIZE = 120;
-const MATCH_TOLERANCE = 40;
+const MATCH_TOLERANCE = 8; // Reduced from 40 to 8 for stricter matching - piece must be very close to outline center
 
 type PuzzleShape = 'circle' | 'square' | 'triangle' | 'star' | 'heart';
 
@@ -152,12 +152,18 @@ const PuzzlePieceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setIsDragging(false);
       pieceScale.value = withSpring(1, { damping: 10, stiffness: 200 });
 
-      // Check if piece matches outline
+      // Check if piece matches outline - must be very close to outline center
       const distance = Math.sqrt(
         Math.pow(pieceX.value - outlineX.value, 2) + Math.pow(pieceY.value - outlineY.value, 2)
       );
 
-      if (distance <= MATCH_TOLERANCE) {
+      // Stricter check: piece center must be within small radius of outline center
+      // Also check that piece is not too far in any single direction
+      const deltaX = Math.abs(pieceX.value - outlineX.value);
+      const deltaY = Math.abs(pieceY.value - outlineY.value);
+      const isWithinBounds = distance <= MATCH_TOLERANCE && deltaX <= MATCH_TOLERANCE && deltaY <= MATCH_TOLERANCE;
+
+      if (isWithinBounds) {
         // Perfect match!
         setIsMatched(true);
         pieceX.value = withSpring(outlineX.value, { damping: 10, stiffness: 200 });
@@ -205,11 +211,16 @@ const PuzzlePieceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
     });
 
-  // Initialize puzzle
+  // Initial instruction - only once
   useEffect(() => {
     try {
       Speech.speak('Drag the puzzle piece to its matching outline. Match the shapes!', { rate: 0.78 });
     } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  // Initialize puzzle
+  useEffect(() => {
     // Random puzzle shape
     const shapes: PuzzleShape[] = ['circle', 'square', 'triangle', 'star', 'heart'];
     const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
@@ -230,7 +241,7 @@ const PuzzlePieceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     setIsMatched(false);
     pieceScale.value = 1;
-  }, [round]);
+  }, [round, startX, startY, pieceX, pieceY, outlineX, outlineY]);
 
   const handleBack = useCallback(() => {
     stopAllSpeech();

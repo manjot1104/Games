@@ -183,13 +183,7 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           }, 800);
         } else {
           setTimeout(() => {
-            setRound((r) => {
-              const nextRound = r + 1;
-              try {
-                Speech.speak('Press and hold until the ring fills completely. Release when you see the green flash!', { rate: 0.78 });
-              } catch {}
-              return nextRound;
-            });
+            setRound((r) => r + 1);
             setHoldProgress(0);
             ringProgress.value = 0;
             setRoundActive(true);
@@ -411,9 +405,9 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 },
               ]}
             >
-              <Text style={styles.buttonText}>
-                {isPressed ? 'HOLDING...' : 'PRESS & HOLD'}
-              </Text>
+              {isPressed && (
+                <Text style={styles.buttonText}>HOLDING...</Text>
+              )}
               {showRelease && (
                 <Text style={styles.releaseText}>RELEASE!</Text>
               )}
@@ -441,6 +435,11 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </View>
           )}
         </Pressable>
+
+        {/* Instruction text below button */}
+        {!isPressed && !ringBroken && (
+          <Text style={styles.instructionText}>PRESS & HOLD</Text>
+        )}
       </View>
 
       <View style={styles.footerBox}>
@@ -608,6 +607,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '800',
+  },
+  instructionText: {
+    marginTop: 20,
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1F2937',
+    textAlign: 'center',
+    letterSpacing: 1,
   },
   footerBox: {
     paddingVertical: 14,

@@ -9,12 +9,12 @@ const PaymentSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false, // Allow null for payments that can't be linked immediately (webhook edge cases)
       index: true,
     },
     auth0Id: {
       type: String,
-      required: true,
+      required: false, // Allow null for payments that can't be linked immediately (webhook edge cases)
       index: true,
     },
     subscriptionId: {

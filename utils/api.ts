@@ -637,4 +637,19 @@ export async function cancelSubscription(reason?: string): Promise<{ ok: boolean
   return apiPost('/api/subscription/cancel', { reason });
 }
 
+/**
+ * Sync subscription status from Razorpay
+ * Useful when payment is successful but status wasn't updated
+ */
+export async function syncSubscriptionStatus(): Promise<{ ok: boolean; message: string; status?: string }> {
+  return apiPost('/api/subscription/sync-status');
+}
+
+/**
+ * Expire trial for testing (development only)
+ */
+export async function expireTrialForTesting(): Promise<{ ok: boolean; message: string; trialEndDate: string }> {
+  return apiPost('/api/subscription/expire-trial');
+}
+
 

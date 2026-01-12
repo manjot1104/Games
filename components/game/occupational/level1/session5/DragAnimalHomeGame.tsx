@@ -207,11 +207,16 @@ const DragAnimalHomeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
     });
 
-  // Initialize round
+  // Initial instruction - only once
   useEffect(() => {
     try {
       Speech.speak('Drag the animal to its home! Match the animal with its home.', { rate: 0.78 });
     } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  // Initialize round
+  useEffect(() => {
     // Random animal type
     const animals: AnimalType[] = ['cat', 'bee', 'turtle'];
     const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
@@ -230,7 +235,7 @@ const DragAnimalHomeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     const homeYPos = 30 + Math.random() * 40; // 30-70%
     homeX.value = homeXPos;
     homeY.value = homeYPos;
-  }, [round]);
+  }, [round, startX, startY, animalX, animalY, homeX, homeY]);
 
   const handleBack = useCallback(() => {
     stopAllSpeech();

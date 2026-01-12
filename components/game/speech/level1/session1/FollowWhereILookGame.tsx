@@ -1,14 +1,15 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import {
     Animated,
     Dimensions,
     Easing,
+    Platform,
     Pressable,
     SafeAreaView,
     StyleSheet,
@@ -30,19 +31,49 @@ const DEFAULT_TTS_RATE = 0.75;
 type LookDirection = 'left' | 'right';
 
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
+let webSpeechSynthesis: SpeechSynthesis | null = null;
+let webUtterance: SpeechSynthesisUtterance | null = null;
+
+// Initialize web speech synthesis
+if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  webSpeechSynthesis = window.speechSynthesis;
+}
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
   scheduledSpeechTimers = [];
   try {
-    Speech.stop();
+    if (Platform.OS === 'web' && webSpeechSynthesis) {
+      webSpeechSynthesis.cancel();
+      webUtterance = null;
+    } else {
+      Speech.stop();
+    }
   } catch {}
 }
 
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
   try {
     clearScheduledSpeech();
-    Speech.speak(text, { rate });
+    
+    if (Platform.OS === 'web' && webSpeechSynthesis) {
+      // Use browser's native SpeechSynthesis API for web
+      webUtterance = new SpeechSynthesisUtterance(text);
+      // Convert rate: expo-speech uses 0-1, browser uses 0.1-10, default 1
+      // Map 0.75 (default) to ~0.75, scale appropriately
+      webUtterance.rate = Math.max(0.5, Math.min(2, rate * 1.33)); // Scale to browser range
+      webUtterance.pitch = 1;
+      webUtterance.volume = 1;
+      
+      webUtterance.onerror = (e) => {
+        console.warn('Web TTS error:', e);
+      };
+      
+      webSpeechSynthesis.speak(webUtterance);
+    } else {
+      // Use expo-speech for native platforms
+      Speech.speak(text, { rate });
+    }
   } catch (e) {
     console.warn('speak error', e);
   }
