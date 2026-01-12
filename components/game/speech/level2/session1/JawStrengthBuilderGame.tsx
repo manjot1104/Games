@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import { logGameAndAward } from '@/utils/api';
@@ -1174,28 +1174,17 @@ export const JawStrengthBuilderGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.successfulHolds}
         total={finalStats.totalRounds}
         accuracy={finalStats.attentionScore}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={onBack}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setSuccessfulHolds(0);
-          setTotalHoldTime(0);
-          setHoldTimes([]);
-          setScore(0);
-          setCurrentRound(0);
-          setLogTimestamp(null);
-          buildingProgress.setValue(0);
-          buildingScale.setValue(0.5);
-          progressBarWidth.setValue(0);
-          gameStartedRef.current = false;
-          startGame();
+        onContinue={() => {
+          onComplete?.();
         }}
+        onHome={onBack}
       />
     );
   }

@@ -6,7 +6,6 @@
 import BlowMeter from '@/components/game/BlowMeter';
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
-import ResultCard from '@/components/game/ResultCard';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import { BlowDetector } from '@/utils/blowDetection';
 import { logGameAndAward } from '@/utils/api';
@@ -332,30 +331,20 @@ export function BalloonInflateGame({ onBack, onComplete, requiredRounds = TOTAL_
     ratio || 0
   );
 
-  // Show congratulations screen
-  if (showCongratulations && gameFinished) {
+  // Show congratulations screen with stats
+  if (gameFinished && finalStats) {
     return (
       <CongratulationsScreen
         message="Balloon Champion!"
         showButtons={true}
-        onContinue={() => {
-          setShowCongratulations(false);
-        }}
-        onHome={onBack}
-      />
-    );
-  }
-
-  // Show result card
-  if (gameFinished && finalStats && !showCongratulations) {
-    return (
-      <ResultCard
         correct={finalStats.totalStars}
         total={requiredRounds * 3}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.totalStars * 50}
+        onContinue={() => {
+          onComplete?.();
+        }}
         onHome={onBack}
-        logTimestamp={logTimestamp}
       />
     );
   }

@@ -1,4 +1,5 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,14 +8,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    Pressable,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    useWindowDimensions,
+    View,
 } from 'react-native';
 
 type Props = {
@@ -87,6 +88,7 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
   const [incorrectTaps, setIncorrectTaps] = useState(0);
   const [missedOpportunities, setMissedOpportunities] = useState(0);
   const [correctWaits, setCorrectWaits] = useState(0); // Track correct waits on red
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const objectScale = useRef(new Animated.Value(0)).current;
@@ -101,6 +103,8 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
   const signalTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const rotationAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     // Clear all timeouts and animations
@@ -122,6 +126,7 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps + missedOpportunities;
@@ -309,7 +314,11 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
               useNativeDriver: true,
             }),
           ]).start();
-          speak('Good waiting!');
+          // Show success animation for correct wait
+          setShowRoundSuccess(true);
+          setTimeout(() => {
+            setShowRoundSuccess(false);
+          }, 2500);
         }
 
         // Hide object and advance
@@ -387,7 +396,11 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Perfect!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide object and advance
       Animated.timing(objectOpacity, {
@@ -510,33 +523,20 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setIncorrectTaps(0);
-          setMissedOpportunities(0);
-          setCorrectWaits(0);
-          setLogTimestamp(null);
-          objectScale.setValue(0);
-          objectOpacity.setValue(0);
-          spinnerScale.setValue(1);
-          spinnerRotation.setValue(0);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -672,6 +672,12 @@ export const WaitForTheSignalGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

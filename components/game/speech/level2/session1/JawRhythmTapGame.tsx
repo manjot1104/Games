@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
@@ -1020,28 +1020,17 @@ export const JawRhythmTapGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.perfectBeats + finalStats.goodBeats}
         total={finalStats.totalPatterns * 4}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={onBack}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setPerfectBeats(0);
-          setGoodBeats(0);
-          setMissedBeats(0);
-          setTotalBeats(0);
-          setScore(0);
-          setCurrentPattern(0);
-          setLogTimestamp(null);
-          progressBarWidth.setValue(0);
-          gameStartedRef.current = false;
-          setPatternActive(false);
-          startGame();
+        onContinue={() => {
+          onComplete?.();
         }}
+        onHome={onBack}
       />
     );
   }

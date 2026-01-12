@@ -1,4 +1,5 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -67,6 +68,7 @@ export const PassTheBallGame: React.FC<Props> = ({
   const [isWaiting, setIsWaiting] = useState(false);
   const [ballSide, setBallSide] = useState<'system' | 'child' | 'moving'>('system');
   const [canTap, setCanTap] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const ballX = useRef(new Animated.Value(0)).current;
@@ -229,7 +231,11 @@ export const PassTheBallGame: React.FC<Props> = ({
       }),
     ]).start();
 
-    speak('Good!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
+    setTimeout(() => {
+      setShowRoundSuccess(false);
+    }, 2500);
 
     // Roll ball away to system side
     setTimeout(() => {
@@ -256,6 +262,7 @@ export const PassTheBallGame: React.FC<Props> = ({
 
   const finishGame = useCallback(async () => {
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const accuracy = 100;
@@ -306,27 +313,20 @@ export const PassTheBallGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.turnsCompleted}
         total={finalStats.totalTurns}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setTurns(0);
-          setLogTimestamp(null);
-          const startX = SCREEN_WIDTH * 0.85 - BALL_SIZE / 2;
-          ballX.setValue(startX);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -449,6 +449,12 @@ export const PassTheBallGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

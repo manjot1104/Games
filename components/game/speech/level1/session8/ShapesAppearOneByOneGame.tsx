@@ -1,11 +1,12 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -81,6 +82,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [incorrectTaps, setIncorrectTaps] = useState(0);
   const [tappedShapes, setTappedShapes] = useState<Set<number>>(new Set());
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations - one per shape
   const shapeScales = useRef<Map<number, Animated.Value>>(new Map()).current;
@@ -89,6 +91,8 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
   // Timeouts
   const appearanceTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     // Clear all timeouts
@@ -100,6 +104,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps;
@@ -141,7 +146,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 800);
   }, [requiredRounds]);
 
@@ -255,7 +260,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
               setTimeout(() => {
                 setRounds(prev => {
                   const nextRound = prev + 1;
-                  advanceToNextRound(nextRound);
+                  advanceToNextRoundRef.current?.(nextRound);
                   return nextRound;
                 });
               }, 400);
@@ -268,7 +273,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
       
       appearanceTimeoutsRef.current.push(timeout);
     });
-  }, [rounds, requiredRounds, canTap, isProcessing, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound, shapeScales, shapeOpacities]);
+  }, [rounds, requiredRounds, canTap, isProcessing, SCREEN_WIDTH, SCREEN_HEIGHT, shapeScales, shapeOpacities]);
 
   const handleShapeTap = useCallback((shapeId: number) => {
     if (isProcessing || !canTap) return;
@@ -349,7 +354,11 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
           return currentShapes;
         });
 
-        speak('Perfect!');
+        // Show success animation instead of TTS
+        setShowRoundSuccess(true);
+        setTimeout(() => {
+          setShowRoundSuccess(false);
+        }, 2500);
 
         // Clear timeout
         if (tapTimeoutRef.current) {
@@ -380,18 +389,30 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
           setTimeout(() => {
             setRounds(prev => {
               const nextRound = prev + 1;
-              advanceToNextRound(nextRound);
+              advanceToNextRoundRef.current?.(nextRound);
               return nextRound;
             });
           }, 400);
         }, 1000);
       } else {
-        speak('Good!');
+        // Show success animation for partial success
+        setShowRoundSuccess(true);
+        setTimeout(() => {
+          setShowRoundSuccess(false);
+        }, 2500);
       }
       
       return newTappedShapes;
     });
-  }, [isProcessing, canTap, tappedShapes, shapeScales, shapeOpacities, advanceToNextRound]);
+  }, [isProcessing, canTap, tappedShapes, shapeScales, shapeOpacities]);
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -403,7 +424,7 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
     try {
       speak('Watch shapes appear one by one, then tap them!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -413,31 +434,25 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
         clearTimeout(tapTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setIncorrectTaps(0);
-          setLogTimestamp(null);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -542,6 +557,12 @@ export const ShapesAppearOneByOneGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

@@ -1,11 +1,12 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -83,6 +84,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [earlyTaps, setEarlyTaps] = useState(0);
   const [missedTaps, setMissedTaps] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const targetScale = useRef(new Animated.Value(0)).current;
@@ -118,6 +120,8 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
   const glowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const glowAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     if (soundIntervalRef.current) {
@@ -138,6 +142,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + earlyTaps + missedTaps;
@@ -181,7 +186,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 1200);
   }, [requiredRounds]);
 
@@ -399,7 +404,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -407,7 +412,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         tapTimeoutRef.current = null;
       }, TAP_TIMEOUT_MS)) as unknown as NodeJS.Timeout;
     }, 5000)) as unknown as NodeJS.Timeout;
-  }, [rounds, requiredRounds, advanceToNextRound]);
+  }, [rounds, requiredRounds]);
 
   const handleTargetTap = useCallback(() => {
     if (isProcessing) return;
@@ -462,7 +467,11 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Great focus!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       setTimeout(() => {
@@ -482,7 +491,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -544,7 +553,15 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
 
       setIsProcessing(false);
     }
-  }, [isProcessing, isGlowing, canTap, targetScale, advanceToNextRound]);
+  }, [isProcessing, isGlowing, canTap, targetScale]);
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -556,7 +573,7 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
     try {
       speak('Tap the target, ignore the distracting sounds!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -574,32 +591,25 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
         glowAnimationRef.current.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setEarlyTaps(0);
-          setMissedTaps(0);
-          setLogTimestamp(null);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -790,6 +800,12 @@ export const SoundDistractionChallengeGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

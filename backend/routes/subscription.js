@@ -52,20 +52,31 @@ const TRIAL_DAYS = 7;
 
 // TEMPORARY: Set to true to test Paywall (disable free access for testing)
 // TODO: Remove this and use DISABLE_FREE_ACCESS_FOR_TESTING env variable instead
-const FORCE_DISABLE_FREE_ACCESS = true;
+// Set to false in production to enable free access for employees/boss
+const FORCE_DISABLE_FREE_ACCESS = process.env.DISABLE_FREE_ACCESS_FOR_TESTING === 'true';
 
-// Whitelist: IDs that should always have free access (for development/testing)
-// Add your Auth0 ID here or via FREE_ACCESS_IDS env variable (comma-separated)
+// Whitelist: IDs that should always have free access (employees, boss, etc.)
+// Add Auth0 IDs here or via FREE_ACCESS_IDS env variable (comma-separated)
+// 
+// HOW TO FIND AUTH0 ID:
+// 1. Check browser console when user logs in
+// 2. Check Auth0 dashboard → Users → Select user → Copy "User ID"
+// 3. Format: Usually starts with "auth0|" followed by alphanumeric string
+//
+// EXAMPLES:
+// - Boss: 'auth0|60f7b3c4d5e6f7a8b9c0d1e2'
+// - Employee 1: 'auth0|70f8c4d5e6f7a8b9c0d1e2f3'
+// - Employee 2: 'auth0|80f9d5e6f7a8b9c0d1e2f3a4'
+//
+// OR set in backend .env file:
+// FREE_ACCESS_IDS=auth0|boss_id,auth0|employee1_id,auth0|employee2_id
 const FREE_ACCESS_IDS = [
   'auth0_test_user', // Default test user from server.js
   'dev_local_tester', // Fallback from utils/api.ts for localhost
-  '', // Empty string fallback
-  null, // Null fallback
-  undefined, // Undefined fallback
-  // Add your Auth0 ID here to keep it free (for localhost development)
-  // Example: 'auth0|your_user_id_here'
-  // To find your ID: Check browser console or Auth0 dashboard
-  // OR set FREE_ACCESS_IDS env variable: FREE_ACCESS_IDS=auth0|your_id,another_id
+  // Add employee/boss Auth0 IDs here:
+  // 'auth0|your_boss_id_here',
+  // 'auth0|employee1_id_here',
+  // 'auth0|employee2_id_here',
   ...(process.env.FREE_ACCESS_IDS ? process.env.FREE_ACCESS_IDS.split(',').map(id => id.trim()).filter(Boolean) : []),
 ].filter(Boolean); // Remove null/undefined/empty
 

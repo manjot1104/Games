@@ -37,7 +37,6 @@ if (Platform.OS !== 'web') {
 
 export default function RootIndex() {
   const { session } = useAuth();
-  const [checkingProfile, setCheckingProfile] = useState(false);
   const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   // Animation values (declare before any conditional returns to keep hook order stable)
@@ -73,79 +72,68 @@ export default function RootIndex() {
     if (!session) {
       clearProfileCache();
       setRedirectPath(null);
-      setCheckingProfile(false);
     }
   }, [session]);
 
   useEffect(() => {
     if (session?.profile) {
-      setCheckingProfile(true);
       (async () => {
-        try {
-          // First, check cache for instant response
-          const cached = await getCachedProfileStatus();
-          if (cached?.isComplete) {
-            // Use cached result immediately - no API call needed!
-            setRedirectPath('/(tabs)');
-            setCheckingProfile(false);
-            return;
-          }
-
-          // Cache miss or expired - make API call
-          const profile = await getMyProfile();
-          const complete = isProfileComplete(profile);
-          
-          // Cache the result for next time
-          await setCachedProfileStatus(complete, {
-            firstName: profile.firstName,
-            dob: profile.dob || undefined,
-            phoneNumber: profile.phoneNumber,
-          });
-
-          if (complete) {
-            // Profile complete, go to tabs
-            setRedirectPath('/(tabs)');
-          } else {
-            // Profile incomplete, go to complete-profile
-            setRedirectPath('/(auth)/complete-profile');
-          }
-        } catch (e) {
-          console.error('Error checking profile:', e);
-          // If check fails, assume incomplete and go to complete-profile
+        // Optimistic Navigation: Navigate immediately based on cache
+        // Pattern used by GitHub, Vercel, Linear - don't block on API calls
+        const cached = await getCachedProfileStatus();
+        
+        if (cached?.isComplete) {
+          // Cache says complete - navigate immediately
+          setRedirectPath('/(tabs)');
+        } else if (cached && !cached.isComplete) {
+          // Cache says incomplete - navigate to complete-profile immediately
           setRedirectPath('/(auth)/complete-profile');
-        } finally {
-          setCheckingProfile(false);
+        } else {
+          // No cache - navigate optimistically to tabs (route guard will handle verification)
+          setRedirectPath('/(tabs)');
         }
+
+        // Background verification: Update cache silently (non-blocking)
+        // This doesn't block navigation but keeps cache fresh for next time
+        (async () => {
+          try {
+            const profile = await getMyProfile();
+            const complete = isProfileComplete(profile);
+            
+            // Update cache for next time (silent background update)
+            await setCachedProfileStatus(complete, {
+              firstName: profile.firstName,
+              dob: profile.dob || undefined,
+              phoneNumber: profile.phoneNumber,
+            });
+            
+            // Route guards will handle any discrepancies - don't update redirect here
+            // This keeps navigation instant while cache stays fresh
+          } catch (e) {
+            // Silent failure - route guards will handle verification on protected routes
+            console.error('Background profile verification failed:', e);
+          }
+        })();
       })();
     }
   }, [session]);
 
-  // If authenticated, check profile and redirect accordingly
+  // If authenticated, navigate optimistically (no blocking wait)
   if (session) {
-    if (checkingProfile) {
+    // Show brief loading only if we don't have a redirect path yet (cache check in progress)
+    if (!redirectPath) {
       return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
           <LinearGradient
             colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
             style={StyleSheet.absoluteFillObject}
           />
-        <AuthLoadingContent />
+          <AuthLoadingContent />
         </SafeAreaView>
       );
     }
-    if (redirectPath) {
-      return <Redirect href={redirectPath as any} />;
-    }
-    // Still checking, show loader
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
-        <LinearGradient
-          colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <AuthLoadingContent />
-      </SafeAreaView>
-    );
+    // Navigate immediately based on cache (optimistic)
+    return <Redirect href={redirectPath as any} />;
   }
 
   // Show beautiful homepage for unauthenticated users

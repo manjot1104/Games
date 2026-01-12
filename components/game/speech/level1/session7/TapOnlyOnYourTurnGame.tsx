@@ -1,4 +1,5 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -74,6 +75,7 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [missedOpportunities, setMissedOpportunities] = useState(0);
   const [correctWaits, setCorrectWaits] = useState(0); // Track correct waits on STOP
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const signalScale = useRef(new Animated.Value(0)).current;
@@ -98,6 +100,7 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps + missedOpportunities;
@@ -250,7 +253,11 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
             useNativeDriver: true,
           }),
         ]).start();
-        speak('Good waiting!');
+        // Show success animation for correct wait
+        setShowRoundSuccess(true);
+        setTimeout(() => {
+          setShowRoundSuccess(false);
+        }, 2500);
       }
 
       // Hide signal
@@ -325,7 +332,11 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Great!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide signal and advance
       Animated.timing(signalOpacity, {
@@ -432,32 +443,20 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setIncorrectTaps(0);
-          setMissedOpportunities(0);
-          setCorrectWaits(0);
-          setLogTimestamp(null);
-          signalScale.setValue(0);
-          signalOpacity.setValue(0);
-          signalPulse.setValue(1);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -562,6 +561,12 @@ export const TapOnlyOnYourTurnGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

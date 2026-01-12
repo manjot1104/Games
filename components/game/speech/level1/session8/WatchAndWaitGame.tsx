@@ -1,11 +1,12 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -85,6 +86,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [earlyTaps, setEarlyTaps] = useState(0);
   const [missedTaps, setMissedTaps] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const objectX = useRef(new Animated.Value(0)).current;
@@ -109,6 +111,8 @@ export const WatchAndWaitGame: React.FC<Props> = ({
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const rotationAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     // Clear all timeouts and animations
@@ -134,6 +138,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + earlyTaps + missedTaps;
@@ -177,7 +182,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 900);
   }, [requiredRounds]);
 
@@ -474,7 +479,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
           ]).start(() => {
             setRounds(prev => {
               const nextRound = prev + 1;
-              advanceToNextRound(nextRound);
+              advanceToNextRoundRef.current?.(nextRound);
               return nextRound;
             });
           });
@@ -485,7 +490,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         movementTimeoutRef.current = null;
       }, MOVEMENT_DURATION_MS + WAIT_DURATION_MS)) as unknown as NodeJS.Timeout;
     }, 600);
-  }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound]);
+  }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT]);
 
   const handleTap = useCallback(() => {
     if (isProcessing) return;
@@ -573,7 +578,11 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         ]).start();
       }, 1500);
 
-      speak('Perfect!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       Animated.parallel([
@@ -605,7 +614,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
       ]).start(() => {
         setRounds(prev => {
           const nextRound = prev + 1;
-          advanceToNextRound(nextRound);
+          advanceToNextRoundRef.current?.(nextRound);
           return nextRound;
         });
       });
@@ -650,7 +659,15 @@ export const WatchAndWaitGame: React.FC<Props> = ({
     } else {
       setIsProcessing(false);
     }
-  }, [phase, canTap, isProcessing, advanceToNextRound]);
+  }, [phase, canTap, isProcessing]);
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -662,7 +679,7 @@ export const WatchAndWaitGame: React.FC<Props> = ({
     try {
       speak('Watch and wait for the ring, then tap!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -683,32 +700,25 @@ export const WatchAndWaitGame: React.FC<Props> = ({
         pulseAnimationRef.current.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setEarlyTaps(0);
-          setMissedTaps(0);
-          setLogTimestamp(null);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -930,6 +940,12 @@ export const WatchAndWaitGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

@@ -15,6 +15,7 @@ import {
     View,
 } from 'react-native';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 
 type Props = {
   onBack: () => void;
@@ -93,6 +94,7 @@ export const TapForChoiceGame: React.FC<Props> = ({
   const [selectedItem, setSelectedItem] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [showRoundSuccess, setShowRoundSuccess] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
 
   // Animations for left item
   const leftScale = useRef(new Animated.Value(1)).current;
@@ -121,12 +123,11 @@ export const TapForChoiceGame: React.FC<Props> = ({
   }, []);
 
   useEffect(() => {
-    if (choices >= requiredChoices && onComplete) {
-      setTimeout(() => {
-        onComplete();
-      }, 1500);
+    if (choices >= requiredChoices && !gameFinished) {
+      setGameFinished(true);
+      setShowRoundSuccess(false);
     }
-  }, [choices, requiredChoices, onComplete]);
+  }, [choices, requiredChoices, gameFinished]);
 
   const startGlowAnimation = () => {
     // Left item glow
@@ -299,6 +300,34 @@ export const TapForChoiceGame: React.FC<Props> = ({
   }, [isAnimating, currentPair, choices, requiredChoices, currentPairIndex]);
 
   const progressDots = Array.from({ length: requiredChoices }, (_, i) => i < choices);
+
+  // Show completion screen with stats when game finishes
+  if (gameFinished) {
+    const accuracyPct = choices >= requiredChoices ? 100 : Math.round((choices / requiredChoices) * 100);
+    const xpAwarded = choices * 10;
+    return (
+      <CongratulationsScreen
+        message="Great Choices!"
+        showButtons={true}
+        correct={choices}
+        total={requiredChoices}
+        accuracy={accuracyPct}
+        xpAwarded={xpAwarded}
+        onContinue={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

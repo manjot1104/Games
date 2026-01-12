@@ -1,3 +1,4 @@
+// Image imports - highlight uses arrow.png from icons directory
 import highlight from "@/assets/icons/arrow.png";
 import rankingGradient from "@/assets/icons/games.png";
 import tapNowIcon from "@/assets/icons/gamesf.png";

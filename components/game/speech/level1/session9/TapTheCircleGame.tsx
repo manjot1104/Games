@@ -1,11 +1,12 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -80,6 +81,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [incorrectTaps, setIncorrectTaps] = useState(0);
   const [showInstruction, setShowInstruction] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const shapeScales = useRef<Map<number, Animated.Value>>(new Map()).current;
@@ -91,6 +93,8 @@ export const TapTheCircleGame: React.FC<Props> = ({
   
   // Timeouts
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     if (tapTimeoutRef.current) {
@@ -99,6 +103,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps;
@@ -140,7 +145,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 1000);
   }, [requiredRounds]);
 
@@ -277,7 +282,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -285,7 +290,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
         tapTimeoutRef.current = null;
       }, 8000)) as unknown as NodeJS.Timeout;
     }, INSTRUCTION_DELAY_MS);
-  }, [rounds, requiredRounds, canTap, isProcessing, shapeScales, shapeOpacities, advanceToNextRound]);
+  }, [rounds, requiredRounds, canTap, isProcessing, shapeScales, shapeOpacities]);
 
   const handleShapeTap = useCallback((shapeName: string, shapeId: number) => {
     if (isProcessing || !canTap) return;
@@ -336,7 +341,11 @@ export const TapTheCircleGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Perfect!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       setTimeout(() => {
@@ -371,7 +380,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -401,7 +410,7 @@ export const TapTheCircleGame: React.FC<Props> = ({
       speak('Try again!');
       setIsProcessing(false);
     }
-  }, [isProcessing, canTap, targetShape, shapes, shapeScales, shapeOpacities, advanceToNextRound]);
+  }, [isProcessing, canTap, targetShape, shapes, shapeScales, shapeOpacities]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -409,11 +418,19 @@ export const TapTheCircleGame: React.FC<Props> = ({
     }
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
+
   useEffect(() => {
     try {
       speak('Tap the circle when it appears!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -422,31 +439,25 @@ export const TapTheCircleGame: React.FC<Props> = ({
         clearTimeout(tapTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setIncorrectTaps(0);
-          setLogTimestamp(null);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -587,6 +598,12 @@ export const TapTheCircleGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

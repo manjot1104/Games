@@ -33,6 +33,9 @@ type LookDirection = 'left' | 'right';
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
 let webSpeechSynthesis: SpeechSynthesis | null = null;
 let webUtterance: SpeechSynthesisUtterance | null = null;
+let isSpeaking = false;
+let speechQueue: Array<{ text: string; rate: number }> = [];
+let currentSpeechTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Initialize web speech synthesis
 if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -42,6 +45,10 @@ if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
   scheduledSpeechTimers = [];
+  if (currentSpeechTimer) {
+    clearTimeout(currentSpeechTimer);
+    currentSpeechTimer = null;
+  }
   try {
     if (Platform.OS === 'web' && webSpeechSynthesis) {
       webSpeechSynthesis.cancel();
@@ -50,9 +57,29 @@ function clearScheduledSpeech() {
       Speech.stop();
     }
   } catch {}
+  isSpeaking = false;
+  speechQueue = [];
 }
 
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
+  // Add to queue
+  speechQueue.push({ text, rate });
+  
+  // If not currently speaking, start processing queue
+  if (!isSpeaking) {
+    processSpeechQueue();
+  }
+}
+
+function processSpeechQueue() {
+  if (speechQueue.length === 0) {
+    isSpeaking = false;
+    return;
+  }
+  
+  const { text, rate } = speechQueue.shift()!;
+  isSpeaking = true;
+  
   try {
     clearScheduledSpeech();
     
@@ -72,10 +99,16 @@ function speak(text: string, rate = DEFAULT_TTS_RATE) {
       webSpeechSynthesis.speak(webUtterance);
     } else {
       // Use expo-speech for native platforms
+      Speech.stop();
       Speech.speak(text, { rate });
     }
   } catch (e) {
     console.warn('speak error', e);
+    isSpeaking = false;
+    // Process next in queue even on error
+    setTimeout(() => {
+      processSpeechQueue();
+    }, 100);
   }
 }
 
@@ -193,12 +226,18 @@ export const FollowWhereILookGame: React.FC<Props> = ({
       }),
     ]).start();
 
-    speak(direction === 'left' ? 'I\'m looking left!' : 'I\'m looking right!');
+    const directionText = direction === 'left' ? 'I\'m looking left!' : 'I\'m looking right!';
+    speak(directionText);
 
-    // Object appears after short delay
+    // Object appears after speech finishes (estimate: ~2 seconds for direction text at rate 0.75)
+    // Calculate delay based on speech duration
+    const words = directionText.split(/\s+/).length;
+    const speechDuration = (words / 150) * 60 * 1000 / DEFAULT_TTS_RATE; // Adjust for rate
+    const delay = Math.max(1500, speechDuration + 500); // At least 1.5s, or speech duration + 500ms buffer
+    
     setTimeout(() => {
       showObject(direction, objectIndex);
-    }, 800);
+    }, delay);
   };
 
   const showObject = (direction: LookDirection, objectIndex: number) => {
@@ -330,19 +369,23 @@ export const FollowWhereILookGame: React.FC<Props> = ({
     shouldShowCongrats: showCongratulations && gameFinished,
   });
 
-  // Show congratulations screen when game finishes
-  if (showCongratulations && gameFinished) {
-    console.log('🎮 FollowWhereILookGame: 🎉 RENDERING CongratulationsScreen NOW!');
+  // Show completion screen with stats when game finishes
+  if (gameFinished) {
+    const accuracyPct = hits >= requiredTaps ? 100 : Math.round((hits / requiredTaps) * 100);
+    const xpAwarded = hits * 10;
+    console.log('🎮 FollowWhereILookGame: 🎉 RENDERING Completion Screen with stats');
     return (
       <CongratulationsScreen
         message="Great Job!"
         showButtons={true}
+        correct={hits}
+        total={requiredTaps}
+        accuracy={accuracyPct}
+        xpAwarded={xpAwarded}
         onContinue={() => {
-          setShowCongratulations(false);
-          setTimeout(() => {
-            onComplete?.();
-            setTimeout(() => onBack(), 500);
-          }, 500);
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
         }}
         onHome={() => {
           clearScheduledSpeech();

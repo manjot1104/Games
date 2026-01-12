@@ -4,7 +4,6 @@
  * Features: 5 difficulty rounds, timer, coverage tracking, star scoring, color picker, and beautiful UI
  */
 
-import ResultCard from '@/components/game/ResultCard';
 import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
@@ -754,44 +753,21 @@ export function PaintCurvedSnakeGame({ onBack, onComplete, requiredRounds = TOTA
   const paintedString = pathToSvgString(paintedPath);
   const glowSize = isTablet ? 50 : isMobile ? 35 : 40;
 
-  // Show congratulations screen first
-  if (showCongratulations && gameState === 'gameComplete' && finalStats) {
+  // Show congratulations screen with stats
+  if (gameState === 'gameComplete' && finalStats) {
     return (
       <CongratulationsScreen
         message="Amazing Work!"
         showButtons={true}
+        correct={finalStats.totalStars}
+        total={requiredRounds * 3}
+        accuracy={finalStats.accuracy}
+        xpAwarded={totalStars * 50}
         onContinue={() => {
-          setShowCongratulations(false);
+          onComplete?.();
         }}
         onHome={onBack}
       />
-    );
-  }
-
-  // Then show result card
-  if (gameState === 'gameComplete' && finalStats && !showCongratulations) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ResultCard
-          correct={finalStats.totalStars}
-          total={requiredRounds * 3}
-          accuracy={finalStats.accuracy}
-          xpAwarded={totalStars * 50}
-          logTimestamp={logTimestamp}
-          onHome={onBack}
-          onPlayAgain={() => {
-            setGameState('calibration');
-            setCurrentRound(1);
-            setRoundResults([]);
-            setTotalStars(0);
-            setFinalStats(null);
-            setCoverage(0);
-            setTimeRemaining(ROUND_TIME_MS);
-            setShowCongratulations(false);
-            startCalibration();
-          }}
-        />
-      </SafeAreaView>
     );
   }
 

@@ -1,26 +1,109 @@
 // components/game/ResultCard.tsx
-import Lottie from 'lottie-react';
 import React, { useEffect } from 'react';
 import { Platform, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { 
+  useAnimatedProps, 
+  useSharedValue, 
+  withTiming, 
+  withRepeat, 
+  withSequence,
+  Easing,
+  useAnimatedStyle
+} from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import { SparkleBurst } from '@/components/game/FX';
 import ReflectionPrompt from '@/components/game/ReflectionPrompt';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-let NativeLottie: any = null;
-if (Platform.OS !== 'web') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  NativeLottie = require('lottie-react-native').default;
+const AnimatedText = Animated.createAnimatedComponent(Text);
+
+// Animated Confetti Emoji Component
+function AnimatedConfettiEmoji({ 
+  isCelebrating, 
+  size = 180 
+}: { 
+  isCelebrating: boolean; 
+  size?: number;
+}) {
+  const scale = useSharedValue(1);
+  const rotation = useSharedValue(0);
+  const bounce = useSharedValue(0);
+  const opacity = useSharedValue(1);
+
+  useEffect(() => {
+    if (isCelebrating) {
+      // Celebration animation: dramatic scale, rotate, and bounce (plays once, like celebratoryCat)
+      scale.value = withSequence(
+        withTiming(1.3, { duration: 400, easing: Easing.out(Easing.back(1.5)) }),
+        withTiming(1, { duration: 300, easing: Easing.in(Easing.ease) })
+      );
+      rotation.value = withSequence(
+        withTiming(20, { duration: 400 }),
+        withTiming(-20, { duration: 400 }),
+        withTiming(10, { duration: 300 }),
+        withTiming(0, { duration: 300 })
+      );
+      bounce.value = withSequence(
+        withTiming(-15, { duration: 400 }),
+        withTiming(0, { duration: 300 }),
+        withTiming(-8, { duration: 250 }),
+        withTiming(0, { duration: 250 })
+      );
+    } else {
+      // Chill animation: gentle continuous looping animation (like chillCat)
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(1.08, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        false
+      );
+      rotation.value = withRepeat(
+        withSequence(
+          withTiming(8, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+          withTiming(-8, { duration: 1800, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        false
+      );
+      bounce.value = withRepeat(
+        withSequence(
+          withTiming(-5, { duration: 1600, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0, { duration: 1600, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        false
+      );
+    }
+  }, [isCelebrating]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        { scale: scale.value },
+        { rotate: `${rotation.value}deg` },
+        { translateY: bounce.value }
+      ],
+      opacity: opacity.value,
+    };
+  });
+
+  return (
+    <Animated.View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, animatedStyle]}>
+      <AnimatedText style={{ fontSize: size * 0.7, textAlign: 'center' }}>
+        🎉
+      </AnimatedText>
+    </Animated.View>
+  );
 }
-const celebratoryCat = require('@/assets/animation/black rainbow cat.json');
-const chillCat = require('@/assets/animation/cat Mark loading.json');
 
 export default function ResultCard({
   correct,
   total,
   onPlayAgain,
   onHome,
+  onContinue,
   xpAwarded,
   accuracy,
   logTimestamp,
@@ -29,6 +112,7 @@ export default function ResultCard({
   total: number;
   onPlayAgain?: () => void;
   onHome?: () => void;
+  onContinue?: () => void;
   xpAwarded?: number;
   accuracy?: number;
   logTimestamp?: string | null;
@@ -43,7 +127,7 @@ export default function ResultCard({
   const props: any = useAnimatedProps(() => ({ strokeDashoffset: C * (1 - prog.value) } as any));
 
   const showCelebration = displayedAccuracy >= 80;
-  const catMessage = showCelebration ? 'Sparkle Cat is proud of you!' : 'Cat is cheering you on!';
+  const confettiMessage = showCelebration ? 'Congratulations! You did amazing! 🎉' : 'Great effort! Keep it up! 🎊';
 
   return (
     <View
@@ -63,23 +147,7 @@ export default function ResultCard({
       }}
     >
       <View style={{ alignItems: 'center', marginBottom: 12 }}>
-        {Platform.OS === 'web' ? (
-          <Lottie
-            animationData={showCelebration ? celebratoryCat : chillCat}
-            loop={!showCelebration}
-            autoplay
-            style={{ width: 180, height: 180 }}
-          />
-        ) : NativeLottie ? (
-          <NativeLottie
-            source={showCelebration ? celebratoryCat : chillCat}
-            autoPlay
-            loop={!showCelebration}
-            style={{ width: 170, height: 170 }}
-          />
-        ) : (
-          <Text style={{ fontSize: 64 }}>{showCelebration ? '😺🎉' : '😺✨'}</Text>
-        )}
+        <AnimatedConfettiEmoji isCelebrating={showCelebration} size={Platform.OS === 'web' ? 180 : 170} />
         <Text
           style={{
             marginTop: 6,
@@ -89,7 +157,7 @@ export default function ResultCard({
             textAlign: 'center',
           }}
         >
-          {catMessage}
+          {confettiMessage}
         </Text>
       </View>
       <View style={{ alignItems: 'center', marginBottom: 12 }}>
@@ -156,6 +224,22 @@ export default function ResultCard({
       )}
 
       <View style={{ alignItems: 'center', gap: 8, marginTop: 8, width: '100%' }}>
+        {onContinue && (
+          <TouchableOpacity
+            onPress={onContinue}
+            activeOpacity={0.9}
+            style={{
+              backgroundColor: '#22C55E',
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderRadius: 999,
+              alignSelf: 'stretch',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 15 }}>Continue</Text>
+          </TouchableOpacity>
+        )}
         {onPlayAgain && (
           <TouchableOpacity
             onPress={onPlayAgain}

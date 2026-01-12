@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
@@ -774,28 +774,17 @@ export const JawSwingAdventureGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctMatches}
         total={finalStats.totalRounds}
         accuracy={finalStats.matchAccuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={onBack}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setCorrectMatches(0);
-          setMatchFrames(0);
-          setTotalFrames(0);
-          setItemsCollected(0);
-          setScore(0);
-          setCurrentRound(0);
-          setLogTimestamp(null);
-          itemsRef.current = [];
-          progressBarWidth.setValue(0);
-          gameStartedRef.current = false;
-          startGame();
+        onContinue={() => {
+          onComplete?.();
         }}
+        onHome={onBack}
       />
     );
   }

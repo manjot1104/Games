@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -130,11 +130,10 @@ export const FollowMyEyesGame: React.FC<Props> = ({
         },
       });
       setLogTimestamp(result?.last?.at ?? null);
-      onComplete?.();
     } catch (e) {
       console.error('Failed to save game:', e);
     }
-  }, [hits, requiredTaps, gameFinished, onComplete]);
+  }, [hits, requiredTaps, gameFinished]);
 
   const startRound = useCallback(() => {
     setRound((prev) => prev + 1);
@@ -279,51 +278,26 @@ export const FollowMyEyesGame: React.FC<Props> = ({
   if (gameFinished && finalStats) {
     const accuracyPct = finalStats.accuracy;
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={() => {
-            clearScheduledSpeech();
-            Speech.stop();
-            onBack();
-          }}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-
-        <ScrollView contentContainerStyle={styles.completionScroll}>
-          <LinearGradient
-            colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.completionContent}>
-            <ResultCard
-              correct={finalStats.correctTaps}
-              total={finalStats.totalTaps}
-              xpAwarded={finalStats.correctTaps * 10}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setHits(0);
-                setRound(0);
-                setGameFinished(false);
-                setFinalStats(null);
-                setObjectVisible(false);
-                setIsLooking(false);
-                startRound();
-                speak('Look… where am I looking?');
-              }}
-              onHome={() => {
-                clearScheduledSpeech();
-                stopAllSpeech();
-                cleanupSounds();
-                onBack();
-              }}
-            />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Excellent Gaze Following!"
+        showButtons={true}
+        correct={finalStats.correctTaps}
+        total={finalStats.totalTaps}
+        accuracy={accuracyPct}
+        xpAwarded={finalStats.correctTaps * 10}
+        onContinue={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
     );
   }
 

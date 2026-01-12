@@ -1,11 +1,12 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -191,6 +192,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
   const [correctTaps, setCorrectTaps] = useState(0);
   const [distractionTaps, setDistractionTaps] = useState(0);
   const [missedTaps, setMissedTaps] = useState(0);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   const [particlePosition, setParticlePosition] = useState({ x: 0, y: 0 });
   
   // Animations - Target
@@ -240,6 +242,8 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
   const targetAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const distraction1AnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const distraction2AnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const glowAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -274,6 +278,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + distractionTaps + missedTaps;
@@ -317,7 +322,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 1200);
   }, [requiredRounds]);
 
@@ -656,14 +661,14 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
       setTimeout(() => {
         setRounds(prev => {
           const nextRound = prev + 1;
-          advanceToNextRound(nextRound);
+          advanceToNextRoundRef.current?.(nextRound);
           return nextRound;
         });
       }, 400);
       
       tapTimeoutRef.current = null;
     }, TAP_TIMEOUT_MS)) as unknown as NodeJS.Timeout;
-  }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT, advanceToNextRound, createMovementAnimation]);
+  }, [rounds, requiredRounds, SCREEN_WIDTH, SCREEN_HEIGHT, createMovementAnimation]);
 
   const handleTargetTap = useCallback(() => {
     if (isProcessing || !canTap) return;
@@ -742,7 +747,11 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
       ]),
     ]).start();
 
-    speak('Excellent focus!');
+    // Show success animation instead of TTS
+    setShowRoundSuccess(true);
+    setTimeout(() => {
+      setShowRoundSuccess(false);
+    }, 2500);
 
     // Hide and advance
     setTimeout(() => {
@@ -772,12 +781,12 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
       setTimeout(() => {
         setRounds(prev => {
           const nextRound = prev + 1;
-          advanceToNextRound(nextRound);
+          advanceToNextRoundRef.current?.(nextRound);
           return nextRound;
         });
       }, 400);
     }, 1500);
-  }, [isProcessing, canTap, targetScale, advanceToNextRound]);
+  }, [isProcessing, canTap, targetScale]);
 
   const handleDistractionTap = useCallback((distractionId: number) => {
     if (isProcessing || !canTap) return;
@@ -838,6 +847,14 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
     }, 2000);
   }, [isProcessing, canTap, target, distraction1Scale, distraction2Scale]);
 
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
+
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
       finishGame();
@@ -848,7 +865,7 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
     try {
       speak('Tap the moving target, ignore the other objects!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -875,32 +892,25 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
         glowAnimationRef.current.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setDistractionTaps(0);
-          setMissedTaps(0);
-          setLogTimestamp(null);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -1158,6 +1168,12 @@ export const MovingTargetWithExtraObjectsGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

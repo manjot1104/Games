@@ -1,7 +1,7 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
-import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds, playSound, preloadSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -82,6 +82,8 @@ export const WhichSoundGame: React.FC<Props> = ({
   const feedbackOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Preload sounds on mount for instant playback (especially important for mobile browsers)
+    preloadSounds();
     startTrial();
     return () => {
       clearScheduledSpeech();
@@ -121,11 +123,10 @@ export const WhichSoundGame: React.FC<Props> = ({
         },
       });
       setLogTimestamp(result?.last?.at ?? null);
-      onComplete?.();
     } catch (e) {
       console.error('Failed to save game:', e);
     }
-  }, [correct, requiredTrials, gameFinished, onComplete]);
+  }, [correct, requiredTrials, gameFinished]);
 
   const startTrial = useCallback(() => {
     setPhase('sound');
@@ -275,51 +276,26 @@ export const WhichSoundGame: React.FC<Props> = ({
   if (gameFinished && finalStats) {
     const accuracyPct = finalStats.accuracy;
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={() => {
-            clearScheduledSpeech();
-            Speech.stop();
-            onBack();
-          }}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-
-        <ScrollView contentContainerStyle={styles.completionScroll}>
-          <LinearGradient
-            colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.completionContent}>
-            <ResultCard
-              correct={finalStats.correctTrials}
-              total={finalStats.totalTrials}
-              xpAwarded={finalStats.correctTrials * 10}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setTrials(0);
-                setCorrect(0);
-                setGameFinished(false);
-                setFinalStats(null);
-                setPhase('sound');
-                setCanTap(false);
-                startTrial();
-                speak('Listen… which one made the sound?');
-              }}
-              onHome={() => {
-                clearScheduledSpeech();
-                stopAllSpeech();
-                cleanupSounds();
-                onBack();
-              }}
-            />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Great Sound Recognition!"
+        showButtons={true}
+        correct={finalStats.correctTrials}
+        total={finalStats.totalTrials}
+        accuracy={accuracyPct}
+        xpAwarded={finalStats.correctTrials * 10}
+        onContinue={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
     );
   }
 

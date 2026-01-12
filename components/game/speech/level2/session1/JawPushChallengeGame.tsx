@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
@@ -1062,32 +1062,17 @@ export const JawPushChallengeGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctMatches}
         total={finalStats.totalRounds}
         accuracy={finalStats.matchAccuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={onBack}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setCorrectMatches(0);
-          setMatchFrames(0);
-          setTotalFrames(0);
-          setObjectsPushed(0);
-          setScore(0);
-          setCurrentRound(0);
-          setLogTimestamp(null);
-          setGameObjects([]);
-          setIsPushing(false);
-          cleanupObjects();
-          cleanupParticles();
-          progressBarWidth.setValue(0);
-          gameStartedRef.current = false;
-          roundActiveRef.current = false;
-          startGame();
+        onContinue={() => {
+          onComplete?.();
         }}
+        onHome={onBack}
       />
     );
   }

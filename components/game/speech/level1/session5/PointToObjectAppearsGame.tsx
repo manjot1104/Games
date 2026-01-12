@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
@@ -302,52 +302,21 @@ export const PointToObjectAppearsGame: React.FC<Props> = ({
   if (gameFinished && finalStats) {
     const accuracyPct = finalStats.accuracy;
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={() => {
-            clearScheduledSpeech();
-            stopAllSpeech();
-            cleanupSounds();
-            onBack();
-          }}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-
-        <ScrollView contentContainerStyle={styles.completionScroll}>
-          <LinearGradient
-            colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.completionContent}>
-            <ResultCard
-              correct={finalStats.correctTaps}
-              total={finalStats.totalTaps}
-              xpAwarded={finalStats.correctTaps * 10}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setHits(0);
-                setRound(0);
-                setGameFinished(false);
-                setFinalStats(null);
-                setObjectVisible(false);
-                setIsPointing(false);
-                startRound();
-                speak('Watch where I point!');
-              }}
-              onHome={() => {
-                clearScheduledSpeech();
-                stopAllSpeech();
-                cleanupSounds();
-                onBack();
-              }}
-            />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
+        correct={finalStats.correctTaps}
+        total={finalStats.totalTaps}
+        accuracy={accuracyPct}
+        xpAwarded={finalStats.correctTaps * 10}
+        onContinue={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onComplete?.();
+        }}
+        onHome={onBack}
+      />
     );
   }
 

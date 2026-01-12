@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { getSoundAsset } from '@/utils/soundAssets';
@@ -149,11 +149,10 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
         },
       });
       setLogTimestamp(result?.last?.at ?? null);
-      onComplete?.();
     } catch (e) {
       console.error('Failed to save game:', e);
     }
-  }, [correct, requiredTrials, gameFinished, onComplete]);
+  }, [correct, requiredTrials, gameFinished]);
 
   const startTrial = useCallback(async () => {
     // Stop any previous continuous sound
@@ -443,51 +442,28 @@ export const StopWhenSoundStopsGame: React.FC<Props> = ({
   if (gameFinished && finalStats) {
     const accuracyPct = finalStats.accuracy;
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={async () => {
-            await stopContinuousSound();
-            clearScheduledSpeech();
-            Speech.stop();
-            onBack();
-          }}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-
-        <ScrollView contentContainerStyle={styles.completionScroll}>
-          <LinearGradient
-            colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.completionContent}>
-            <ResultCard
-              correct={finalStats.correctTrials}
-              total={finalStats.totalTrials}
-              xpAwarded={finalStats.correctTrials * 10}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setTrials(0);
-                setCorrect(0);
-                setGameFinished(false);
-                setFinalStats(null);
-                setGameState('moving');
-                startTrial();
-                speak('Watch the ball! When the sound stops, tap it!');
-              }}
-              onHome={async () => {
-                await stopContinuousSound();
-                clearScheduledSpeech();
-                Speech.stop();
-                onBack();
-              }}
-            />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Excellent Timing!"
+        showButtons={true}
+        correct={finalStats.correctTrials}
+        total={finalStats.totalTrials}
+        accuracy={accuracyPct}
+        xpAwarded={finalStats.correctTrials * 10}
+        onContinue={async () => {
+          await stopContinuousSound();
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={async () => {
+          await stopContinuousSound();
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
     );
   }
 

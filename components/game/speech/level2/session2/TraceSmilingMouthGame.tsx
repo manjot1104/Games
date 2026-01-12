@@ -4,7 +4,7 @@
  * Features: 5 difficulty levels, timer, coverage tracking, scoring, and beautiful UI
  */
 
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
@@ -745,31 +745,18 @@ export function TraceSmilingMouthGame({ onBack, onComplete }: Props) {
 
   if (gameState === 'gameComplete' && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <ResultCard
-          correct={totalStars}
-          total={TOTAL_ROUNDS * 3}
-          accuracy={finalStats.accuracy}
-          xpAwarded={totalStars * 50}
-          logTimestamp={logTimestamp}
-          onHome={onBack}
-          onPlayAgain={() => {
-            setGameState('calibration');
-            setCurrentRound(1);
-            setRoundResults([]);
-            setTotalStars(0);
-            setFinalStats(null);
-            setCoverage(0);
-            setTimeRemaining(ROUND_TIME_MS);
-            setHappinessLevel(0);
-            startCalibration();
-          }}
-        />
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
+        correct={totalStars}
+        total={TOTAL_ROUNDS * 3}
+        accuracy={finalStats.accuracy}
+        xpAwarded={totalStars * 50}
+        onContinue={() => {
+          onComplete?.();
+        }}
+        onHome={onBack}
+      />
     );
   }
 

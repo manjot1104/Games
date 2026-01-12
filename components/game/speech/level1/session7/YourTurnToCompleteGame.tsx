@@ -1,4 +1,5 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,6 +76,7 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
   const [piecePosition, setPiecePosition] = useState<'left' | 'right' | null>(null);
   const [canTap, setCanTap] = useState(false);
   const [placedPieces, setPlacedPieces] = useState<{ emoji: string; color: string[]; side: 'left' | 'right' }[]>([]);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const pieceX = useRef(new Animated.Value(0)).current;
@@ -218,7 +220,11 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
         useNativeDriver: true,
       }),
     ]).start(() => {
-      speak('Good!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
       setTimeout(() => {
         startRound();
       }, 500);
@@ -227,6 +233,7 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
 
   const finishGame = useCallback(async () => {
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const accuracy = 100;
@@ -279,26 +286,20 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.piecesPlaced}
         total={finalStats.totalPieces}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setPiecesPlaced(0);
-          setPlacedPieces([]);
-          setLogTimestamp(null);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -446,6 +447,12 @@ export const YourTurnToCompleteGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

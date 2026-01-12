@@ -367,19 +367,23 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
     shouldShowCongrats: showCongratulations && gameFinished,
   });
 
-  // Show congratulations screen when game finishes
-  if (showCongratulations && gameFinished) {
-    console.log('🎮 TrackAndFreezeGame: 🎉 RENDERING CongratulationsScreen NOW!');
+  // Show completion screen with stats when game finishes
+  if (gameFinished) {
+    const accuracyPct = hits >= requiredTaps ? 100 : Math.round((hits / requiredTaps) * 100);
+    const xpAwarded = hits * 10;
+    console.log('🎮 TrackAndFreezeGame: 🎉 RENDERING Completion Screen with stats');
     return (
       <CongratulationsScreen
         message="Excellent Control!"
         showButtons={true}
+        correct={hits}
+        total={requiredTaps}
+        accuracy={accuracyPct}
+        xpAwarded={xpAwarded}
         onContinue={() => {
-          setShowCongratulations(false);
-          setTimeout(() => {
-            onComplete?.();
-            setTimeout(() => onBack(), 500);
-          }, 500);
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
         }}
         onHome={() => {
           clearScheduledSpeech();

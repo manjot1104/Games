@@ -213,16 +213,19 @@ export const SlowToFastGame: React.FC<Props> = ({
       const nextHits = hits + 1;
       setHits(nextHits);
 
-      // Show success animation after every 3 taps
+      // Show success animation on every tap (like CatchTheBouncingStar)
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
+
+      // Speed up after every 3 taps (if not at max speed)
       if (nextHits > 0 && nextHits % 3 === 0) {
         setShowReinforcement(true);
-        setShowRoundSuccess(true);
         setTimeout(() => {
-          setShowRoundSuccess(false);
           setShowReinforcement(false);
         }, 2500);
 
-        // Speed up after 3 taps (if not at max speed)
         if (speedLevel < SPEED_LEVELS.length - 1) {
           const newSpeedLevel = speedLevel + 1;
           setSpeedLevel(newSpeedLevel);
@@ -234,9 +237,13 @@ export const SlowToFastGame: React.FC<Props> = ({
         // Stop animations and set states
         setIsMoving(false);
         motionLoop.current?.stop();
-        console.log('🎮 SlowToFastGame: About to set gameFinished to true');
-        setGameFinished(true);
-        console.log('🎮 SlowToFastGame: ✅ Set gameFinished to true');
+        // Hide animation before finishing game
+        setTimeout(() => {
+          setShowRoundSuccess(false);
+          console.log('🎮 SlowToFastGame: About to set gameFinished to true');
+          setGameFinished(true);
+          console.log('🎮 SlowToFastGame: ✅ Set gameFinished to true');
+        }, 2500);
         return;
       }
 
@@ -272,19 +279,23 @@ export const SlowToFastGame: React.FC<Props> = ({
     shouldShowCongrats: showCongratulations && gameFinished,
   });
 
-  // Show congratulations screen when game finishes
-  if (showCongratulations && gameFinished) {
-    console.log('🎮 SlowToFastGame: 🎉 RENDERING CongratulationsScreen NOW!');
+  // Show completion screen when game finishes
+  if (gameFinished) {
+    const accuracyPct = hits >= requiredTaps ? 100 : Math.round((hits / requiredTaps) * 100);
+    const xpAwarded = hits * 10;
+    console.log('🎮 SlowToFastGame: 🎉 RENDERING Completion Screen NOW!');
     return (
       <CongratulationsScreen
         message="Super Eyes!"
         showButtons={true}
+        correct={hits}
+        total={requiredTaps}
+        accuracy={accuracyPct}
+        xpAwarded={xpAwarded}
         onContinue={() => {
-          setShowCongratulations(false);
-          setTimeout(() => {
-            onComplete?.();
-            setTimeout(() => onBack(), 500);
-          }, 500);
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
         }}
         onHome={() => {
           clearScheduledSpeech();

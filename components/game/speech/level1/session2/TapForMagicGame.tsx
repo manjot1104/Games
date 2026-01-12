@@ -15,6 +15,7 @@ import {
     View,
 } from 'react-native';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 
 type Props = {
   onBack: () => void;
@@ -77,6 +78,7 @@ export const TapForMagicGame: React.FC<Props> = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showRoundSuccess, setShowRoundSuccess] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
   const [stars, setStars] = useState<Star[]>([]);
   const [currentColor, setCurrentColor] = useState(0);
   const starIdCounter = useRef(0);
@@ -271,15 +273,41 @@ export const TapForMagicGame: React.FC<Props> = ({
     }, 2500);
 
     if (nextHits >= requiredTaps) {
-      setTimeout(() => {
-        onComplete?.();
-        setTimeout(() => onBack(), 2000);
-      }, 2000);
+      setGameFinished(true);
+      setShowRoundSuccess(false);
     }
   };
 
   const progressDots = Array.from({ length: requiredTaps }, (_, i) => i < hits);
   const currentColorScheme = COLORS[currentColor];
+
+  // Show completion screen with stats when game finishes
+  if (gameFinished) {
+    const accuracyPct = hits >= requiredTaps ? 100 : Math.round((hits / requiredTaps) * 100);
+    const xpAwarded = hits * 10;
+    return (
+      <CongratulationsScreen
+        message="Magical Work!"
+        showButtons={true}
+        correct={hits}
+        total={requiredTaps}
+        accuracy={accuracyPct}
+        xpAwarded={xpAwarded}
+        onContinue={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -540,7 +568,7 @@ const styles = StyleSheet.create({
   },
   instructionBadge: {
     position: 'absolute',
-    bottom: 200,
+    top: '20%',
     alignSelf: 'center',
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -548,6 +576,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(59, 130, 246, 0.2)',
     borderWidth: 2,
     borderColor: '#3B82F6',
+    zIndex: 200,
+    elevation: 10,
   },
   instructionText: {
     color: '#1E40AF',

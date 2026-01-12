@@ -4,6 +4,27 @@ import * as SecureStore from "expo-secure-store";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import Auth0 from "react-native-auth0";
 
+// Base64 URL decode helper (works in both web and React Native)
+function base64UrlDecode(str: string): string {
+  // Add padding if needed
+  let padded = str + '='.repeat((4 - (str.length % 4)) % 4);
+  // Replace URL-safe characters
+  padded = padded.replace(/-/g, '+').replace(/_/g, '/');
+  
+  // Use atob if available (web)
+  if (typeof atob !== 'undefined') {
+    return atob(padded);
+  }
+  
+  // React Native: Try using global Buffer if available (Node.js environment)
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(padded, 'base64').toString('utf-8');
+  }
+  
+  // If neither is available, throw error to trigger API fallback
+  throw new Error('Base64 decoding not available');
+}
+
 type Session = { accessToken?: string; idToken?: string; profile?: any };
 
 const extra = (Constants as any).expoConfig?.extra ?? {};
@@ -63,7 +84,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ...(audience ? { audience } : {}),
       redirectUri,
     });
-    const profile = await auth0.auth.userInfo({ token: res.accessToken! });
+    
+    // Decode profile from ID token instead of making an extra API call
+    // This is much faster - no network request needed
+    let profile: any = null;
+    if (res.idToken) {
+      try {
+        // Decode JWT token (base64url decode the payload)
+        const parts = res.idToken.split('.');
+        if (parts.length === 3) {
+          const payload = parts[1];
+          const decodedStr = base64UrlDecode(payload);
+          profile = JSON.parse(decodedStr);
+        }
+      } catch (e) {
+        console.warn('Failed to decode ID token, falling back to userInfo API:', e);
+        // Fallback to API call only if decoding fails
+        profile = await auth0.auth.userInfo({ token: res.accessToken! });
+      }
+    } else {
+      // No ID token, fallback to API call
+      profile = await auth0.auth.userInfo({ token: res.accessToken! });
+    }
+    
     const next = { accessToken: res.accessToken, idToken: res.idToken, profile };
     setSession(next);
     await SecureStore.setItemAsync("cw.session", JSON.stringify(next));
@@ -89,7 +132,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       screen_hint: "signup",
       login_hint: emailHint || "",
     });
-    const profile = await auth0.auth.userInfo({ token: res.accessToken! });
+    
+    // Decode profile from ID token instead of making an extra API call
+    let profile: any = null;
+    if (res.idToken) {
+      try {
+        const parts = res.idToken.split('.');
+        if (parts.length === 3) {
+          const payload = parts[1];
+          const decodedStr = base64UrlDecode(payload);
+          profile = JSON.parse(decodedStr);
+        }
+      } catch (e) {
+        console.warn('Failed to decode ID token, falling back to userInfo API:', e);
+        profile = await auth0.auth.userInfo({ token: res.accessToken! });
+      }
+    } else {
+      profile = await auth0.auth.userInfo({ token: res.accessToken! });
+    }
+    
     const next = { accessToken: res.accessToken, idToken: res.idToken, profile };
     setSession(next);
     await SecureStore.setItemAsync("cw.session", JSON.stringify(next));

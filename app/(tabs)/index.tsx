@@ -135,13 +135,24 @@ function HomeLoadingAnimation({ size = 240 }: { size?: number }) {
 
 export default function Index() {
   const router = useRouter();
-  const [stats, setStats] = useState<StatsResponse | null>(null);
+  // Initialize with default values so UI can render immediately
+  const [stats, setStats] = useState<StatsResponse | null>({
+    xp: 0,
+    coins: 0,
+    hearts: 5,
+    streakDays: 0,
+    bestStreak: 0,
+    lastPlayedDate: null,
+    accuracy: 0,
+    levelLabel: 'Explorer',
+  });
   const [refreshing, setRefreshing] = useState(false);
-  const [skillProfile, setSkillProfile] = useState<SkillProfileEntry[] | null>(null);
+  const [skillProfile, setSkillProfile] = useState<SkillProfileEntry[] | null>([]);
   const [selectedMood, setSelectedMood] = useState<MoodOption>('focused');
   const [canScroll, setCanScroll] = useState(true);
   const [layoutHeight, setLayoutHeight] = useState(0);
   const enablePullToRefresh = Platform.OS !== 'android' || canScroll;
+  const hasLoadedOnceRef = useRef(false);
 
   // Animations
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -156,18 +167,33 @@ export default function Index() {
   const loadStats = useCallback(async () => {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
+    
+    // Load both API calls in parallel for faster loading
     try {
-      const s = await fetchMyStats();
-      prevAccRef.current = stats?.accuracy ?? s?.accuracy ?? 0;
-      setStats(s);
-    } catch (error) {
-      console.warn('Failed to load stats', error);
-    }
-    try {
-      const profile = await fetchSkillProfile();
-      setSkillProfile(profile.skills || []);
-    } catch (error) {
-      console.warn('Failed to load skill profile', error);
+      const [s, profile] = await Promise.all([
+        fetchMyStats().catch((error) => {
+          console.warn('Failed to load stats', error);
+          return null;
+        }),
+        fetchSkillProfile().catch((error) => {
+          console.warn('Failed to load skill profile', error);
+          return null;
+        })
+      ]);
+      
+      // Update stats immediately when available
+      if (s) {
+        prevAccRef.current = stats?.accuracy ?? s?.accuracy ?? 0;
+        setStats(s);
+      }
+      
+      // Update skill profile immediately when available
+      if (profile) {
+        setSkillProfile(profile.skills || []);
+      }
+      
+      // Mark that we've loaded at least once
+      hasLoadedOnceRef.current = true;
     } finally {
       isLoadingRef.current = false;
     }
@@ -349,20 +375,8 @@ export default function Index() {
     extrapolate: 'clamp',
   });
 
-  if (!stats) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" />
-        <LinearGradient
-          colors={['#FDF4FF', '#FAE8FF', '#F0F9FF', '#E0F2FE']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <HomeLoadingContent />
-      </SafeAreaView>
-    );
-  }
+  // Always show UI immediately with default values
+  // Data will populate as it loads - no blocking loading screen
 
   return (
     <SafeAreaView style={styles.container}>

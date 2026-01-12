@@ -1,7 +1,7 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
-import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
+import { cleanupSounds, playSound, preloadSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -67,7 +67,7 @@ export const SoundToTapGame: React.FC<Props> = ({
   const [phase, setPhase] = useState<'waiting' | 'sound' | 'circle' | 'success'>('waiting');
   const [canTap, setCanTap] = useState(false);
   const [gameFinished, setGameFinished] = useState(false);
-  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState<boolean>(false);
   const [finalStats, setFinalStats] = useState<{
     totalTrials: number;
     successfulTrials: number;
@@ -81,20 +81,19 @@ export const SoundToTapGame: React.FC<Props> = ({
   const backgroundPulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    // Preload sounds on mount for instant playback (especially important for mobile browsers)
+    preloadSounds();
     startTrial();
     return () => {
       clearScheduledSpeech();
     };
   }, []);
 
-  useEffect(() => {
-    if (trials >= requiredTrials) {
-      finishGame();
-    }
-  }, [trials, requiredTrials]);
-
   const finishGame = useCallback(async () => {
     if (gameFinished) return;
+    
+    // Clear animation when game finishes
+    setShowRoundSuccess(false);
     
     const stats = {
       totalTrials: requiredTrials,
@@ -120,11 +119,10 @@ export const SoundToTapGame: React.FC<Props> = ({
         },
       });
       setLogTimestamp(result?.last?.at ?? null);
-      onComplete?.();
     } catch (e) {
       console.error('Failed to save game:', e);
     }
-  }, [trials, requiredTrials, gameFinished, onComplete]);
+  }, [trials, requiredTrials, gameFinished]);
 
   useEffect(() => {
     if (trials >= requiredTrials && !gameFinished) {
@@ -271,7 +269,7 @@ export const SoundToTapGame: React.FC<Props> = ({
         }, 500);
       }
     }, 2500);
-  }, [canTap, phase, trials, currentSound, requiredTrials, startTrial]);
+  }, [canTap, phase, trials, currentSound, requiredTrials, startTrial, setShowRoundSuccess]);
 
   const progressDots = Array.from({ length: requiredTrials }, (_, i) => i < trials);
   // Use playingSound for display to ensure it matches the sound being played
@@ -281,62 +279,26 @@ export const SoundToTapGame: React.FC<Props> = ({
   if (gameFinished && finalStats) {
     const accuracyPct = finalStats.accuracy;
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={() => {
-            clearScheduledSpeech();
-            Speech.stop();
-            onBack();
-          }}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-
-        <ScrollView contentContainerStyle={styles.completionScroll}>
-          <LinearGradient
-            colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.completionContent}>
-            <View style={styles.completionEmojiContainer}>
-              <Text style={styles.completionEmoji}>🔔</Text>
-            </View>
-            <Text style={styles.completionTitle}>Game Complete!</Text>
-            <Text style={styles.completionSubtitle}>
-              You completed {finalStats.successfulTrials} sound trials!
-            </Text>
-
-            <ResultCard
-              correct={finalStats.successfulTrials}
-              total={finalStats.totalTrials}
-              xpAwarded={finalStats.successfulTrials * 10}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setTrials(0);
-                setCurrentSound(0);
-                setPlayingSound(0);
-                setGameFinished(false);
-                setFinalStats(null);
-                setPhase('sound');
-                setCanTap(false);
-                startTrial();
-                speak('Listen… ding! Tap when you hear the sound!');
-              }}
-              onHome={() => {
-                clearScheduledSpeech();
-                stopAllSpeech();
-                cleanupSounds();
-                onBack();
-              }}
-            />
-
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Great Listening!"
+        showButtons={true}
+        correct={finalStats.successfulTrials}
+        total={finalStats.totalTrials}
+        accuracy={accuracyPct}
+        xpAwarded={finalStats.successfulTrials * 10}
+        onContinue={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
     );
   }
 

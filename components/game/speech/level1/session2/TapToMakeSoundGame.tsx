@@ -17,6 +17,7 @@ import {
     View,
 } from 'react-native';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 
 type Props = {
   onBack: () => void;
@@ -252,6 +253,7 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [showSoundWord, setShowSoundWord] = useState(false);
   const [showRoundSuccess, setShowRoundSuccess] = useState(false);
+  const [gameFinished, setGameFinished] = useState(false);
 
   const instrumentScale = useRef(new Animated.Value(1)).current;
   const instrumentRotation = useRef(new Animated.Value(0)).current;
@@ -413,10 +415,8 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
     }
 
     if (nextHits >= requiredTaps) {
-      setTimeout(() => {
-        onComplete?.();
-        setTimeout(() => onBack(), 2000);
-      }, 2000);
+      setGameFinished(true);
+      setShowRoundSuccess(false);
     }
   }, [isPlaying, currentInstrument, hits, requiredTaps, activeInstruments, playDrum, playBell, playHorn, onComplete, onBack]);
 
@@ -426,6 +426,34 @@ export const TapToMakeSoundGame: React.FC<Props> = ({
 
   const progressDots = Array.from({ length: requiredTaps }, (_, i) => i < hits);
   const instrument = activeInstruments[currentInstrument];
+
+  // Show completion screen with stats when game finishes
+  if (gameFinished) {
+    const accuracyPct = hits >= requiredTaps ? 100 : Math.round((hits / requiredTaps) * 100);
+    const xpAwarded = hits * 10;
+    return (
+      <CongratulationsScreen
+        message="Great Sounds!"
+        showButtons={true}
+        correct={hits}
+        total={requiredTaps}
+        accuracy={accuracyPct}
+        xpAwarded={xpAwarded}
+        onContinue={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          onComplete?.();
+        }}
+        onHome={() => {
+          clearScheduledSpeech();
+          Speech.stop();
+          stopAllSpeech();
+          cleanupSounds();
+          onBack();
+        }}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

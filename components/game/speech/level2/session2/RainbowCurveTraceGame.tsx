@@ -5,7 +5,7 @@
  */
 
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -783,30 +783,18 @@ export function RainbowCurveTraceGame({ onBack, onComplete }: Props) {
 
   if (gameState === 'gameComplete' && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['#E0F2FE', '#F0F9FF', '#FFFFFF']}
-          style={StyleSheet.absoluteFillObject}
-        />
-      <ResultCard
-          correct={totalStars}
-          total={TOTAL_ROUNDS * 3}
-          accuracy={finalStats.accuracy}
-          xpAwarded={totalStars * 50}
-          logTimestamp={logTimestamp}
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
+        correct={totalStars}
+        total={TOTAL_ROUNDS * 3}
+        accuracy={finalStats.accuracy}
+        xpAwarded={totalStars * 50}
+        onContinue={() => {
+          onComplete?.();
+        }}
         onHome={onBack}
-        onPlayAgain={() => {
-            setGameState('calibration');
-            setCurrentRound(1);
-            setRoundResults([]);
-            setTotalStars(0);
-          setFinalStats(null);
-            setCoverage(0);
-            setTimeRemaining(ROUND_TIME_MS);
-            startCalibration();
-          }}
-        />
-      </SafeAreaView>
+      />
     );
   }
 

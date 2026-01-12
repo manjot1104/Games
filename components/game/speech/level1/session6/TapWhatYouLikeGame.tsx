@@ -15,7 +15,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 
@@ -384,54 +384,21 @@ export const TapWhatYouLikeGame: React.FC<Props> = ({
 
   if (gameFinished && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity
-          onPress={() => {
-            clearScheduledSpeech();
-            Speech.stop();
-            onBack();
-          }}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-
-        <ScrollView contentContainerStyle={styles.completionScroll}>
-          <LinearGradient
-            colors={['#FEF3C7', '#FDE68A', '#FFFFFF']}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.completionContent}>
-            <ResultCard
-              correct={finalStats.choicesMade}
-              total={finalStats.totalChoices}
-              xpAwarded={finalStats.choicesMade * 10}
-              accuracy={finalStats.accuracy}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setChoices(0);
-                setCurrentPairIndex(0);
-                setGameFinished(false);
-                setFinalStats(null);
-                setSelectedItem(null);
-                setIsAnimating(false);
-                leftScale.setValue(1);
-                rightScale.setValue(1);
-                leftRotation.setValue(0);
-                rightRotation.setValue(0);
-                startGlowAnimation();
-                speak('Choose the one you like!');
-              }}
-              onHome={() => {
-                clearScheduledSpeech();
-                Speech.stop();
-                onBack();
-              }}
-            />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
+        correct={finalStats.choicesMade}
+        total={finalStats.totalChoices}
+        accuracy={finalStats.accuracy}
+        xpAwarded={finalStats.choicesMade * 10}
+        onContinue={() => {
+          clearScheduledSpeech();
+          stopAllSpeech();
+          cleanupSounds();
+          onComplete?.();
+        }}
+        onHome={onBack}
+      />
     );
   }
 

@@ -82,62 +82,32 @@ import RoadRollerGame from '@/components/game/RoadRollerGame';
 import StartStopLineGame from '@/components/game/StartStopLineGame';
 import TrainTrackLineGame from '@/components/game/TrainTrackLineGame';
 
-// Occupational Therapy Level 3 Session 1: Tap with Rhythm (Drum Beats) - uses Session 3 games
-// Occupational Therapy Level 3 Session 2: Big vs Small Movements - uses Session 4 games
+// Occupational Therapy Level 3 Session 1: Tap with Rhythm (Drum Beats)
+import { BeatMatchTapGame } from '@/components/game/BeatMatchTapGame';
+import { CopyMyRhythmGame } from '@/components/game/CopyMyRhythmGame';
+import { InstrumentChoiceGame } from '@/components/game/InstrumentChoiceGame';
+import { LoudSoftRhythmGame } from '@/components/game/LoudSoftRhythmGame';
+import { StopGoDrumGame } from '@/components/game/StopGoDrumGame';
+
+// Occupational Therapy Level 3 Session 2: Big vs Small Movements
+import BigSwipeSmallSwipeGame from '@/components/game/occupational/level3/session2/BigSwipeSmallSwipeGame';
+import BigTapSmallTapGame from '@/components/game/occupational/level3/session2/BigTapSmallTapGame';
+import BigThrowSmallThrowGame from '@/components/game/occupational/level3/session2/BigThrowSmallThrowGame';
+import StretchPinchGame from '@/components/game/occupational/level3/session2/StretchPinchGame';
 
 // Occupational Therapy Level 3 Session 3: Tap with Rhythm (Drum Beats)
-import DoubleBeatCopyGame from '@/components/game/occupational/level3/session3/DoubleBeatCopyGame';
-import FastBeatChallengeGame from '@/components/game/occupational/level3/session3/FastBeatChallengeGame';
-import PauseAndTapGame from '@/components/game/occupational/level3/session3/PauseAndTapGame';
-import SingleBeatTapGame from '@/components/game/occupational/level3/session3/SingleBeatTapGame';
-import SlowBeatCalmModeGame from '@/components/game/occupational/level3/session3/SlowBeatCalmModeGame';
 // Occupational Therapy Level 3 Session 3: Fast vs Slow Movements
-import FastRabbitRunGame from '@/components/game/occupational/level3/session3/FastRabbitRunGame';
-import MusicSpeedControlGame from '@/components/game/occupational/level3/session3/MusicSpeedControlGame';
-import SlowTurtleMoveGame from '@/components/game/occupational/level3/session3/SlowTurtleMoveGame';
-import SpeedMatchGame from '@/components/game/occupational/level3/session3/SpeedMatchGame';
-import TrafficLightGame from '@/components/game/occupational/level3/session3/TrafficLightGame';
 
 // Occupational Therapy Level 3 Session 4: Big vs Small Movements
-import BalloonInflateGameOT from '@/components/game/occupational/level3/session4/BalloonInflateGame';
-import BigSmallSwitchGame from '@/components/game/occupational/level3/session4/BigSmallSwitchGame';
-import BigTapGame from '@/components/game/occupational/level3/session4/BigTapGame';
-import CompareAndMoveGame from '@/components/game/occupational/level3/session4/CompareAndMoveGame';
-import SmallDotTouchGame from '@/components/game/occupational/level3/session4/SmallDotTouchGame';
 // Occupational Therapy Level 3 Session 4: Up-Down Gestures
-import BallDropGame from '@/components/game/occupational/level3/session4/BallDropGame';
-import BalloonUpGame from '@/components/game/occupational/level3/session4/BalloonUpGame';
-import ElevatorGame from '@/components/game/occupational/level3/session4/ElevatorGame';
-import JumpArrowGame from '@/components/game/occupational/level3/session4/JumpArrowGame';
-import RainCatchGame from '@/components/game/occupational/level3/session4/RainCatchGame';
 
 // Occupational Therapy Level 3 Session 5: Left-Right Swipes
-import AnimalRunGame from '@/components/game/occupational/level3/session5/AnimalRunGame';
-import ArrowMatchGame from '@/components/game/occupational/level3/session5/ArrowMatchGame';
-import CarTurnGame from '@/components/game/occupational/level3/session5/CarTurnGame';
-import CatchTheBallGame from '@/components/game/occupational/level3/session5/CatchTheBallGame';
-import MirrorSwipeGame from '@/components/game/occupational/level3/session5/MirrorSwipeGame';
 
 // Occupational Therapy Level 3 Session 6: Jump Imitation (Tap Twice)
-import DoubleTapOnlyGame from '@/components/game/occupational/level3/session6/DoubleTapOnlyGame';
-import FrogJumpGame from '@/components/game/occupational/level3/session6/FrogJumpGame';
-import JumpCountGame from '@/components/game/occupational/level3/session6/JumpCountGame';
-import ObstacleJumpGame from '@/components/game/occupational/level3/session6/ObstacleJumpGame';
-import RhythmJumpGame from '@/components/game/occupational/level3/session6/RhythmJumpGame';
 
 // Occupational Therapy Level 3 Session 7: Swinging Movement Imitation
-import FanMotionGame from '@/components/game/occupational/level3/session7/FanMotionGame';
-import MonkeySwingGame from '@/components/game/occupational/level3/session7/MonkeySwingGame';
-import MusicSwingGame from '@/components/game/occupational/level3/session7/MusicSwingGame';
-import PendulumCopyGame from '@/components/game/occupational/level3/session7/PendulumCopyGame';
-import RopeSwingTimingGame from '@/components/game/occupational/level3/session7/RopeSwingTimingGame';
 
 // Occupational Therapy Level 3 Session 8: Whole Body Map
-import BodyFlashGame from '@/components/game/occupational/level3/session8/BodyFlashGame';
-import BodyPuzzleGame from '@/components/game/occupational/level3/session8/BodyPuzzleGame';
-import FollowTheBodyGame from '@/components/game/occupational/level3/session8/FollowTheBodyGame';
-import ShouldersTapGame from '@/components/game/occupational/level3/session8/ShouldersTapGame';
-import TouchHeadGame from '@/components/game/occupational/level3/session8/TouchHeadGame';
 
 
 // Speech Therapy Level 2 Session 3 (Airflow Games)
@@ -528,6 +498,82 @@ export default function SessionGamesScreen() {
   const therapyId = params.therapy || 'speech';
   const levelNumber = params.level ? parseInt(params.level, 10) : 1;
   const sessionNumber = params.session ? parseInt(params.session, 10) : 1;
+
+  // Function to get the next game in sequence
+  const getNextGame = React.useCallback((currentGameId: GameKey): { gameId: GameKey | null; nextSession?: number; nextLevel?: number } | null => {
+    // Get all available games for current session (already filtered by availability flags)
+    const availableGames = GAMES.filter(game => game.available);
+    
+    // Find current game index in available games
+    const currentIndex = availableGames.findIndex(game => game.id === currentGameId);
+    if (currentIndex === -1) {
+      // Current game not found in available games, try to find next available game
+      if (availableGames.length > 0) {
+        return { gameId: availableGames[0].id as GameKey };
+      }
+      // No available games, check next session/level
+    } else {
+      // Check if there's a next game in the same session
+      if (currentIndex < availableGames.length - 1) {
+        return { gameId: availableGames[currentIndex + 1].id as GameKey };
+      }
+    }
+
+    // No more games in current session, check next session
+    if (sessionNumber < 10) {
+      return { gameId: null, nextSession: sessionNumber + 1 };
+    }
+
+    // No more sessions in current level, check next level
+    if (levelNumber < 10) {
+      return { gameId: null, nextLevel: levelNumber + 1, nextSession: 1 };
+    }
+
+    // No more games/sessions/levels
+    return null;
+  }, [therapyId, levelNumber, sessionNumber]);
+
+  // Handle continue to next game
+  const handleContinue = React.useCallback(() => {
+    if (currentGame === 'menu') return;
+    
+    const next = getNextGame(currentGame);
+    if (!next) {
+      // No more games, go back to menu
+      setCurrentGame('menu');
+      return;
+    }
+
+    if (next.nextLevel) {
+      // Navigate to next level, session 1
+      router.push({
+        pathname: '/(tabs)/SessionGames',
+        params: {
+          therapy: therapyId,
+          level: next.nextLevel.toString(),
+          session: '1',
+        },
+      });
+      setCurrentGame('menu');
+    } else if (next.nextSession) {
+      // Navigate to next session
+      router.push({
+        pathname: '/(tabs)/SessionGames',
+        params: {
+          therapy: therapyId,
+          level: levelNumber.toString(),
+          session: next.nextSession.toString(),
+        },
+      });
+      setCurrentGame('menu');
+    } else if (next.gameId) {
+      // Go to next game in same session
+      setCurrentGame(next.gameId);
+    } else {
+      // Fallback: go back to menu
+      setCurrentGame('menu');
+    }
+  }, [currentGame, getNextGame, router, therapyId, levelNumber]);
 
   const isFollowBallAvailable =
     therapyId === 'speech' && levelNumber === 1 && sessionNumber === 1;
@@ -3433,171 +3479,46 @@ export default function SessionGamesScreen() {
   }
 
   // Level 3 Session 1 games - Tap with Rhythm
-  if (currentGame === 'single-beat-tap') {
-    return <SingleBeatTapGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'beat-match-tap') {
+    return <BeatMatchTapGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'double-beat-copy') {
-    return <DoubleBeatCopyGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'copy-my-rhythm') {
+    return <CopyMyRhythmGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'pause-and-tap') {
-    return <PauseAndTapGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'stop-go-drum') {
+    return <StopGoDrumGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'fast-beat-challenge') {
-    return <FastBeatChallengeGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'loud-soft-rhythm') {
+    return <LoudSoftRhythmGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'slow-beat-calm-mode') {
-    return <SlowBeatCalmModeGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'instrument-choice') {
+    return <InstrumentChoiceGame onBack={() => setCurrentGame('menu')} />;
   }
 
   // Level 3 Session 2 games - Big vs Small Movements
-  if (currentGame === 'big-tap-l3s4') {
-    return <BigTapGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'big-swipe-small-swipe') {
+    return <BigSwipeSmallSwipeGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'small-dot-touch') {
-    return <SmallDotTouchGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'big-tap-small-tap') {
+    return <BigTapSmallTapGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'big-small-switch') {
-    return <BigSmallSwitchGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'stretch-pinch') {
+    return <StretchPinchGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'balloon-inflate-l3s4') {
-    return <BalloonInflateGameOT onBack={() => setCurrentGame('menu')} />;
-  }
+  // Note: BigPathTraceGame doesn't exist yet, commenting out
+  // if (currentGame === 'big-path-trace') {
+  //   return <BigPathTraceGame onBack={() => setCurrentGame('menu')} />;
+  // }
 
-  if (currentGame === 'compare-and-move') {
-    return <CompareAndMoveGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  // Level 3 Session 4: Up-Down Gestures
-  if (currentGame === 'balloon-up') {
-    return <BalloonUpGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'ball-drop') {
-    return <BallDropGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'elevator-game') {
-    return <ElevatorGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'jump-arrow') {
-    return <JumpArrowGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'rain-catch') {
-    return <RainCatchGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  // Level 3 Session 5: Left-Right Swipes
-  if (currentGame === 'car-turn') {
-    return <CarTurnGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'arrow-match') {
-    return <ArrowMatchGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'animal-run') {
-    return <AnimalRunGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'mirror-swipe') {
-    return <MirrorSwipeGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'catch-the-ball') {
-    return <CatchTheBallGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  // Level 3 Session 6: Jump Imitation (Tap Twice)
-  if (currentGame === 'frog-jump') {
-    return <FrogJumpGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'jump-count') {
-    return <JumpCountGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'double-tap-only') {
-    return <DoubleTapOnlyGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'rhythm-jump') {
-    return <RhythmJumpGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'obstacle-jump') {
-    return <ObstacleJumpGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  // Level 3 Session 7: Swinging Movement Imitation
-  if (currentGame === 'pendulum-copy') {
-    return <PendulumCopyGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'monkey-swing') {
-    return <MonkeySwingGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'fan-motion') {
-    return <FanMotionGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'rope-swing-timing') {
-    return <RopeSwingTimingGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'music-swing') {
-    return <MusicSwingGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  // Level 3 Session 8: Whole Body Map
-  if (currentGame === 'touch-head') {
-    return <TouchHeadGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'shoulders-tap') {
-    return <ShouldersTapGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'body-puzzle') {
-    return <BodyPuzzleGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'follow-the-body') {
-    return <FollowTheBodyGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'body-flash') {
-    return <BodyFlashGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  // Level 3 Session 3: Fast vs Slow Movements
-  if (currentGame === 'slow-turtle-move') {
-    return <SlowTurtleMoveGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'fast-rabbit-run') {
-    return <FastRabbitRunGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'speed-match') {
-    return <SpeedMatchGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'traffic-light-game') {
-    return <TrafficLightGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'music-speed-control') {
-    return <MusicSpeedControlGame onBack={() => setCurrentGame('menu')} />;
+  if (currentGame === 'big-throw-small-throw') {
+    return <BigThrowSmallThrowGame onBack={() => setCurrentGame('menu')} />;
   }
 
   // ---------- Menu UI ----------

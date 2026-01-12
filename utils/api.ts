@@ -7,23 +7,25 @@ const FALLBACK_BASE = Platform.select({
 });
 
 // Detect if we're running on localhost (for web)
-const isLocalhost = Platform.OS === 'web' && 
-  (typeof window !== 'undefined' && 
-   (window.location.hostname === 'localhost' || 
-    window.location.hostname === '127.0.0.1' ||
-    window.location.hostname === ''));
+const isLocalhost =
+  Platform.OS === 'web' &&
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' ||
+   window.location.hostname === '127.0.0.1');
+
 
 // Normalize API_BASE_URL: remove trailing slash and /api if present
 // (since all endpoints already include /api/)
 // If running on localhost, force localhost URL regardless of env var
 let rawBase: string;
 if (isLocalhost) {
-  // Force localhost when running locally
   rawBase = 'http://localhost:4000';
-  console.log('[API] Localhost detected, forcing localhost:4000');
 } else {
-  rawBase = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || FALLBACK_BASE!;
+  rawBase =
+    process.env.EXPO_PUBLIC_API_BASE_URL?.trim() ||
+    'https://child-wellness.onrender.com'; // HARD SAFE PROD FALLBACK
 }
+
 
 // Remove trailing slash
 rawBase = rawBase.replace(/\/+$/, '');

@@ -1,11 +1,12 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     Animated,
     Easing,
@@ -86,6 +87,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
   const [incorrectTaps, setIncorrectTaps] = useState(0);
   const [showInstruction, setShowInstruction] = useState(false);
   const [showArrow, setShowArrow] = useState(false);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const leftScale = useRef(new Animated.Value(0)).current;
@@ -103,6 +105,8 @@ export const FollowTheArrowGame: React.FC<Props> = ({
   // Timeouts
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const arrowBounceRef = useRef<Animated.CompositeAnimation | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     if (tapTimeoutRef.current) {
@@ -115,6 +119,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps;
@@ -156,7 +161,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
       return;
     }
     setTimeout(() => {
-      startRound();
+      startRoundRef.current?.();
     }, 1000);
   }, [requiredRounds]);
 
@@ -333,7 +338,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
           setTimeout(() => {
             setRounds(prev => {
               const nextRound = prev + 1;
-              advanceToNextRound(nextRound);
+              advanceToNextRoundRef.current?.(nextRound);
               return nextRound;
             });
           }, 400);
@@ -342,7 +347,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
         }, 8000)) as unknown as NodeJS.Timeout;
       }, INSTRUCTION_DELAY_MS);
     }, 800);
-  }, [rounds, requiredRounds, canTap, isProcessing, advanceToNextRound]);
+  }, [rounds, requiredRounds, canTap, isProcessing]);
 
   const handleObjectTap = useCallback((side: 'left' | 'right') => {
     if (isProcessing || !canTap) return;
@@ -398,7 +403,11 @@ export const FollowTheArrowGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Excellent!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       setTimeout(() => {
@@ -433,7 +442,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -464,7 +473,7 @@ export const FollowTheArrowGame: React.FC<Props> = ({
       speak('Follow the arrow!');
       setIsProcessing(false);
     }
-  }, [isProcessing, canTap, targetSide, leftScale, rightScale, advanceToNextRound]);
+  }, [isProcessing, canTap, targetSide, leftScale, rightScale]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -472,11 +481,19 @@ export const FollowTheArrowGame: React.FC<Props> = ({
     }
   }, [rounds, requiredRounds, gameFinished, finishGame]);
 
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
+
   useEffect(() => {
     try {
       speak('Follow the arrow and tap the object it points to!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -488,31 +505,25 @@ export const FollowTheArrowGame: React.FC<Props> = ({
         arrowBounceRef.current.stop();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setIncorrectTaps(0);
-          setLogTimestamp(null);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -698,6 +709,12 @@ export const FollowTheArrowGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

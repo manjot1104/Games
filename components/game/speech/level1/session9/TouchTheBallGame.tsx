@@ -1,11 +1,12 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
+import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Speech from 'expo-speech';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -82,6 +83,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
   const [incorrectTaps, setIncorrectTaps] = useState(0);
   const [showInstruction, setShowInstruction] = useState(false);
   const [glowingObjectId, setGlowingObjectId] = useState<number | null>(null);
+  const [showRoundSuccess, setShowRoundSuccess] = useState(false);
   
   // Animations
   const objectScales = useRef<Map<number, Animated.Value>>(new Map()).current;
@@ -96,6 +98,8 @@ export const TouchTheBallGame: React.FC<Props> = ({
   // Timeouts
   const glowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const startRoundRef = useRef<() => void>(undefined);
+  const advanceToNextRoundRef = useRef<(nextRound: number) => void>(undefined);
 
   const finishGame = useCallback(async () => {
     if (glowTimeoutRef.current) {
@@ -108,6 +112,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
     }
     
     setGameFinished(true);
+    setShowRoundSuccess(false); // Clear animation when game finishes
     clearScheduledSpeech();
 
     const totalAttempts = correctTaps + incorrectTaps;
@@ -143,15 +148,6 @@ export const TouchTheBallGame: React.FC<Props> = ({
       console.error('Failed to save game:', e);
     }
   }, [correctTaps, incorrectTaps, requiredRounds, onComplete]);
-
-  const advanceToNextRound = useCallback((nextRound: number) => {
-    if (nextRound >= requiredRounds) {
-      return;
-    }
-    setTimeout(() => {
-      startRound();
-    }, 1000);
-  }, [requiredRounds]);
 
   const startRound = useCallback(() => {
     // Clear timeouts
@@ -339,7 +335,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -347,7 +343,24 @@ export const TouchTheBallGame: React.FC<Props> = ({
         tapTimeoutRef.current = null;
       }, 8000)) as unknown as NodeJS.Timeout;
     }, 1000);
-  }, [rounds, requiredRounds, canTap, isProcessing, objectScales, objectOpacities, glowScales, glowOpacities, advanceToNextRound]);
+  }, [rounds, requiredRounds, canTap, isProcessing, objectScales, objectOpacities, glowScales, glowOpacities]);
+
+  useLayoutEffect(() => {
+    startRoundRef.current = startRound;
+  }, [startRound]);
+
+  const advanceToNextRound = useCallback((nextRound: number) => {
+    if (nextRound >= requiredRounds) {
+      return;
+    }
+    setTimeout(() => {
+      startRoundRef.current?.();
+    }, 1000);
+  }, [requiredRounds]);
+
+  useLayoutEffect(() => {
+    advanceToNextRoundRef.current = advanceToNextRound;
+  }, [advanceToNextRound]);
 
   const handleObjectTap = useCallback((objectName: string, objectId: number) => {
     if (isProcessing || !canTap) return;
@@ -398,7 +411,11 @@ export const TouchTheBallGame: React.FC<Props> = ({
         ]),
       ]).start();
 
-      speak('Good job!');
+      // Show success animation instead of TTS
+      setShowRoundSuccess(true);
+      setTimeout(() => {
+        setShowRoundSuccess(false);
+      }, 2500);
 
       // Hide and advance
       setTimeout(() => {
@@ -433,7 +450,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
         setTimeout(() => {
           setRounds(prev => {
             const nextRound = prev + 1;
-            advanceToNextRound(nextRound);
+            advanceToNextRoundRef.current?.(nextRound);
             return nextRound;
           });
         }, 400);
@@ -463,7 +480,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
       speak('Try the other one!');
       setIsProcessing(false);
     }
-  }, [isProcessing, canTap, targetObject, objects, objectScales, objectOpacities, advanceToNextRound]);
+  }, [isProcessing, canTap, targetObject, objects, objectScales, objectOpacities]);
 
   useEffect(() => {
     if (rounds >= requiredRounds && !gameFinished) {
@@ -475,7 +492,7 @@ export const TouchTheBallGame: React.FC<Props> = ({
     try {
       speak('Touch the ball when it appears!');
     } catch {}
-    startRound();
+    startRoundRef.current?.();
     return () => {
       clearScheduledSpeech();
       stopAllSpeech();
@@ -487,31 +504,25 @@ export const TouchTheBallGame: React.FC<Props> = ({
         clearTimeout(tapTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (gameFinished && finalStats) {
     return (
-      <ResultCard
+      <CongratulationsScreen
+        message="Amazing Work!"
+        showButtons={true}
         correct={finalStats.correctTaps}
         total={finalStats.totalRounds}
         accuracy={finalStats.accuracy}
         xpAwarded={finalStats.xpAwarded}
-        logTimestamp={logTimestamp}
-        onHome={() => {
+        onContinue={() => {
           clearScheduledSpeech();
           stopAllSpeech();
           cleanupSounds();
-          onBack();
+          onComplete?.();
         }}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setRounds(0);
-          setCorrectTaps(0);
-          setIncorrectTaps(0);
-          setLogTimestamp(null);
-          startRound();
-        }}
+        onHome={onBack}
       />
     );
   }
@@ -674,6 +685,12 @@ export const TouchTheBallGame: React.FC<Props> = ({
           </View>
         </View>
       </LinearGradient>
+
+      {/* Round Success Animation */}
+      <RoundSuccessAnimation
+        visible={showRoundSuccess}
+        stars={3}
+      />
     </SafeAreaView>
   );
 };

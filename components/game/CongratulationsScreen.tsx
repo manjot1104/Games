@@ -23,6 +23,11 @@ type Props = {
   onHome?: () => void;
   message?: string;
   showButtons?: boolean;
+  // Stats props (like ResultCard)
+  correct?: number;
+  total?: number;
+  accuracy?: number;
+  xpAwarded?: number;
 };
 
 export default function CongratulationsScreen({
@@ -30,10 +35,21 @@ export default function CongratulationsScreen({
   onHome,
   message = 'Congratulations!',
   showButtons = true,
+  correct,
+  total,
+  accuracy,
+  xpAwarded,
 }: Props) {
   const { width, height } = useWindowDimensions();
   const isTablet = width >= 768;
   const isMobile = width < 600;
+  
+  // Calculate accuracy percentage if not provided
+  const accuracyPct = accuracy !== undefined 
+    ? accuracy 
+    : (correct !== undefined && total !== undefined && total > 0)
+      ? Math.round((correct / total) * 100)
+      : undefined;
 
   const renderLottie = (animationData: any, size: number, style?: any) => {
     if (Platform.OS === 'web') {
@@ -116,6 +132,32 @@ export default function CongratulationsScreen({
             You did an amazing job! 🎉
           </Text>
         </View>
+
+        {/* Stats Section (like ResultCard) */}
+        {(correct !== undefined || accuracyPct !== undefined || xpAwarded !== undefined) && (
+          <View style={styles.statsContainer}>
+            {correct !== undefined && total !== undefined && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Score</Text>
+                <Text style={styles.statValue}>
+                  {correct}/{total}
+                </Text>
+              </View>
+            )}
+            {accuracyPct !== undefined && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>Accuracy</Text>
+                <Text style={styles.statValue}>{accuracyPct}%</Text>
+              </View>
+            )}
+            {xpAwarded !== undefined && (
+              <View style={styles.statRow}>
+                <Text style={styles.statLabel}>XP Earned</Text>
+                <Text style={[styles.statValue, styles.xpValue]}>+{xpAwarded} XP</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Buttons */}
         {showButtons && (
@@ -256,6 +298,42 @@ const styles = StyleSheet.create({
   },
   homeButtonText: {
     color: '#92400E',
+  },
+  statsContainer: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 30,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }
+      : {
+          shadowColor: '#000',
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 4 },
+          elevation: 4,
+        }),
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7280',
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#111827',
+  },
+  xpValue: {
+    color: '#16A34A',
   },
 });
 
