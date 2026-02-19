@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -214,7 +214,7 @@ const DotBorderShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log dot border shapes game:', e);
       }
 
-      Speech.speak('Shape traced!', { rate: 0.78 });
+      speakTTS('Shape traced!', 0.78 );
     },
     [router],
   );
@@ -371,7 +371,7 @@ const DotBorderShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Trace the whole shape!', { rate: 0.78 });
+          speakTTS('Trace the whole shape!', 0.78 );
         } catch {}
       }
     });
@@ -385,7 +385,7 @@ const DotBorderShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     lastProgress.current = 0;
     updatePaths();
     try {
-      Speech.speak('Trace the dotted border shape with precision!', { rate: 0.78 });
+      speakTTS('Trace the dotted border shape with precision!', 0.78 );
     } catch {}
     
     return () => {

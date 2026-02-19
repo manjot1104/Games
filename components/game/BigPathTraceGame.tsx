@@ -1,9 +1,9 @@
 import { logGameAndAward } from '@/utils/api';
 import { stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { PanResponder, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
@@ -100,11 +100,11 @@ export const BigPathTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
       if (isAccurate) {
         setCorrect((c) => c + 1);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        Speech.speak('Perfect trace!');
+        speakTTS('Perfect trace!');
       } else {
         setWrong((w) => w + 1);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        Speech.speak('Try again!');
+        speakTTS('Try again!');
       }
 
       // Reset and next round
@@ -115,7 +115,7 @@ export const BigPathTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
           setPathType(newType);
           setCurrentPath(generatePath(newType));
           setRound((r) => r + 1);
-          Speech.speak(newType === 'wide' ? 'Trace the WIDE road!' : 'Trace the THIN road!');
+          speakTTS(newType === 'wide' ? 'Trace the WIDE road!' : 'Trace the THIN road!');
         } else {
           finishGame();
         }
@@ -132,7 +132,7 @@ export const BigPathTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
     setPathType(initialType);
     setCurrentPath(generatePath(initialType));
     setTracePath([]);
-    Speech.speak('Trace the path! Start from the left!');
+    speakTTS('Trace the path! Start from the left!');
   };
 
   const finishGame = async () => {
@@ -159,7 +159,7 @@ export const BigPathTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
       console.error('Failed to save game:', e);
     }
 
-    Speech.speak('Amazing! You traced all the paths perfectly!');
+    speakTTS('Amazing! You traced all the paths perfectly!');
   };
 
 

@@ -4,8 +4,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { speak as speakTTS, speakSequence, clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
 import { FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
     Easing,
@@ -58,54 +58,16 @@ function BigButton({
   );
 }
 
-// Better TTS helpers: speak one piece, or a sequence (question + options)
-// defaultRate chosen to be slightly slower for kids — tweak as needed
-const DEFAULT_TTS_RATE = 0.78;
+// Use shared TTS utility (speech-to-speech on web, expo-speech on native)
+// Imported from @/utils/tts
 let lastSpokenQuestionId: number | string | null = null;
-let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
 
-function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
-  scheduledSpeechTimers = [];
-  try {
-    Speech.stop();
-  } catch { }
-}
+// Local rate override for this component (slightly slower for kids)
+const LOCAL_TTS_RATE = 0.78;
 
-function speak(text: string, rate = DEFAULT_TTS_RATE) {
-  try {
-    clearScheduledSpeech();
-    Speech.speak(text, { rate });
-  } catch (e) {
-    console.warn('speak error', e);
-  }
-}
-
-/**
- * Speak a sequence of short phrases with small gaps.
- * texts: array of strings to speak in order.
- * rate: speech rate (0.4..1.5)
- * gapMs: gap between phrases (ms)
- */
-function speakSequence(texts: string[], rate = DEFAULT_TTS_RATE, gapMs = 450) {
-  try {
-    clearScheduledSpeech();
-    if (!texts || texts.length === 0) return;
-    // speak first immediately
-    Speech.speak(texts[0], { rate });
-
-    // subsequent items with small timeout
-    for (let i = 1; i < texts.length; i++) {
-      const delay = gapMs * i;
-      const timer = setTimeout(() => {
-        // Note: calling Speech.speak repeatedly queues new utterances on native platforms
-        Speech.speak(texts[i], { rate });
-      }, delay);
-      scheduledSpeechTimers.push(timer);
-    }
-  } catch (e) {
-    console.warn('speakSequence error', e);
-  }
+// Wrapper to use local rate
+function speak(text: string, rate = LOCAL_TTS_RATE) {
+  speakTTS(text, rate);
 }
 
 /** Helper to speak a question + options nicely:
@@ -116,7 +78,7 @@ function speakQuestionWithOptions(
   question: string,
   options: string[],
   questionId?: number | string | null,
-  rate = DEFAULT_TTS_RATE
+  rate = LOCAL_TTS_RATE
 ) {
   if (!question) return;
   if (questionId !== undefined && questionId !== null && lastSpokenQuestionId === questionId) return;

@@ -5,7 +5,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -112,14 +112,14 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => {
     try {
-      Speech.speak('Watch the slow balloon and tap it before it reaches the other side!', { rate: 0.78 });
+      speakTTS('Watch the slow balloon and tap it before it reaches the other side!', 0.78 );
     } catch {}
     startRound();
     return () => {
       currentAnimRef.current?.stop();
       // Cleanup: Stop speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -139,7 +139,7 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setDone(true);
       setShowCongratulations(true);
       
-      Speech.speak('Amazing work! You completed the game!', { rate: 0.78 });
+      speakTTS('Amazing work! You completed the game!', 0.78 );
 
       // Log game in background (don't wait for it)
       try {

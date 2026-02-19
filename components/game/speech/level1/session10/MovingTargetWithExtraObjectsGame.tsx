@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -26,7 +26,6 @@ type Props = {
 
 const TARGET_SIZE = 150;
 const DISTRACTION_SIZE = 120;
-const DEFAULT_TTS_RATE = 0.75;
 const MOVEMENT_DURATION_MS = 7000;
 const TAP_TIMEOUT_MS = 12000;
 const MIN_DISTANCE_BETWEEN_OBJECTS = 180; // Minimum distance to avoid overlap
@@ -37,14 +36,14 @@ function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
   scheduledSpeechTimers = [];
   try {
-    Speech.stop();
+    stopTTS();
   } catch {}
 }
 
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
   try {
     clearScheduledSpeech();
-    Speech.speak(text, { rate });
+    speakTTS(text, rate);
   } catch (e) {
     console.warn('speak error', e);
   }

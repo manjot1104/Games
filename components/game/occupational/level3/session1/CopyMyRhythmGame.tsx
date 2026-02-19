@@ -4,7 +4,7 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, playSound } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     SafeAreaView,
@@ -54,7 +54,7 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       if (beatIndex >= currentPattern.length) {
         setIsPlaying(false);
         setPhase('tap');
-        Speech.speak('Now tap the same pattern!', { rate: 0.9 });
+        speakTTS('Now tap the same pattern!', 0.9 );
         return;
       }
 
@@ -64,7 +64,7 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       beatIndex++;
     };
 
-    Speech.speak('Listen to the pattern!', { rate: 0.9 });
+    speakTTS('Listen to the pattern!', 0.9 );
     setTimeout(() => playNextBeat(), 500);
   }, [currentPattern]);
 
@@ -76,7 +76,7 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setUserTaps([]);
     setIsPlaying(false);
     if (round === 1) {
-      Speech.speak('Listen to the rhythm pattern, then tap the same pattern!', { rate: 0.9 });
+      speakTTS('Listen to the rhythm pattern, then tap the same pattern!', { rate: 0.9 });
     }
     setTimeout(() => playPattern(), 1000);
   }, [round, done, currentPattern, playPattern]);
@@ -159,7 +159,7 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => {
       // Cleanup: Stop all sounds and speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -198,7 +198,7 @@ const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <TouchableOpacity
           onPress={() => {
             try {
-              Speech.stop();
+              stopTTS();
             } catch (e) {
               // Ignore errors
             }

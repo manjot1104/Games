@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -140,7 +140,7 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playFlicker();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Release now!', { rate: 0.78 });
+          speakTTS('Release now!', 0.78 );
         } catch {}
 
         setTimeout(() => {
@@ -186,7 +186,7 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log hold the light game:', e);
       }
 
-      Speech.speak('Perfect lighting!', { rate: 0.78 });
+      speakTTS('Perfect lighting!', 0.78 );
     },
     [router],
   );
@@ -258,7 +258,7 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Speech.speak('Hold longer for full brightness!', { rate: 0.78 });
+        speakTTS('Hold longer for full brightness!', 0.78 );
       } catch {}
 
       // Re-enable after brief delay
@@ -271,7 +271,7 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial instruction - only once
   useEffect(() => {
     try {
-      Speech.speak('Press and hold to make the bulb glow brighter. Release at full brightness!', { rate: 0.78 });
+      speakTTS('Press and hold to make the bulb glow brighter. Release at full brightness!', 0.78 );
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount

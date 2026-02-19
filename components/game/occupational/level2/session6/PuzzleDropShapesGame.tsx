@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -136,7 +136,7 @@ const PuzzleDropShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         console.error('Failed to log puzzle drop shapes game:', e);
       }
 
-      Speech.speak('Puzzle complete!', { rate: 0.78 });
+      speakTTS('Puzzle complete!', 0.78 );
     },
     [router],
   );
@@ -198,14 +198,14 @@ const PuzzleDropShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         try {
           playWarning();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Drag to the outline!', { rate: 0.78 });
+          speakTTS('Drag to the outline!', 0.78 );
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Drag the shape to match the outline!', { rate: 0.78 });
+      speakTTS('Drag the shape to match the outline!', 0.78 );
     } catch {}
     generateRound();
     

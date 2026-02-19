@@ -10,6 +10,16 @@ const router = express.Router();
 // Log that router is being loaded
 console.log('[SUBSCRIPTION ROUTER] Router module loaded');
 
+// Middleware to ensure CORS headers on all responses from this router
+router.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  next();
+});
+
 // Test route to verify router is working
 router.get('/test', (req, res) => {
   console.log('[SUBSCRIPTION ROUTER] Test route hit');
@@ -46,7 +56,7 @@ try {
 }
 
 // Monthly subscription plan configuration
-const MONTHLY_PLAN_AMOUNT = 29900; // ₹299.00 in paise
+const MONTHLY_PLAN_AMOUNT = 5900; // ₹59.00 in paise
 const MONTHLY_PLAN_INTERVAL = 1; // 1 month
 const TRIAL_DAYS = 7;
 
@@ -80,6 +90,20 @@ const FREE_ACCESS_IDS = [
   ...(process.env.FREE_ACCESS_IDS ? process.env.FREE_ACCESS_IDS.split(',').map(id => id.trim()).filter(Boolean) : []),
 ].filter(Boolean); // Remove null/undefined/empty
 
+// Email whitelist: Emails that should always have free access
+// Add emails here or via FREE_ACCESS_EMAILS env variable (comma-separated)
+// 
+// EXAMPLES:
+// - manjot1104@gmail.com
+// - boss@company.com
+//
+// OR set in backend .env file:
+// FREE_ACCESS_EMAILS=manjot1104@gmail.com,boss@company.com,employee1@company.com
+const FREE_ACCESS_EMAILS = [
+  'manjot1104@gmail.com', // Added for free subscription access
+  ...(process.env.FREE_ACCESS_EMAILS ? process.env.FREE_ACCESS_EMAILS.split(',').map(email => email.trim().toLowerCase()).filter(Boolean) : []),
+].filter(Boolean); // Remove null/undefined/empty
+
 /**
  * Helper: Get or create subscription for user
  * Automatically starts 7-day free trial for new users
@@ -87,7 +111,7 @@ const FREE_ACCESS_IDS = [
  */
 async function getOrCreateSubscription(auth0Id, userId) {
   // Skip subscription creation for whitelisted users
-  if (hasFreeAccess(auth0Id)) {
+  if (await hasFreeAccess(auth0Id)) {
     console.log(`User ${auth0Id} has free access - skipping subscription creation`);
     return null;
   }
@@ -121,7 +145,7 @@ async function getOrCreateSubscription(auth0Id, userId) {
  * 
  * IMPORTANT: If Razorpay keys are not configured, ALL users get free access (for localhost development)
  */
-function hasFreeAccess(auth0Id) {
+async function hasFreeAccess(auth0Id) {
   // Check if free access is disabled for testing (to test Paywall)
   // Check both environment variable and temporary hardcoded flag
   const disableFreeAccess = FORCE_DISABLE_FREE_ACCESS || process.env.DISABLE_FREE_ACCESS_FOR_TESTING === 'true';
@@ -139,8 +163,28 @@ function hasFreeAccess(auth0Id) {
     return true;
   }
   
-  // Check whitelist
-  const isWhitelisted = FREE_ACCESS_IDS.includes(auth0Id);
+  // Check Auth0 ID whitelist
+  const isWhitelistedById = FREE_ACCESS_IDS.includes(auth0Id);
+  
+  // Check email whitelist by looking up user in database
+  let isWhitelistedByEmail = false;
+  if (!isWhitelistedById && FREE_ACCESS_EMAILS.length > 0) {
+    try {
+      const user = await User.findOne({ auth0Id });
+      if (user && user.email) {
+        const userEmail = user.email.toLowerCase().trim();
+        isWhitelistedByEmail = FREE_ACCESS_EMAILS.includes(userEmail);
+        if (isWhitelistedByEmail) {
+          console.log(`[FREE ACCESS] User ${auth0Id} (${userEmail}) is whitelisted by email`);
+        }
+      }
+    } catch (error) {
+      console.error(`[FREE ACCESS] Error checking email whitelist for ${auth0Id}:`, error);
+      // Continue with other checks if email lookup fails
+    }
+  }
+  
+  const isWhitelisted = isWhitelistedById || isWhitelistedByEmail;
   
   // Also allow if running on localhost (development)
   // If Razorpay keys are NOT configured, allow free access for everyone (localhost development)
@@ -164,9 +208,9 @@ function hasFreeAccess(auth0Id) {
   // Log for debugging
   const hasAccess = isWhitelisted || isLocalhost;
   if (hasAccess) {
-    console.log(`[FREE ACCESS] User ${auth0Id} has free access. Whitelisted: ${isWhitelisted}, Localhost: ${isLocalhost}, HasKeys: ${hasRazorpayKeys}, IsTestKey: ${isTestKey}`);
+    console.log(`[FREE ACCESS] User ${auth0Id} has free access. Whitelisted (ID): ${isWhitelistedById}, Whitelisted (Email): ${isWhitelistedByEmail}, Localhost: ${isLocalhost}, HasKeys: ${hasRazorpayKeys}, IsTestKey: ${isTestKey}`);
   } else {
-    console.log(`[FREE ACCESS] User ${auth0Id} does NOT have free access. Whitelisted: ${isWhitelisted}, Localhost: ${isLocalhost}`);
+    console.log(`[FREE ACCESS] User ${auth0Id} does NOT have free access. Whitelisted (ID): ${isWhitelistedById}, Whitelisted (Email): ${isWhitelistedByEmail}, Localhost: ${isLocalhost}`);
   }
   
   return hasAccess;
@@ -177,7 +221,7 @@ function hasFreeAccess(auth0Id) {
  */
 async function checkSubscriptionStatus(auth0Id) {
   // Check if user has free access (whitelisted)
-  if (hasFreeAccess(auth0Id)) {
+  if (await hasFreeAccess(auth0Id)) {
     return {
       hasAccess: true,
       status: 'free',
@@ -283,7 +327,7 @@ router.post('/create-subscription', async (req, res) => {
     }
     
     // Check if user has free access - don't create subscription
-    if (hasFreeAccess(auth0Id)) {
+    if (await hasFreeAccess(auth0Id)) {
       console.log(`[CREATE SUBSCRIPTION] User ${auth0Id} has free access - skipping subscription creation`);
       return res.json({
         ok: true,
@@ -300,6 +344,15 @@ router.post('/create-subscription', async (req, res) => {
     // Get or create subscription
     const subscription = await getOrCreateSubscription(auth0Id, user._id);
     
+    // Safety check: subscription should not be null at this point (free access already checked)
+    if (!subscription) {
+      console.error(`[CREATE SUBSCRIPTION] Unexpected: subscription is null for user ${auth0Id}`);
+      return res.status(500).json({
+        ok: false,
+        error: 'Failed to get or create subscription',
+      });
+    }
+    
     // Check if already has active subscription
     if (subscription.status === 'active' && subscription.isActive()) {
       return res.json({
@@ -313,6 +366,7 @@ router.post('/create-subscription', async (req, res) => {
     // This handles cases where previous subscription creation failed or has past start_at
     if (subscription.status === 'created' && subscription.razorpaySubscriptionId) {
       console.log(`[CREATE SUBSCRIPTION] Found existing 'created' subscription ${subscription.razorpaySubscriptionId} - cancelling to create fresh one`);
+      console.log(`[CREATE SUBSCRIPTION] Old plan ID stored in DB: ${subscription.razorpayPlanId}`);
       try {
         // Cancel the old subscription in Razorpay
         await razorpay.subscriptions.cancel(subscription.razorpaySubscriptionId);
@@ -321,10 +375,11 @@ router.post('/create-subscription', async (req, res) => {
         // If already cancelled or doesn't exist, continue
         console.log(`[CREATE SUBSCRIPTION] Could not cancel old subscription (may already be cancelled): ${error.message}`);
       }
-      // Clear the old subscription ID so we can create a new one
+      // Clear the old subscription ID and plan ID so we can create a new one with correct plan
       subscription.razorpaySubscriptionId = null;
       subscription.razorpayPlanId = null;
       await subscription.save();
+      console.log(`[CREATE SUBSCRIPTION] Cleared old subscription data - will create new one with correct plan (₹59)`);
     }
     
     // Check if Razorpay keys are configured
@@ -359,8 +414,13 @@ router.post('/create-subscription', async (req, res) => {
     // Create Razorpay plan if it doesn't exist (idempotent)
     let planId = process.env.RAZORPAY_PLAN_ID;
     
+    console.log('[CREATE SUBSCRIPTION] Checking for RAZORPAY_PLAN_ID in env...');
+    console.log('[CREATE SUBSCRIPTION] RAZORPAY_PLAN_ID from env:', planId || 'NOT SET');
+    console.log('[CREATE SUBSCRIPTION] MONTHLY_PLAN_AMOUNT:', MONTHLY_PLAN_AMOUNT, 'paise (₹' + (MONTHLY_PLAN_AMOUNT / 100) + ')');
+    
     if (!planId) {
       // Create plan dynamically (only if not set in env)
+      console.log('[CREATE SUBSCRIPTION] RAZORPAY_PLAN_ID not set - creating new plan with amount:', MONTHLY_PLAN_AMOUNT, 'paise');
       try {
         const plan = await razorpay.plans.create({
           period: 'monthly',
@@ -368,20 +428,44 @@ router.post('/create-subscription', async (req, res) => {
           item: {
             name: 'Monthly Therapy Access',
             description: 'Monthly subscription for Therapy Progress access',
-            amount: MONTHLY_PLAN_AMOUNT,
+            amount: MONTHLY_PLAN_AMOUNT, // 5900 paise = ₹59
             currency: 'INR',
           },
         });
         planId = plan.id;
-        console.log('Created Razorpay plan:', planId);
+        console.log('[CREATE SUBSCRIPTION] ✅ Created new Razorpay plan:', planId);
+        console.log('[CREATE SUBSCRIPTION] Plan amount:', plan.item.amount, 'paise (₹' + (plan.item.amount / 100) + ')');
+        console.log('[CREATE SUBSCRIPTION] ⚠️ IMPORTANT: Save this plan ID in .env file: RAZORPAY_PLAN_ID=' + planId);
       } catch (error) {
-        console.error('Failed to create Razorpay plan:', error);
+        console.error('[CREATE SUBSCRIPTION] ❌ Failed to create Razorpay plan:', error);
+        console.error('[CREATE SUBSCRIPTION] Error details:', error.message);
         // If plan already exists, try to find it
         // In production, you should set RAZORPAY_PLAN_ID in env vars
         return res.status(500).json({
           ok: false,
           error: 'Failed to create subscription plan. Please set RAZORPAY_PLAN_ID in environment variables.',
+          details: error.message,
         });
+      }
+    } else {
+      console.log('[CREATE SUBSCRIPTION] Using existing plan ID from env:', planId);
+      // Verify the plan amount by fetching it from Razorpay
+      try {
+        const existingPlan = await razorpay.plans.fetch(planId);
+        console.log('[CREATE SUBSCRIPTION] Existing plan details:', {
+          id: existingPlan.id,
+          amount: existingPlan.item.amount,
+          amountInRupees: '₹' + (existingPlan.item.amount / 100),
+          period: existingPlan.period,
+        });
+        if (existingPlan.item.amount !== MONTHLY_PLAN_AMOUNT) {
+          console.warn('[CREATE SUBSCRIPTION] ⚠️ WARNING: Plan amount mismatch!');
+          console.warn('[CREATE SUBSCRIPTION] Plan in Razorpay:', existingPlan.item.amount, 'paise (₹' + (existingPlan.item.amount / 100) + ')');
+          console.warn('[CREATE SUBSCRIPTION] Expected amount:', MONTHLY_PLAN_AMOUNT, 'paise (₹' + (MONTHLY_PLAN_AMOUNT / 100) + ')');
+          console.warn('[CREATE SUBSCRIPTION] 💡 Solution: Remove RAZORPAY_PLAN_ID from .env to create new plan with correct amount');
+        }
+      } catch (planError) {
+        console.error('[CREATE SUBSCRIPTION] Failed to fetch plan details:', planError);
       }
     }
     
@@ -418,6 +502,30 @@ router.post('/create-subscription', async (req, res) => {
     console.log(`[CREATE SUBSCRIPTION] Created subscription with start_at: ${new Date(startAt * 1000).toISOString()}`);
     
     console.log(`[CREATE SUBSCRIPTION] Created Razorpay subscription ${razorpaySubscription.id} with status: ${razorpaySubscription.status}`);
+    
+    // Verify the plan amount by fetching it from Razorpay
+    try {
+      const planDetails = await razorpay.plans.fetch(planId);
+      console.log(`[CREATE SUBSCRIPTION] ✅ Verified plan amount:`, {
+        planId: planId,
+        planAmount: planDetails.item.amount,
+        planAmountInRupees: '₹' + (planDetails.item.amount / 100),
+        expectedAmount: MONTHLY_PLAN_AMOUNT,
+        expectedAmountInRupees: '₹' + (MONTHLY_PLAN_AMOUNT / 100),
+      });
+      
+      if (planDetails.item.amount !== MONTHLY_PLAN_AMOUNT) {
+        console.error(`[CREATE SUBSCRIPTION] ❌ CRITICAL: Plan amount mismatch!`);
+        console.error(`[CREATE SUBSCRIPTION] Plan in Razorpay: ${planDetails.item.amount} paise (₹${planDetails.item.amount / 100})`);
+        console.error(`[CREATE SUBSCRIPTION] Expected: ${MONTHLY_PLAN_AMOUNT} paise (₹${MONTHLY_PLAN_AMOUNT / 100})`);
+        console.error(`[CREATE SUBSCRIPTION] 💡 This subscription will show WRONG amount (₹${planDetails.item.amount / 100}) in checkout!`);
+        console.error(`[CREATE SUBSCRIPTION] 💡 Solution: Remove RAZORPAY_PLAN_ID from .env and restart server to create new plan`);
+      } else {
+        console.log(`[CREATE SUBSCRIPTION] ✅ Plan amount is correct: ₹${MONTHLY_PLAN_AMOUNT / 100}`);
+      }
+    } catch (verifyError) {
+      console.warn(`[CREATE SUBSCRIPTION] Could not verify plan amount:`, verifyError.message);
+    }
     
     // Update subscription in database
     // IMPORTANT: Do NOT set status to 'active' here - it should only be active after payment is verified
@@ -561,7 +669,30 @@ router.post('/verify-payment', async (req, res) => {
  * Automatically creates trial for new users
  */
 router.get('/status', async (req, res) => {
+  // Track if response has been sent to prevent double responses
+  let responseSent = false;
+  
+  const sendResponse = (statusCode, data) => {
+    if (responseSent || res.headersSent) {
+      console.warn('[SUBSCRIPTION STATUS] Attempted to send response but already sent');
+      return;
+    }
+    responseSent = true;
+    
+    // Ensure CORS headers
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    
+    res.status(statusCode).json(data);
+  };
+  
   console.log('[SUBSCRIPTION ROUTER] GET /status route hit');
+  console.log('[SUBSCRIPTION ROUTER] Request origin:', req.headers.origin);
+  console.log('[SUBSCRIPTION ROUTER] Request method:', req.method);
+  
   try {
     const auth0Id = req.auth0Id || req.headers['x-auth0-id'];
     
@@ -578,7 +709,7 @@ router.get('/status', async (req, res) => {
       const disableFreeAccess = process.env.DISABLE_FREE_ACCESS_FOR_TESTING === 'true';
       if (disableFreeAccess) {
         console.log(`[SUBSCRIPTION STATUS] No auth0Id but free access disabled for testing - returning no access`);
-        return res.json({
+        return sendResponse(200, {
           ok: true,
           hasAccess: false,
           status: 'none',
@@ -602,7 +733,7 @@ router.get('/status', async (req, res) => {
       
       if (isLocalhost) {
         console.log(`[SUBSCRIPTION STATUS] No auth0Id but localhost detected - allowing free access`);
-        return res.json({
+        return sendResponse(200, {
           ok: true,
           hasAccess: true,
           status: 'free',
@@ -615,17 +746,17 @@ router.get('/status', async (req, res) => {
           isFreeAccess: true,
         });
       }
-      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+      return sendResponse(401, { ok: false, error: 'Unauthorized' });
     }
     
     // Check free access first (before any database operations)
-    const freeAccessResult = hasFreeAccess(auth0Id);
+    const freeAccessResult = await hasFreeAccess(auth0Id);
     console.log(`[SUBSCRIPTION STATUS] DISABLE_FREE_ACCESS_FOR_TESTING: ${process.env.DISABLE_FREE_ACCESS_FOR_TESTING}`);
     console.log(`[SUBSCRIPTION STATUS] hasFreeAccess(${auth0Id}) = ${freeAccessResult}`);
     
     if (freeAccessResult) {
       console.log(`[SUBSCRIPTION STATUS] User ${auth0Id} has free access - skipping subscription check`);
-      return res.json({
+      return sendResponse(200, {
         ok: true,
         hasAccess: true,
         status: 'free',
@@ -640,30 +771,56 @@ router.get('/status', async (req, res) => {
     }
     
     // Get user
-    const user = await User.findOne({ auth0Id });
-    if (!user) {
-      return res.status(404).json({ ok: false, error: 'User not found' });
+    let user;
+    try {
+      user = await User.findOne({ auth0Id });
+      if (!user) {
+        console.warn(`[SUBSCRIPTION STATUS] User not found for auth0Id: ${auth0Id}`);
+        return sendResponse(404, { ok: false, error: 'User not found' });
+      }
+    } catch (dbError) {
+      console.error('[SUBSCRIPTION STATUS] Database error finding user:', dbError);
+      return sendResponse(500, { 
+        ok: false, 
+        error: 'Database error while finding user',
+        details: dbError.message 
+      });
     }
     
     // Only create trial if free access is NOT disabled (for testing Paywall)
     // When testing Paywall, we don't want to auto-create trials
     if (!FORCE_DISABLE_FREE_ACCESS && process.env.DISABLE_FREE_ACCESS_FOR_TESTING !== 'true') {
-      // Ensure subscription exists (creates trial if new user)
-      await getOrCreateSubscription(auth0Id, user._id);
+      try {
+        // Ensure subscription exists (creates trial if new user)
+        await getOrCreateSubscription(auth0Id, user._id);
+      } catch (subError) {
+        console.error('[SUBSCRIPTION STATUS] Error creating/getting subscription:', subError);
+        // Continue anyway - we'll still try to get status
+      }
     }
     
     // Get current status
-    const status = await checkSubscriptionStatus(auth0Id);
+    let status;
+    try {
+      status = await checkSubscriptionStatus(auth0Id);
+      console.log(`[SUBSCRIPTION STATUS] Final status for ${auth0Id}:`, status);
+    } catch (statusError) {
+      console.error('[SUBSCRIPTION STATUS] Error checking subscription status:', statusError);
+      return sendResponse(500, {
+        ok: false,
+        error: 'Failed to check subscription status',
+        details: statusError.message,
+      });
+    }
     
-    console.log(`[SUBSCRIPTION STATUS] Final status for ${auth0Id}:`, status);
-    
-    res.json({
+    return sendResponse(200, {
       ok: true,
       ...status,
     });
   } catch (error) {
-    console.error('Failed to get subscription status:', error);
-    res.status(500).json({
+    console.error('[SUBSCRIPTION STATUS] Unexpected error:', error);
+    console.error('[SUBSCRIPTION STATUS] Error stack:', error.stack);
+    return sendResponse(500, {
       ok: false,
       error: error.message || 'Failed to get subscription status',
     });
@@ -850,8 +1007,33 @@ router.post('/cancel', async (req, res) => {
 });
 
 // Catch-all route for debugging (must be last)
+// Catch-all error handler for this router
+router.use((err, req, res, next) => {
+  console.error('[SUBSCRIPTION ROUTER] Unhandled error:', err);
+  console.error('[SUBSCRIPTION ROUTER] Error stack:', err.stack);
+  
+  // Ensure CORS headers on error
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  if (!res.headersSent) {
+    res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
 router.use('*', (req, res) => {
   console.log(`[SUBSCRIPTION ROUTER] Unmatched route: ${req.method} ${req.originalUrl}`);
+  
+  // Ensure CORS headers on 404
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  
   res.status(404).json({ 
     ok: false, 
     error: 'Route not found in subscription router',

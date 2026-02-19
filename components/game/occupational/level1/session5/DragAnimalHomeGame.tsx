@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -138,7 +138,7 @@ const DragAnimalHomeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log drag animal home game:', e);
       }
 
-      Speech.speak('All animals are home!', { rate: 0.78 });
+      speakTTS('All animals are home!', 0.78 );
     },
     [router],
   );
@@ -202,7 +202,7 @@ const DragAnimalHomeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak(`Drag the ${animalType} to its home!`, { rate: 0.78 });
+          speakTTS(`Drag the ${animalType} to its home!`, 0.78 );
         } catch {}
       }
     });
@@ -210,7 +210,7 @@ const DragAnimalHomeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial instruction - only once
   useEffect(() => {
     try {
-      Speech.speak('Drag the animal to its home! Match the animal with its home.', { rate: 0.78 });
+      speakTTS('Drag the animal to its home! Match the animal with its home.', 0.78 );
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount

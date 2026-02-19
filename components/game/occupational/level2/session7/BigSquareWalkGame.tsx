@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -175,7 +175,7 @@ const BigSquareWalkGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log big square walk game:', e);
       }
 
-      Speech.speak('Square walked!', { rate: 0.78 });
+      speakTTS('Square walked!', 0.78 );
     },
     [router],
   );
@@ -331,7 +331,7 @@ const BigSquareWalkGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Walk around the whole square!', { rate: 0.78 });
+          speakTTS('Walk around the whole square!', 0.78 );
         } catch {}
       }
     });
@@ -349,7 +349,7 @@ const BigSquareWalkGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectX.value = pathPoints.current[0].x;
     objectY.value = pathPoints.current[0].y;
     try {
-      Speech.speak('Walk around the big square with your whole arm!', { rate: 0.78 });
+      speakTTS('Walk around the big square with your whole arm!', 0.78 );
     } catch {}
     progress.value = 0;
     lastProgress.current = 0;

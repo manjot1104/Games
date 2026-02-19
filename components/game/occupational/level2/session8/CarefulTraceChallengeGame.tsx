@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -185,7 +185,7 @@ const CarefulTraceChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }
         console.error('Failed to log careful trace challenge game:', e);
       }
 
-      Speech.speak('Careful trace complete!', { rate: 0.78 });
+      speakTTS('Careful trace complete!', 0.78 );
     },
     [router],
   );
@@ -306,7 +306,7 @@ const CarefulTraceChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Trace carefully and slowly!', { rate: 0.78 });
+          speakTTS('Trace carefully and slowly!', 0.78 );
         } catch {}
       }
     });
@@ -319,7 +319,7 @@ const CarefulTraceChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }
     offTrackCount.current = 0;
     updatePaths();
     try {
-      Speech.speak('Trace slowly and carefully with precision!', { rate: 0.78 });
+      speakTTS('Trace slowly and carefully with precision!', 0.78 );
     } catch {}
     
     return () => {

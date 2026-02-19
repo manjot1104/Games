@@ -3,7 +3,7 @@ import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -25,57 +25,15 @@ type Props = {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CAR_SIZE = 100;
-const DEFAULT_TTS_RATE = 0.75;
 
 type GameState = 'moving' | 'stopped' | 'feedback';
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
-let webSpeechSynthesis: SpeechSynthesis | null = null;
-let webUtterance: SpeechSynthesisUtterance | null = null;
+// Use shared TTS utility (speech-to-speech on web, expo-speech on native)
+// Imported from @/utils/tts
 
-// Initialize web speech synthesis
-if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  webSpeechSynthesis = window.speechSynthesis;
-}
-
-function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
-  scheduledSpeechTimers = [];
-  try {
-    if (Platform.OS === 'web' && webSpeechSynthesis) {
-      webSpeechSynthesis.cancel();
-      webUtterance = null;
-    } else {
-      Speech.stop();
-    }
-  } catch {}
-}
-
+// Wrapper function for backward compatibility
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
-  try {
-    clearScheduledSpeech();
-    
-    if (Platform.OS === 'web' && webSpeechSynthesis) {
-      // Use browser's native SpeechSynthesis API for web
-      webUtterance = new SpeechSynthesisUtterance(text);
-      // Convert rate: expo-speech uses 0-1, browser uses 0.1-10, default 1
-      // Map 0.75 (default) to ~0.75, scale appropriately
-      webUtterance.rate = Math.max(0.5, Math.min(2, rate * 1.33)); // Scale to browser range
-      webUtterance.pitch = 1;
-      webUtterance.volume = 1;
-      
-      webUtterance.onerror = (e) => {
-        console.warn('Web TTS error:', e);
-      };
-      
-      webSpeechSynthesis.speak(webUtterance);
-    } else {
-      // Use expo-speech for native platforms
-      Speech.speak(text, { rate });
-    }
-  } catch (e) {
-    console.warn('speak error', e);
-  }
+  speakTTS(text, rate);
 }
 
 export const TrackAndFreezeGame: React.FC<Props> = ({
@@ -382,12 +340,12 @@ export const TrackAndFreezeGame: React.FC<Props> = ({
         xpAwarded={xpAwarded}
         onContinue={() => {
           clearScheduledSpeech();
-          Speech.stop();
+          stopTTS();
           onComplete?.();
         }}
         onHome={() => {
           clearScheduledSpeech();
-          Speech.stop();
+          stopTTS();
           onBack();
         }}
       />

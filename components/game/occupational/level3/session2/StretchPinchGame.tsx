@@ -3,7 +3,7 @@ import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -86,9 +86,9 @@ const StretchPinchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     scale.value = 1.0;
     setIsActive(true);
     if (round === 1) {
-      Speech.speak('Make it BIG by stretching, make it SMALL by pinching!', { rate: 0.9 });
+      speakTTS('Make it BIG by stretching, make it SMALL by pinching!', { rate: 0.9 });
     } else {
-      Speech.speak(target === 'big' ? 'Make it BIG!' : 'Make it SMALL!', { rate: 0.9 });
+      speakTTS(target === 'big' ? 'Make it BIG!' : 'Make it SMALL!', 0.9 );
     }
   }, [round, done, scale]);
 
@@ -96,7 +96,7 @@ const StretchPinchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => {
       // Cleanup: Stop all sounds and speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -172,7 +172,7 @@ const StretchPinchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <TouchableOpacity
           onPress={() => {
             try {
-              Speech.stop();
+              stopTTS();
             } catch (e) {
               // Ignore errors
             }

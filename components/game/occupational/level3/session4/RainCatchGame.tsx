@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -139,10 +139,10 @@ const RainCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak('Hands up to catch rain drops!', { rate: 0.8 });
+        speakTTS('Hands up to catch rain drops!', 0.8 );
       }, 300);
     } else {
-      Speech.speak('Hands up to catch rain drops!', { rate: 0.8 });
+      speakTTS('Hands up to catch rain drops!', 0.8 );
     }
   }, [handScale, handY, createRainDrop]);
 
@@ -151,7 +151,7 @@ const RainCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + caught);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak(`Great! Caught ${caught} rain drop${caught > 1 ? 's' : ''}!`, { rate: 0.9 });
+    speakTTS(`Great! Caught ${caught} rain drop${caught > 1 ? 's' : ''}!`, 0.9 );
     
     Animated.sequence([
       Animated.timing(handScale, {
@@ -183,7 +183,7 @@ const RainCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleMiss = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    Speech.speak('Try swiping up with your hands!', { rate: 0.8 });
+    speakTTS('Try swiping up with your hands!', 0.8 );
     // Reset hand position
     Animated.timing(handY, {
       toValue: HAND_START_Y,
@@ -232,7 +232,7 @@ const RainCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -300,7 +300,7 @@ const RainCatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

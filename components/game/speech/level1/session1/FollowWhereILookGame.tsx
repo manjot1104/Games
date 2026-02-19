@@ -3,7 +3,7 @@ import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -26,90 +26,15 @@ type Props = {
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const AVATAR_SIZE = 120;
 const OBJECT_SIZE = 100;
-const DEFAULT_TTS_RATE = 0.75;
 
 type LookDirection = 'left' | 'right';
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
-let webSpeechSynthesis: SpeechSynthesis | null = null;
-let webUtterance: SpeechSynthesisUtterance | null = null;
-let isSpeaking = false;
-let speechQueue: Array<{ text: string; rate: number }> = [];
-let currentSpeechTimer: ReturnType<typeof setTimeout> | null = null;
+// Use shared TTS utility (speech-to-speech on web, expo-speech on native)
+// Imported from @/utils/tts
 
-// Initialize web speech synthesis
-if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  webSpeechSynthesis = window.speechSynthesis;
-}
-
-function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
-  scheduledSpeechTimers = [];
-  if (currentSpeechTimer) {
-    clearTimeout(currentSpeechTimer);
-    currentSpeechTimer = null;
-  }
-  try {
-    if (Platform.OS === 'web' && webSpeechSynthesis) {
-      webSpeechSynthesis.cancel();
-      webUtterance = null;
-    } else {
-      Speech.stop();
-    }
-  } catch {}
-  isSpeaking = false;
-  speechQueue = [];
-}
-
+// Wrapper function for backward compatibility
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
-  // Add to queue
-  speechQueue.push({ text, rate });
-  
-  // If not currently speaking, start processing queue
-  if (!isSpeaking) {
-    processSpeechQueue();
-  }
-}
-
-function processSpeechQueue() {
-  if (speechQueue.length === 0) {
-    isSpeaking = false;
-    return;
-  }
-  
-  const { text, rate } = speechQueue.shift()!;
-  isSpeaking = true;
-  
-  try {
-    clearScheduledSpeech();
-    
-    if (Platform.OS === 'web' && webSpeechSynthesis) {
-      // Use browser's native SpeechSynthesis API for web
-      webUtterance = new SpeechSynthesisUtterance(text);
-      // Convert rate: expo-speech uses 0-1, browser uses 0.1-10, default 1
-      // Map 0.75 (default) to ~0.75, scale appropriately
-      webUtterance.rate = Math.max(0.5, Math.min(2, rate * 1.33)); // Scale to browser range
-      webUtterance.pitch = 1;
-      webUtterance.volume = 1;
-      
-      webUtterance.onerror = (e) => {
-        console.warn('Web TTS error:', e);
-      };
-      
-      webSpeechSynthesis.speak(webUtterance);
-    } else {
-      // Use expo-speech for native platforms
-      Speech.stop();
-      Speech.speak(text, { rate });
-    }
-  } catch (e) {
-    console.warn('speak error', e);
-    isSpeaking = false;
-    // Process next in queue even on error
-    setTimeout(() => {
-      processSpeechQueue();
-    }, 100);
-  }
+  speakTTS(text, rate);
 }
 
 export const FollowWhereILookGame: React.FC<Props> = ({
@@ -384,12 +309,12 @@ export const FollowWhereILookGame: React.FC<Props> = ({
         xpAwarded={xpAwarded}
         onContinue={() => {
           clearScheduledSpeech();
-          Speech.stop();
+          stopTTS();
           onComplete?.();
         }}
         onHome={() => {
           clearScheduledSpeech();
-          Speech.stop();
+          stopTTS();
           onBack();
         }}
       />

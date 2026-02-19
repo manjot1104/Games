@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -74,7 +74,7 @@ const GrowTheBalloonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial speech on mount
   useEffect(() => {
     try {
-      Speech.speak('Press and hold to inflate the balloon. Release when it\'s big to make it float!', { rate: 0.78 });
+      speakTTS('Press and hold to inflate the balloon. Release when it\'s big to make it float!', 0.78 );
     } catch {}
   }, []);
   const [done, setDone] = useState(false);
@@ -195,7 +195,7 @@ const GrowTheBalloonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Speech.speak('Hold longer for a bigger balloon!', { rate: 0.78 });
+        speakTTS('Hold longer for a bigger balloon!', 0.78 );
       } catch {}
     }
   }, [isPressed, isFloating, inflateProgress, balloonScale, balloonY, balloonOpacity, sparkleX, sparkleY, playFloat]);
@@ -227,7 +227,7 @@ const GrowTheBalloonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log grow the balloon game:', e);
       }
 
-      Speech.speak('Amazing balloons!', { rate: 0.78 });
+      speakTTS('Amazing balloons!', 0.78 );
     },
     [router],
   );

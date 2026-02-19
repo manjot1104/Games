@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -86,7 +86,7 @@ const MonkeySwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           } else {
             // One more swing needed
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-            Speech.speak('Ek aur swing karo!', { rate: 0.8 });
+            speakTTS('Ek aur swing karo!', 0.8 );
             
             // Reset position for next swing
             setTimeout(() => {
@@ -98,7 +98,7 @@ const MonkeySwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         } else {
           // Not enough distance
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          Speech.speak('Zada swing karo! Liana pe swing karna hai!', { rate: 0.8 });
+          speakTTS('Zada swing karo! Liana pe swing karna hai!', 0.8 );
           
           // Reset position
           Animated.parallel([
@@ -142,7 +142,7 @@ const MonkeySwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       useNativeDriver: true,
     }).start();
 
-    Speech.speak('Monkey ko liana pe swing karao! Do baar swing karo!', { rate: 0.8 });
+    speakTTS('Monkey ko liana pe swing karao! Do baar swing karo!', 0.8 );
   }, [monkeyScale, monkeyX, monkeyY, monkeyRotation]);
 
   const handleSuccess = useCallback(() => {
@@ -150,7 +150,7 @@ const MonkeySwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect monkey swing!', { rate: 0.9 });
+    speakTTS('Perfect monkey swing!', 0.9 );
     
     // Success animation
     Animated.sequence([
@@ -229,7 +229,7 @@ const MonkeySwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

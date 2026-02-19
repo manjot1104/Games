@@ -3,7 +3,7 @@ import { stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -223,7 +223,7 @@ const TraceStraightLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
 
   useEffect(() => {
     if (round === 1 && !done) {
-      Speech.speak('Trace the straight line from start to end!', { rate: 0.9 });
+      speakTTS('Trace the straight line from start to end!', 0.9 );
     }
   }, [round, done]);
 

@@ -15,7 +15,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
@@ -111,7 +111,7 @@ export const TouchTheDotGame: React.FC<TouchTheDotGameProps> = ({ onBack }) => {
 
   useEffect(() => {
     try {
-      Speech.speak('Tap the dot when you see it!', { rate: 0.78 });
+      speakTTS('Tap the dot when you see it!', 0.78 );
     } catch {}
     spawnTarget();
     return () => {

@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -47,7 +47,12 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
+      },
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (evt) => {
         swipeStartX.current = evt.nativeEvent.pageX;
         swipeDistance.current = 0;
@@ -122,10 +127,10 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak(instruction, { rate: 0.8 });
+        speakTTS(instruction, 0.8, 'en-US' );
       }, 300);
     } else {
-      Speech.speak(instruction, { rate: 0.8 });
+      speakTTS(instruction, 0.8, 'en-US' );
     }
   }, [carScale, carX, carRotation]);
 
@@ -134,7 +139,7 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Great turn!', { rate: 0.9 });
+    speakTTS('Great turn!', 0.9, 'en-US' );
     
     const targetX = direction === 'left' ? CAR_LEFT_X : CAR_RIGHT_X;
     const rotation = direction === 'left' ? -30 : 30;
@@ -187,7 +192,7 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleMiss = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     const correctDirection = targetDirection === 'left' ? 'left' : 'right';
-    Speech.speak(`Try swiping ${correctDirection}!`, { rate: 0.8 });
+    speakTTS(`Try swiping ${correctDirection}!`, 0.8, 'en-US' );
     // Reset car position
     Animated.parallel([
       Animated.timing(carX, {
@@ -243,7 +248,7 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -302,7 +307,7 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container} {...panResponder.panHandlers}>
+    <SafeAreaView style={styles.container}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => {
@@ -311,20 +316,20 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           onBack?.();
         }}
       >
-        <Text style={styles.backButtonText}>← Back</Text>
+        <Text style={styles.backButtonText} selectable={false}>← Back</Text>
       </TouchableOpacity>
 
       <View style={styles.header}>
-        <Text style={styles.title}>Car Turn</Text>
-        <Text style={styles.subtitle}>
+        <Text style={styles.title} selectable={false}>Car Turn</Text>
+        <Text style={styles.subtitle} selectable={false}>
           Round {round}/{TOTAL_ROUNDS} • 🚗 Score: {score}
         </Text>
-        <Text style={styles.instruction}>
+        <Text style={styles.instruction} selectable={false}>
           {targetDirection === 'left' ? 'Swipe left to turn left!' : 'Swipe right to turn right!'}
         </Text>
       </View>
 
-      <View style={styles.gameArea}>
+      <View style={styles.gameArea} {...panResponder.panHandlers}>
         {showCar && (
           <Animated.View
             style={[
@@ -341,15 +346,15 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               },
             ]}
           >
-            <Text style={styles.carEmoji}>🚗</Text>
+            <Text style={styles.carEmoji} selectable={false}>🚗</Text>
             {targetDirection === 'left' && (
               <View style={styles.directionIndicator}>
-                <Text style={styles.directionArrow}>←</Text>
+                <Text style={styles.directionArrow} selectable={false}>←</Text>
               </View>
             )}
             {targetDirection === 'right' && (
               <View style={styles.directionIndicator}>
-                <Text style={styles.directionArrow}>→</Text>
+                <Text style={styles.directionArrow} selectable={false}>→</Text>
               </View>
             )}
           </Animated.View>
@@ -357,16 +362,16 @@ const CarTurnGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         {!showCar && (
           <View style={styles.waitingContainer}>
-            <Text style={styles.waitingText}>Get ready...</Text>
+            <Text style={styles.waitingText} selectable={false}>Get ready...</Text>
           </View>
         )}
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
+        <Text style={styles.footerText} selectable={false}>
           Skills: Direction discrimination • Lateral movement
         </Text>
-        <Text style={styles.footerSubtext}>
+        <Text style={styles.footerSubtext} selectable={false}>
           Swipe in the correct direction to turn the car!
         </Text>
       </View>
@@ -378,6 +383,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F0F9FF',
+    ...(Platform.OS === 'web' && {
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      MozUserSelect: 'none',
+      msUserSelect: 'none',
+    } as any),
+  },
+  gameArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    marginVertical: 40,
+    ...(Platform.OS === 'web' && {
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      touchAction: 'pan-y pan-x',
+    } as any),
   },
   backButton: {
     position: 'absolute',
@@ -415,13 +438,6 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     fontWeight: '600',
     textAlign: 'center',
-  },
-  gameArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    marginVertical: 40,
   },
   carContainer: {
     position: 'absolute',

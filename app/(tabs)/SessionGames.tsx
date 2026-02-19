@@ -83,11 +83,17 @@ import StartStopLineGame from '@/components/game/StartStopLineGame';
 import TrainTrackLineGame from '@/components/game/TrainTrackLineGame';
 
 // Occupational Therapy Level 3 Session 1: Tap with Rhythm (Drum Beats)
-import { BeatMatchTapGame } from '@/components/game/BeatMatchTapGame';
-import { CopyMyRhythmGame } from '@/components/game/CopyMyRhythmGame';
-import { InstrumentChoiceGame } from '@/components/game/InstrumentChoiceGame';
-import { LoudSoftRhythmGame } from '@/components/game/LoudSoftRhythmGame';
-import { StopGoDrumGame } from '@/components/game/StopGoDrumGame';
+import BeatMatchTapGame from '@/components/game/occupational/level3/session1/BeatMatchTapGame';
+import CopyMyRhythmGame from '@/components/game/occupational/level3/session1/CopyMyRhythmGame';
+import InstrumentChoiceGame from '@/components/game/occupational/level3/session1/InstrumentChoiceGame';
+import LoudSoftRhythmGame from '@/components/game/occupational/level3/session1/LoudSoftRhythmGame';
+import StopGoDrumGame from '@/components/game/occupational/level3/session1/StopGoDrumGame';
+// Level 3 Session 1 games that are in session3 folder (Tap with Rhythm)
+import DoubleBeatCopyGame from '@/components/game/occupational/level3/session3/DoubleBeatCopyGame';
+import FastBeatChallengeGame from '@/components/game/occupational/level3/session3/FastBeatChallengeGame';
+import PauseAndTapGame from '@/components/game/occupational/level3/session3/PauseAndTapGame';
+import SingleBeatTapGame from '@/components/game/occupational/level3/session3/SingleBeatTapGame';
+import SlowBeatCalmModeGame from '@/components/game/occupational/level3/session3/SlowBeatCalmModeGame';
 
 // Occupational Therapy Level 3 Session 2: Big vs Small Movements
 import BigSwipeSmallSwipeGame from '@/components/game/occupational/level3/session2/BigSwipeSmallSwipeGame';
@@ -95,20 +101,186 @@ import BigTapSmallTapGame from '@/components/game/occupational/level3/session2/B
 import BigThrowSmallThrowGame from '@/components/game/occupational/level3/session2/BigThrowSmallThrowGame';
 import StretchPinchGame from '@/components/game/occupational/level3/session2/StretchPinchGame';
 
-// Occupational Therapy Level 3 Session 3: Tap with Rhythm (Drum Beats)
 // Occupational Therapy Level 3 Session 3: Fast vs Slow Movements
+import FastRabbitRunGame from '@/components/game/occupational/level3/session3/FastRabbitRunGame';
+import MusicSpeedControlGame from '@/components/game/occupational/level3/session3/MusicSpeedControlGame';
+import SlowTurtleMoveGame from '@/components/game/occupational/level3/session3/SlowTurtleMoveGame';
+import SpeedMatchGame from '@/components/game/occupational/level3/session3/SpeedMatchGame';
+import TrafficLightGame from '@/components/game/occupational/level3/session3/TrafficLightGame';
 
-// Occupational Therapy Level 3 Session 4: Big vs Small Movements
-// Occupational Therapy Level 3 Session 4: Up-Down Gestures
+// Occupational Therapy Level 3 Session 4: Big vs Small Movements & Up-Down Gestures
+import BallDropGame from '@/components/game/occupational/level3/session4/BallDropGame';
+import BalloonInflateL3S4Game from '@/components/game/occupational/level3/session4/BalloonInflateGame';
+import BalloonUpGame from '@/components/game/occupational/level3/session4/BalloonUpGame';
+import BigSmallSwitchGame from '@/components/game/occupational/level3/session4/BigSmallSwitchGame';
+import BigTapL3S4Game from '@/components/game/occupational/level3/session4/BigTapGame';
+import CompareAndMoveGame from '@/components/game/occupational/level3/session4/CompareAndMoveGame';
+import ElevatorGame from '@/components/game/occupational/level3/session4/ElevatorGame';
+import JumpArrowGame from '@/components/game/occupational/level3/session4/JumpArrowGame';
+import RainCatchGame from '@/components/game/occupational/level3/session4/RainCatchGame';
+import SmallDotTouchGame from '@/components/game/occupational/level3/session4/SmallDotTouchGame';
 
 // Occupational Therapy Level 3 Session 5: Left-Right Swipes
+import AnimalRunGame from '@/components/game/occupational/level3/session5/AnimalRunGame';
+import ArrowMatchGame from '@/components/game/occupational/level3/session5/ArrowMatchGame';
+import CarTurnGame from '@/components/game/occupational/level3/session5/CarTurnGame';
+import CatchTheBallGame from '@/components/game/occupational/level3/session5/CatchTheBallGame';
+import MirrorSwipeGame from '@/components/game/occupational/level3/session5/MirrorSwipeGame';
 
 // Occupational Therapy Level 3 Session 6: Jump Imitation (Tap Twice)
+import DoubleTapOnlyGame from '@/components/game/occupational/level3/session6/DoubleTapOnlyGame';
+import FrogJumpGame from '@/components/game/occupational/level3/session6/FrogJumpGame';
+import JumpCountGame from '@/components/game/occupational/level3/session6/JumpCountGame';
+import ObstacleJumpGame from '@/components/game/occupational/level3/session6/ObstacleJumpGame';
+import RhythmJumpGame from '@/components/game/occupational/level3/session6/RhythmJumpGame';
 
 // Occupational Therapy Level 3 Session 7: Swinging Movement Imitation
+import FanMotionGame from '@/components/game/occupational/level3/session7/FanMotionGame';
+import MonkeySwingGame from '@/components/game/occupational/level3/session7/MonkeySwingGame';
+import MusicSwingGame from '@/components/game/occupational/level3/session7/MusicSwingGame';
+import PendulumCopyGame from '@/components/game/occupational/level3/session7/PendulumCopyGame';
+import RopeSwingTimingGame from '@/components/game/occupational/level3/session7/RopeSwingTimingGame';
 
 // Occupational Therapy Level 3 Session 8: Whole Body Map
+import BodyFlashGame from '@/components/game/occupational/level3/session8/BodyFlashGame';
+import BodyPuzzleGame from '@/components/game/occupational/level3/session8/BodyPuzzleGame';
+import FollowTheBodyGame from '@/components/game/occupational/level3/session8/FollowTheBodyGame';
+import ShouldersTapGame from '@/components/game/occupational/level3/session8/ShouldersTapGame';
+import TouchHeadGame from '@/components/game/occupational/level3/session8/TouchHeadGame';
 
+// Occupational Therapy Level 3 Session 9: Mirror Movements
+import CopyPoseGame from '@/components/game/occupational/level3/session9/CopyPoseGame';
+import DelayedMirrorGame from '@/components/game/occupational/level3/session9/DelayedMirrorGame';
+import FastCopyGame from '@/components/game/occupational/level3/session9/FastCopyGame';
+import HandMirrorGame from '@/components/game/occupational/level3/session9/HandMirrorGame';
+import PatternCopyGame from '@/components/game/occupational/level3/session9/PatternCopyGame';
+
+// Occupational Therapy Level 3 Session 10: Posture-Based Games
+import AnimalPoseGame from '@/components/game/occupational/level3/session10/AnimalPoseGame';
+import CountHoldGame from '@/components/game/occupational/level3/session10/CountHoldGame';
+import FreezePoseGame from '@/components/game/occupational/level3/session10/FreezePoseGame';
+import PoseMatchGame from '@/components/game/occupational/level3/session10/PoseMatchGame';
+import ShapePoseGame from '@/components/game/occupational/level3/session10/ShapePoseGame';
+
+// Occupational Therapy Level 4 Session 1: Drag Object Left → Right
+import BallTransferGame from '@/components/game/occupational/level4/session1/BallTransferGame';
+import ColorMatchDragGame from '@/components/game/occupational/level4/session1/ColorMatchDragGame';
+import FeedTheMonsterGame from '@/components/game/occupational/level4/session1/FeedTheMonsterGame';
+import RoadCrossingGame from '@/components/game/occupational/level4/session1/RoadCrossingGame';
+import TimedDragGame from '@/components/game/occupational/level4/session1/TimedDragGame';
+
+// Occupational Therapy Level 4 Session 2: Drag Object Right → Left
+import CollectStarsGame from '@/components/game/occupational/level4/session2/CollectStarsGame';
+import MirrorDragGame from '@/components/game/occupational/level4/session2/MirrorDragGame';
+import PatternDragGame from '@/components/game/occupational/level4/session2/PatternDragGame';
+import ReverseBallPassGame from '@/components/game/occupational/level4/session2/ReverseBallPassGame';
+import ReversePathGame from '@/components/game/occupational/level4/session2/ReversePathGame';
+
+// Occupational Therapy Level 4 Session 3: Diagonal Dragging
+import DiagonalCatchGame from '@/components/game/occupational/level4/session3/DiagonalCatchGame';
+import DiagonalMatchGame from '@/components/game/occupational/level4/session3/DiagonalMatchGame';
+import TopLeftToBottomRightGame from '@/components/game/occupational/level4/session3/TopLeftToBottomRightGame';
+import XPathTraceGame from '@/components/game/occupational/level4/session3/XPathTraceGame';
+import ZigZagDragGame from '@/components/game/occupational/level4/session3/ZigZagDragGame';
+
+// Occupational Therapy Level 4 Session 4: Two-Hand Tapping (Dual Targets)
+import DoubleCircleTapGame from '@/components/game/occupational/level4/session4/DoubleCircleTapGame';
+import DrumDuoGame from '@/components/game/occupational/level4/session4/DrumDuoGame';
+import HoldAndTapGame from '@/components/game/occupational/level4/session4/HoldAndTapGame';
+import LightUpTargetsGame from '@/components/game/occupational/level4/session4/LightUpTargetsGame';
+import PianoKeysGame from '@/components/game/occupational/level4/session4/PianoKeysGame';
+
+// Occupational Therapy Level 4 Session 5: Alternating Hands
+import DrumAlternateGame from '@/components/game/occupational/level4/session5/DrumAlternateGame';
+import FlashSideGame from '@/components/game/occupational/level4/session5/FlashSideGame';
+import LeftRightTapGame from '@/components/game/occupational/level4/session5/LeftRightTapGame';
+import SpeedAlternateGame from '@/components/game/occupational/level4/session5/SpeedAlternateGame';
+import WalkingHandsGame from '@/components/game/occupational/level4/session5/WalkingHandsGame';
+
+// Occupational Therapy Level 4 Session 6: Pass Ball Across Midline
+import HandToHandPassGame from '@/components/game/occupational/level4/session6/HandToHandPassGame';
+import ObstaclePassGame from '@/components/game/occupational/level4/session6/ObstaclePassGame';
+import RhythmPassGame from '@/components/game/occupational/level4/session6/RhythmPassGame';
+import TargetPassGame from '@/components/game/occupational/level4/session6/TargetPassGame';
+import ThrowCatchGame from '@/components/game/occupational/level4/session6/ThrowCatchGame';
+
+// Occupational Therapy Level 4 Session 7: Follow Cross-Body Arrows
+import ArrowSwipeGame from '@/components/game/occupational/level4/session7/ArrowSwipeGame';
+import ArrowTouchGame from '@/components/game/occupational/level4/session7/ArrowTouchGame';
+import MovingArrowsGame from '@/components/game/occupational/level4/session7/MovingArrowsGame';
+import ArrowSequenceGame from '@/components/game/occupational/level4/session7/ArrowSequenceGame';
+import SpeedArrowsGame from '@/components/game/occupational/level4/session7/SpeedArrowsGame';
+
+// Occupational Therapy Level 4 Session 8: Tap Alternating Sides
+import CountAndTapGame from '@/components/game/occupational/level4/session8/CountAndTapGame';
+import FastSwitchGame from '@/components/game/occupational/level4/session8/FastSwitchGame';
+import PingPongTapGame from '@/components/game/occupational/level4/session8/PingPongTapGame';
+import SideLightsGame from '@/components/game/occupational/level4/session8/SideLightsGame';
+import SoundSideTapGame from '@/components/game/occupational/level4/session8/SoundSideTapGame';
+
+// Occupational Therapy Level 4 Session 9: Drag Two Objects Simultaneously
+import BalanceDragGame from '@/components/game/occupational/level4/session9/BalanceDragGame';
+import DoubleDragGame from '@/components/game/occupational/level4/session9/DoubleDragGame';
+import MatchPairGame from '@/components/game/occupational/level4/session9/MatchPairGame';
+import RopePullGame from '@/components/game/occupational/level4/session9/RopePullGame';
+import ShapeSortGame from '@/components/game/occupational/level4/session9/ShapeSortGame';
+
+// Occupational Therapy Level 4 Session 10: Cross-Body Rhythm Imitation
+import ClapPatternGame from '@/components/game/occupational/level4/session10/ClapPatternGame';
+import MemoryRhythmGame from '@/components/game/occupational/level4/session10/MemoryRhythmGame';
+import MusicCopyGame from '@/components/game/occupational/level4/session10/MusicCopyGame';
+import SpeedRhythmGame from '@/components/game/occupational/level4/session10/SpeedRhythmGame';
+import TapShoulderPatternGame from '@/components/game/occupational/level4/session10/TapShoulderPatternGame';
+
+// Occupational Therapy Level 5 Session 1: Follow Moving Object
+import CatchMovingBallGame from '@/components/game/occupational/level5/session1/CatchTheBallGame';
+import FollowTheButterflyGame from '@/components/game/occupational/level5/session1/FollowTheButterflyGame';
+import AvoidTheBombGame from '@/components/game/occupational/level5/session1/AvoidTheBombGame';
+import ChaseTheStarGame from '@/components/game/occupational/level5/session1/ChaseTheStarGame';
+import ZigZagFollowGame from '@/components/game/occupational/level5/session1/ZigZagFollowGame';
+
+// Occupational Therapy Level 5 Session 2: Targeted Tapping
+import PopTheBubbleGame from '@/components/game/occupational/level5/session2/PopTheBubbleGame';
+import ColorDotHitGame from '@/components/game/occupational/level5/session2/ColorDotHitGame';
+import SmallTargetGame from '@/components/game/occupational/level5/session2/SmallTargetGame';
+import MovingTargetGame from '@/components/game/occupational/level5/session2/MovingTargetGame';
+import TimedTargetGame from '@/components/game/occupational/level5/session2/TimedTargetGame';
+
+// Occupational Therapy Level 5 Session 3: Drag to Track
+
+// Occupational Therapy Level 5 Session 4: Visual Focus
+import FindTheStarGame from '@/components/game/occupational/level5/session4/FindTheStarGame';
+import MemoryFlashGame from '@/components/game/occupational/level5/session4/MemoryFlashGame';
+import MatchShadowGame from '@/components/game/occupational/level5/session4/MatchShadowGame';
+import WhatMovedGame from '@/components/game/occupational/level5/session4/WhatMovedGame';
+import SpotTheColorGame from '@/components/game/occupational/level5/session4/SpotTheColorGame';
+
+// Occupational Therapy Level 5 Session 5: Moving Eye Control
+import SideEyeTrackGame from '@/components/game/occupational/level5/session5/SideEyeTrackGame';
+
+// Occupational Therapy Level 5 Session 6: Speed Matching
+import FastCatchGame from '@/components/game/occupational/level5/session6/FastCatchGame';
+import SlowCatchGame from '@/components/game/occupational/level5/session6/SlowCatchGame';
+import SpeedSwitchGame from '@/components/game/occupational/level5/session6/SpeedSwitchGame';
+import MusicSpeedGame from '@/components/game/occupational/level5/session6/MusicSpeedGame';
+import CountdownHitGame from '@/components/game/occupational/level5/session6/CountdownHitGame';
+
+// Occupational Therapy Level 5 Session 7: Depth & Distance
+import NearVsFarGame from '@/components/game/occupational/level5/session7/NearVsFarGame';
+
+// Occupational Therapy Level 5 Session 8: Multi-Object Tracking
+import FollowRedGame from '@/components/game/occupational/level5/session8/FollowRedGame';
+import TwoMovingBallsGame from '@/components/game/occupational/level5/session8/TwoMovingBallsGame';
+import DistractionModeGame from '@/components/game/occupational/level5/session8/DistractionModeGame';
+import PatternChaseGame from '@/components/game/occupational/level5/session8/PatternChaseGame';
+import SpeedObjectsGame from '@/components/game/occupational/level5/session8/SpeedObjectsGame';
+
+// Occupational Therapy Level 5 Session 9: Visual Reaction
+import FlashTapGame from '@/components/game/occupational/level5/session9/FlashTapGame';
+import GoStopGame from '@/components/game/occupational/level5/session9/GoStopGame';
+import SurprisePopGame from '@/components/game/occupational/level5/session9/SurprisePopGame';
+import SoundLightGame from '@/components/game/occupational/level5/session9/SoundLightGame';
+import QuickChoiceGame from '@/components/game/occupational/level5/session9/QuickChoiceGame';
 
 // Speech Therapy Level 2 Session 3 (Airflow Games)
 import { BalloonInflateGame } from '@/components/game/speech/level2/session3/BalloonInflateGame';
@@ -190,6 +362,7 @@ import TwoFingerSimultaneousTapGame from '@/components/game/occupational/level1/
 // Occupational Therapy Level 2 Session 2 (shared with Speech)
 import CurvyRoadDriveGame from '@/components/game/occupational/level2/session2/CurvyRoadDriveGame';
 import MoonPathGame from '@/components/game/occupational/level2/session2/MoonPathGame';
+import RainbowCurveTraceGame from '@/components/game/occupational/level2/session2/RainbowCurveTraceGame';
 import SmileMakerGame from '@/components/game/occupational/level2/session2/SmileMakerGame';
 import SnakeSlideGame from '@/components/game/occupational/level2/session2/SnakeSlideGame';
 
@@ -368,6 +541,26 @@ type GameKey =
   | 'body-puzzle'
   | 'follow-the-body'
   | 'body-flash'
+  | 'copy-pose'
+  | 'hand-mirror'
+  | 'pattern-copy'
+  | 'delayed-mirror'
+  | 'fast-copy'
+  | 'freeze-pose'
+  | 'animal-pose'
+  | 'shape-pose'
+  | 'count-hold'
+  | 'pose-match'
+  | 'ball-transfer'
+  | 'feed-the-monster'
+  | 'road-crossing'
+  | 'color-match-drag'
+  | 'timed-drag'
+  | 'reverse-ball-pass'
+  | 'collect-stars'
+  | 'reverse-path'
+  | 'mirror-drag'
+  | 'pattern-drag'
   | 'rainbow-curve-trace'
   | 'drive-car-curvy-road'
   | 'trace-smiling-mouth'
@@ -473,7 +666,47 @@ type GameKey =
   | 'butterfly-wings'
   | 'face-symmetry-draw'
   | 'half-shape-complete'
-  | 'mirror-maze';
+  | 'mirror-maze'
+  | 'catch-moving-ball'
+  | 'follow-the-butterfly'
+  | 'avoid-the-bomb'
+  | 'chase-the-star'
+  | 'zigzag-follow'
+  | 'pop-the-bubble'
+  | 'color-dot-hit'
+  | 'small-target'
+  | 'moving-target'
+  | 'timed-target'
+  | 'find-the-star'
+  | 'memory-flash'
+  | 'match-shadow'
+  | 'what-moved'
+  | 'spot-the-color'
+  | 'side-eye-track'
+  | 'up-down-track'
+  | 'circular-track'
+  | 'jump-track'
+  | 'multi-dot'
+  | 'fast-catch'
+  | 'slow-catch'
+  | 'speed-switch'
+  | 'music-speed'
+  | 'countdown-hit'
+  | 'near-vs-far'
+  | 'zoom-touch'
+  | 'falling-objects'
+  | 'shrinking-target'
+  | '3-layer-tap'
+  | 'follow-red'
+  | 'two-moving-balls'
+  | 'distraction-mode'
+  | 'pattern-chase'
+  | 'speed-objects'
+  | 'flash-tap'
+  | 'go-stop'
+  | 'surprise-pop'
+  | 'sound-light'
+  | 'quick-choice';
 
 
 type GameInfo = {
@@ -812,13 +1045,6 @@ export default function SessionGamesScreen() {
   const isMoonPathAvailable =
     therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
 
-  const isSmileMakerAvailable =
-    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
-
-  const isCurvyRoadDriveAvailable =
-    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
-
-  // Level 2 Session 3: Trace Zig-Zag games
   const isMountainClimbAvailable =
     therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 3;
 
@@ -833,6 +1059,13 @@ export default function SessionGamesScreen() {
 
   const isZigZagRaceAvailable =
     therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 3;
+
+  const isSmileMakerAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
+
+  const isCurvyRoadDriveAvailable =
+    therapyId === 'occupational' && levelNumber === 2 && sessionNumber === 2;
+
 
   // Level 2 Session 4: Follow Path (Drag) games
   const isMazeWalkAvailable =
@@ -1180,6 +1413,247 @@ export default function SessionGamesScreen() {
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 8;
   const isBodyFlashAvailable =
     therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 8;
+
+  // Level 3 Session 9: Mirror Movements
+  const isCopyPoseAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 9;
+  const isHandMirrorAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 9;
+  const isPatternCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 9;
+  const isDelayedMirrorAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 9;
+  const isFastCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 9;
+
+  // Level 3 Session 10: Posture-Based Games
+  const isFreezePoseAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 10;
+  const isAnimalPoseAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 10;
+  const isShapePoseAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 10;
+  const isCountHoldAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 10;
+  const isPoseMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 3 && sessionNumber === 10;
+
+  // Level 4 Session 1: Drag Object Left → Right
+  const isBallTransferAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 1;
+  const isFeedTheMonsterAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 1;
+  const isRoadCrossingAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 1;
+  const isColorMatchDragAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 1;
+  const isTimedDragAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 1;
+
+  // Level 4 Session 2: Drag Object Right → Left
+  const isReverseBallPassAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 2;
+  const isCollectStarsAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 2;
+  const isReversePathAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 2;
+  const isMirrorDragAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 2;
+  const isPatternDragAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 2;
+
+  // Level 4 Session 3: Diagonal Dragging
+  const isTopLeftToBottomRightAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 3;
+  const isXPathTraceAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 3;
+  const isDiagonalCatchAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 3;
+  const isZigZagDragAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 3;
+  const isDiagonalMatchAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 3;
+
+  // Level 4 Session 4: Two-Hand Tapping (Dual Targets)
+  const isDoubleCircleTapAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 4;
+  const isPianoKeysAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 4;
+  const isDrumDuoAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 4;
+  const isLightUpTargetsAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 4;
+  const isHoldAndTapAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 4;
+
+  // Level 4 Session 5: Alternating Hands
+  const isLeftRightTapAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 5;
+  const isWalkingHandsAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 5;
+  const isFlashSideAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 5;
+  const isDrumAlternateAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 5;
+  const isSpeedAlternateAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 5;
+
+  // Level 4 Session 6: Pass Ball Across Midline
+  const isHandToHandPassAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 6;
+  const isThrowCatchAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 6;
+  const isTargetPassAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 6;
+  const isRhythmPassAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 6;
+  const isObstaclePassAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 6;
+
+  // Level 4 Session 7: Follow Cross-Body Arrows
+  const isArrowTouchAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 7;
+  const isArrowSwipeAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 7;
+  const isMovingArrowsAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 7;
+  const isArrowSequenceAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 7;
+  const isSpeedArrowsAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 7;
+
+  // Level 4 Session 8: Tap Alternating Sides
+  const isSideLightsAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 8;
+  const isPingPongTapAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 8;
+  const isSoundSideTapAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 8;
+  const isCountAndTapAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 8;
+  const isFastSwitchAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 8;
+
+  // Level 4 Session 9: Drag Two Objects Simultaneously
+  const isDoubleDragAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 9;
+  const isMatchPairAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 9;
+  const isShapeSortAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 9;
+  const isRopePullAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 9;
+  const isBalanceDragAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 9;
+
+  // Level 4 Session 10: Cross-Body Rhythm Imitation
+  const isClapPatternAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 10;
+  const isTapShoulderPatternAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 10;
+  const isMusicCopyAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 10;
+  const isMemoryRhythmAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 10;
+  const isSpeedRhythmAvailable =
+    therapyId === 'occupational' && levelNumber === 4 && sessionNumber === 10;
+
+  // Level 5 Session 1: Follow Moving Object
+  const isCatchMovingBallAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 1;
+  const isFollowTheButterflyAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 1;
+  const isAvoidTheBombAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 1;
+  const isChaseTheStarAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 1;
+  const isZigzagFollowAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 1;
+
+  // Level 5 Session 2: Targeted Tapping
+  const isPopTheBubbleAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 2;
+  const isColorDotHitAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 2;
+  const isSmallTargetAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 2;
+  const isMovingTargetAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 2;
+  const isTimedTargetAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 2;
+
+
+  // Level 5 Session 4: Visual Focus
+  const isFindTheStarAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 4;
+  const isMemoryFlashAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 4;
+  const isMatchShadowAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 4;
+  const isWhatMovedAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 4;
+  const isSpotTheColorAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 4;
+
+  // Level 5 Session 5: Moving Eye Control
+  const isSideEyeTrackAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 5;
+  const isUpDownTrackAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 5;
+  const isCircularTrackAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 5;
+  const isJumpTrackAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 5;
+  const isMultiDotAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 5;
+
+  // Level 5 Session 6: Speed Matching
+  const isFastCatchAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 6;
+  const isSlowCatchAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 6;
+  const isSpeedSwitchAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 6;
+  const isMusicSpeedAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 6;
+  const isCountdownHitAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 6;
+
+  // Level 5 Session 7: Depth & Distance
+  const isNearVsFarAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 7;
+  const isZoomTouchAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 7;
+  const isFallingObjectsAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 7;
+  const isShrinkingTargetL5S7Available =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 7;
+  const is3LayerTapAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 7;
+
+  // Level 5 Session 8: Multi-Object Tracking
+  const isFollowRedAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 8;
+  const isTwoMovingBallsAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 8;
+  const isDistractionModeAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 8;
+  const isPatternChaseAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 8;
+  const isSpeedObjectsAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 8;
+
+  // Level 5 Session 9: Visual Reaction
+  const isFlashTapAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 9;
+  const isGoStopAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 9;
+  const isSurprisePopAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 9;
+  const isSoundLightAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 9;
+  const isQuickChoiceAvailable =
+    therapyId === 'occupational' && levelNumber === 5 && sessionNumber === 9;
 
   // Level 2 Session 3 games - Speech Therapy (Airflow Games)
   const isBlowTheBubbleAvailable =
@@ -1672,7 +2146,7 @@ export default function SessionGamesScreen() {
       id: 'rainbow-trace',
       title: 'Rainbow Trace',
       emoji: '🌈',
-      description: 'Follow the arc to complete the rainbow. Build smooth curved tracking skills!',
+      description: 'Follow arc to complete rainbow',
       color: '#FF6B6B',
       available: isRainbowTraceAvailable,
     },
@@ -1707,6 +2181,47 @@ export default function SessionGamesScreen() {
       description: 'Drive along the curvy road! The car slows if you cross the line.',
       color: '#3B82F6',
       available: isCurvyRoadDriveAvailable,
+    },
+    // Level 2 Session 3: Occupational Therapy Trace Zig-Zag
+    {
+      id: 'mountain-climb',
+      title: 'Mountain Climb',
+      emoji: '⛰️',
+      description: 'Follow the zig-zag path up the mountain! Navigate the diagonal turns carefully.',
+      color: '#8B5CF6',
+      available: isMountainClimbAvailable,
+    },
+    {
+      id: 'lightning-bolt',
+      title: 'Lightning Bolt',
+      emoji: '⚡',
+      description: 'Trace the lightning bolt with sharp angles! Follow the zig-zag path carefully.',
+      color: '#8B5CF6',
+      available: isLightningBoltAvailable,
+    },
+    {
+      id: 'saw-path',
+      title: 'Saw Path',
+      emoji: '🪚',
+      description: 'Follow the saw path with controlled up-down motion! Navigate the vertical zig-zag carefully.',
+      color: '#8B5CF6',
+      available: isSawPathAvailable,
+    },
+    {
+      id: 'robot-wire-fix',
+      title: 'Robot Wire Fix',
+      emoji: '🤖',
+      description: 'Follow the zig-zag wire to fix the robot! Navigate the wire path carefully.',
+      color: '#8B5CF6',
+      available: isRobotWireFixAvailable,
+    },
+    {
+      id: 'zig-zag-race',
+      title: 'Zig-Zag Race',
+      emoji: '🏁',
+      description: 'Complete the zig-zag race at your own pace! Follow the path carefully.',
+      color: '#8B5CF6',
+      available: isZigZagRaceAvailable,
     },
     // Level 2 Session 3: Speech Therapy Airflow Games
     {
@@ -1748,47 +2263,6 @@ export default function SessionGamesScreen() {
       description: 'Blow to inflate the balloon! Each blow adds more air!',
       color: '#FFB6C1',
       available: isBalloonInflateAvailable,
-    },
-    // Level 2 Session 3: Trace Zig-Zag games (OT)
-    {
-      id: 'mountain-climb',
-      title: 'Mountain Climb',
-      emoji: '⛰️',
-      description: 'Follow the zig-zag path up the mountain. Change direction smoothly!',
-      color: '#F59E0B',
-      available: isMountainClimbAvailable,
-    },
-    {
-      id: 'lightning-bolt',
-      title: 'Lightning Bolt',
-      emoji: '⚡',
-      description: 'Trace the lightning bolt with sharp angles. Follow the zig-zag!',
-      color: '#FBBF24',
-      available: isLightningBoltAvailable,
-    },
-    {
-      id: 'saw-path',
-      title: 'Saw Path',
-      emoji: '🪚',
-      description: 'Follow the up-down saw path. Controlled motion left to right!',
-      color: '#10B981',
-      available: isSawPathAvailable,
-    },
-    {
-      id: 'robot-wire-fix',
-      title: 'Robot Wire Fix',
-      emoji: '🤖',
-      description: 'Follow the zig-zag wire to fix the robot! Trace carefully.',
-      color: '#8B5CF6',
-      available: isRobotWireFixAvailable,
-    },
-    {
-      id: 'zig-zag-race',
-      title: 'Zig-Zag Race',
-      emoji: '🏁',
-      description: 'Race along the zig-zag path! Timed but slow-paced.',
-      color: '#EF4444',
-      available: isZigZagRaceAvailable,
     },
     // Level 2 Session 4: Follow Path (Drag) games
     {
@@ -2813,6 +3287,785 @@ export default function SessionGamesScreen() {
       color: '#EF4444',
       available: isBodyFlashAvailable,
     },
+    // Level 3 Session 9: Mirror Movements
+    {
+      id: 'copy-pose',
+      title: 'Copy Pose',
+      emoji: '👤',
+      description: 'Watch the pose on screen and copy it!',
+      color: '#3B82F6',
+      available: isCopyPoseAvailable,
+    },
+    {
+      id: 'hand-mirror',
+      title: 'Hand Mirror',
+      emoji: '👋',
+      description: 'Screen shows left hand → you raise right hand! Mirror the hand!',
+      color: '#8B5CF6',
+      available: isHandMirrorAvailable,
+    },
+    {
+      id: 'pattern-copy',
+      title: 'Pattern Copy',
+      emoji: '🔄',
+      description: 'Watch the movement pattern and repeat it!',
+      color: '#10B981',
+      available: isPatternCopyAvailable,
+    },
+    {
+      id: 'delayed-mirror',
+      title: 'Delayed Mirror',
+      emoji: '⏱️',
+      description: 'Watch the pose, wait 2 seconds, then copy it!',
+      color: '#F59E0B',
+      available: isDelayedMirrorAvailable,
+    },
+    {
+      id: 'fast-copy',
+      title: 'Fast Copy',
+      emoji: '⚡',
+      description: 'Quick changing poses! Copy them fast!',
+      color: '#EF4444',
+      available: isFastCopyAvailable,
+    },
+    // Level 4 Session 1: Drag Object Left → Right
+    {
+      id: 'ball-transfer',
+      title: 'Ball Transfer',
+      emoji: '⚽',
+      description: 'Drag the ball from left side to right box!',
+      color: '#3B82F6',
+      available: isBallTransferAvailable,
+    },
+    {
+      id: 'feed-the-monster',
+      title: 'Feed the Monster',
+      emoji: '👹',
+      description: 'Drag food from left side to right side monster!',
+      color: '#F59E0B',
+      available: isFeedTheMonsterAvailable,
+    },
+    {
+      id: 'road-crossing',
+      title: 'Road Crossing',
+      emoji: '🚗',
+      description: 'Drag car from left road to right road!',
+      color: '#8B5CF6',
+      available: isRoadCrossingAvailable,
+    },
+    {
+      id: 'color-match-drag',
+      title: 'Color Match Drag',
+      emoji: '🎨',
+      description: 'Match left color to right same color!',
+      color: '#10B981',
+      available: isColorMatchDragAvailable,
+    },
+    {
+      id: 'timed-drag',
+      title: 'Timed Drag',
+      emoji: '⏱️',
+      description: 'Drag from left to right within time limit!',
+      color: '#EF4444',
+      available: isTimedDragAvailable,
+    },
+    // Level 4 Session 2: Drag Object Right → Left
+    {
+      id: 'reverse-ball-pass',
+      title: 'Reverse Ball Pass',
+      emoji: '⚽',
+      description: 'Drag the ball from right side to left box!',
+      color: '#3B82F6',
+      available: isReverseBallPassAvailable,
+    },
+    {
+      id: 'collect-stars',
+      title: 'Collect Stars',
+      emoji: '⭐',
+      description: 'Drag stars from right side to left bag!',
+      color: '#F59E0B',
+      available: isCollectStarsAvailable,
+    },
+    {
+      id: 'reverse-path',
+      title: 'Reverse Path',
+      emoji: '🔄',
+      description: 'Follow the same path but in reverse direction!',
+      color: '#8B5CF6',
+      available: isReversePathAvailable,
+    },
+    {
+      id: 'mirror-drag',
+      title: 'Mirror Drag',
+      emoji: '👋',
+      description: 'Use right hand to drag to left target!',
+      color: '#10B981',
+      available: isMirrorDragAvailable,
+    },
+    {
+      id: 'pattern-drag',
+      title: 'Pattern Drag',
+      emoji: '📐',
+      description: 'Follow the pattern while dragging from right to left!',
+      color: '#EF4444',
+      available: isPatternDragAvailable,
+    },
+    // Level 4 Session 3: Diagonal Dragging
+    {
+      id: 'top-left-bottom-right',
+      title: 'Top-Left → Bottom-Right',
+      emoji: '↘️',
+      description: 'Drag diagonally across the screen from top-left to bottom-right!',
+      color: '#3B82F6',
+      available: isTopLeftToBottomRightAvailable,
+    },
+    {
+      id: 'x-path-trace',
+      title: 'X Path Trace',
+      emoji: '❌',
+      description: 'Trace the X shape diagonally across the screen!',
+      color: '#8B5CF6',
+      available: isXPathTraceAvailable,
+    },
+    {
+      id: 'diagonal-catch',
+      title: 'Diagonal Catch',
+      emoji: '🎯',
+      description: 'Catch objects coming diagonally across the screen!',
+      color: '#EF4444',
+      available: isDiagonalCatchAvailable,
+    },
+    {
+      id: 'zigzag-drag',
+      title: 'Zig-Zag Drag',
+      emoji: '⚡',
+      description: 'Follow the diagonal zigzag path across the screen!',
+      color: '#10B981',
+      available: isZigZagDragAvailable,
+    },
+    {
+      id: 'diagonal-match',
+      title: 'Diagonal Match',
+      emoji: '🎯',
+      description: 'Drag objects to their opposite corner diagonally!',
+      color: '#8B5CF6',
+      available: isDiagonalMatchAvailable,
+    },
+    // Level 4 Session 4: Two-Hand Tapping (Dual Targets)
+    {
+      id: 'double-circle-tap',
+      title: 'Double Circle Tap',
+      emoji: '⭕',
+      description: 'Tap both circles with both hands at the same time!',
+      color: '#3B82F6',
+      available: isDoubleCircleTapAvailable,
+    },
+    {
+      id: 'piano-keys',
+      title: 'Piano Keys',
+      emoji: '🎹',
+      description: 'Tap left key and right key together at the same time!',
+      color: '#8B5CF6',
+      available: isPianoKeysAvailable,
+    },
+    {
+      id: 'drum-duo',
+      title: 'Drum Duo',
+      emoji: '🥁',
+      description: 'Tap both drums together in rhythm!',
+      color: '#F59E0B',
+      available: isDrumDuoAvailable,
+    },
+    {
+      id: 'light-up-targets',
+      title: 'Light Up Targets',
+      emoji: '💡',
+      description: 'Tap both targets when they light up!',
+      color: '#F59E0B',
+      available: isLightUpTargetsAvailable,
+    },
+    {
+      id: 'hold-and-tap',
+      title: 'Hold & Tap',
+      emoji: '🤲',
+      description: 'Hold with one hand, tap with the other hand!',
+      color: '#10B981',
+      available: isHoldAndTapAvailable,
+    },
+    // Level 4 Session 5: Alternating Hands
+    {
+      id: 'left-right-tap',
+      title: 'Left-Right Tap',
+      emoji: '👆',
+      description: 'Pehle left, phir right - alternating taps!',
+      color: '#3B82F6',
+      available: isLeftRightTapAvailable,
+    },
+    {
+      id: 'walking-hands',
+      title: 'Walking Hands',
+      emoji: '🚶',
+      description: 'Hands ko alternate chalana - pre-writing skill!',
+      color: '#10B981',
+      available: isWalkingHandsAvailable,
+    },
+    {
+      id: 'flash-side',
+      title: 'Flash Side Game',
+      emoji: '⚡',
+      description: 'Screen side flash → same hand response!',
+      color: '#F59E0B',
+      available: isFlashSideAvailable,
+    },
+    {
+      id: 'drum-alternate',
+      title: 'Drum Alternate',
+      emoji: '🥁',
+      description: 'Left drum → right drum - rhythm control!',
+      color: '#EF4444',
+      available: isDrumAlternateAvailable,
+    },
+    {
+      id: 'speed-alternate',
+      title: 'Speed Alternate',
+      emoji: '⚡',
+      description: 'Slow se fast alternating - motor speed control!',
+      color: '#8B5CF6',
+      available: isSpeedAlternateAvailable,
+    },
+    // Level 4 Session 6: Pass Ball Across Midline
+    {
+      id: 'hand-to-hand-pass',
+      title: 'Hand-to-Hand Pass',
+      emoji: '🤲',
+      description: 'Ball left hand → right hand - midline awareness!',
+      color: '#3B82F6',
+      available: isHandToHandPassAvailable,
+    },
+    {
+      id: 'throw-catch',
+      title: 'Throw & Catch',
+      emoji: '🎾',
+      description: 'Left throw → right catch - hand coordination!',
+      color: '#F59E0B',
+      available: isThrowCatchAvailable,
+    },
+    {
+      id: 'target-pass',
+      title: 'Target Pass',
+      emoji: '🎯',
+      description: 'Across body target me pass - accuracy!',
+      color: '#EF4444',
+      available: isTargetPassAvailable,
+    },
+    {
+      id: 'rhythm-pass',
+      title: 'Rhythm Pass',
+      emoji: '🎵',
+      description: 'Music ke sath pass - timing + flow!',
+      color: '#8B5CF6',
+      available: isRhythmPassAvailable,
+    },
+    {
+      id: 'obstacle-pass',
+      title: 'Obstacle Pass',
+      emoji: '🚧',
+      description: 'Obstacle ke upar se pass - planning skill!',
+      color: '#10B981',
+      available: isObstaclePassAvailable,
+    },
+    // Level 4 Session 7: Follow Cross-Body Arrows
+    {
+      id: 'arrow-touch',
+      title: 'Arrow Touch',
+      emoji: '⬅️',
+      description: 'Left arrow → right hand! Cross-body brain training!',
+      color: '#3B82F6',
+      available: isArrowTouchAvailable,
+    },
+    {
+      id: 'arrow-swipe',
+      title: 'Arrow Swipe',
+      emoji: '➡️',
+      description: 'Cross-body swipe! Left arrow → right swipe!',
+      color: '#EF4444',
+      available: isArrowSwipeAvailable,
+    },
+    {
+      id: 'moving-arrows',
+      title: 'Moving Arrows',
+      emoji: '➡️',
+      description: 'Arrows move hote hue! Track and tap with cross-body!',
+      color: '#8B5CF6',
+      available: isMovingArrowsAvailable,
+    },
+    {
+      id: 'arrow-sequence',
+      title: 'Arrow Sequence',
+      emoji: '➡️',
+      description: 'Multiple arrows follow! Remember the sequence!',
+      color: '#10B981',
+      available: isArrowSequenceAvailable,
+    },
+    {
+      id: 'speed-arrows',
+      title: 'Speed Arrows',
+      emoji: '⚡',
+      description: 'Fast-changing arrows! React quickly with cross-body!',
+      color: '#F59E0B',
+      available: isSpeedArrowsAvailable,
+    },
+    // Level 4 Session 8: Tap Alternating Sides
+    {
+      id: 'side-lights',
+      title: 'Side Lights',
+      emoji: '💡',
+      description: 'Left-right lights tap! Bilateral activation!',
+      color: '#3B82F6',
+      available: isSideLightsAvailable,
+    },
+    {
+      id: 'ping-pong-tap',
+      title: 'Ping-Pong Tap',
+      emoji: '🏓',
+      description: 'Ball idhar-udhar tap! Focus on the moving ball!',
+      color: '#10B981',
+      available: isPingPongTapAvailable,
+    },
+    {
+      id: 'sound-side-tap',
+      title: 'Sound Side Tap',
+      emoji: '🔊',
+      description: 'Sound jis side aaye tap! Auditory processing!',
+      color: '#8B5CF6',
+      available: isSoundSideTapAvailable,
+    },
+    {
+      id: 'count-and-tap',
+      title: 'Count & Tap',
+      emoji: '🔢',
+      description: 'Odd = left, even = right! Cognitive-motor link!',
+      color: '#EF4444',
+      available: isCountAndTapAvailable,
+    },
+    {
+      id: 'fast-switch',
+      title: 'Fast Switch',
+      emoji: '⚡',
+      description: 'Rapid side switching! Brain speed training!',
+      color: '#F59E0B',
+      available: isFastSwitchAvailable,
+    },
+    // Level 4 Session 9: Drag Two Objects Simultaneously
+    {
+      id: 'double-drag',
+      title: 'Double Drag',
+      emoji: '🤲',
+      description: 'Dono haathon se drag! Bilateral strength!',
+      color: '#3B82F6',
+      available: isDoubleDragAvailable,
+    },
+    {
+      id: 'match-pair',
+      title: 'Match Pair',
+      emoji: '🤝',
+      description: 'Left-right object same time! Coordination!',
+      color: '#10B981',
+      available: isMatchPairAvailable,
+    },
+    {
+      id: 'shape-sort',
+      title: 'Shape Sort',
+      emoji: '📦',
+      description: '2 shapes → 2 boxes! Multitasking!',
+      color: '#8B5CF6',
+      available: isShapeSortAvailable,
+    },
+    {
+      id: 'rope-pull',
+      title: 'Rope Pull',
+      emoji: '🪢',
+      description: 'Dono sides rope pull! Upper body integration!',
+      color: '#F59E0B',
+      available: isRopePullAvailable,
+    },
+    {
+      id: 'balance-drag',
+      title: 'Balance Drag',
+      emoji: '⚖️',
+      description: 'Objects ko equal pace! Speed regulation!',
+      color: '#EF4444',
+      available: isBalanceDragAvailable,
+    },
+    // Level 4 Session 10: Cross-Body Rhythm Imitation
+    {
+      id: 'clap-pattern',
+      title: 'Clap Pattern',
+      emoji: '👏',
+      description: 'Cross-body clap copy! Rhythm + midline!',
+      color: '#3B82F6',
+      available: isClapPatternAvailable,
+    },
+    {
+      id: 'tap-shoulder-pattern',
+      title: 'Tap-Shoulder Pattern',
+      emoji: '👆',
+      description: 'Right hand → left shoulder! Body mapping!',
+      color: '#10B981',
+      available: isTapShoulderPatternAvailable,
+    },
+    {
+      id: 'music-copy',
+      title: 'Music Copy',
+      emoji: '🎵',
+      description: 'Beat ke sath movements! Auditory-motor sync!',
+      color: '#8B5CF6',
+      available: isMusicCopyAvailable,
+    },
+    {
+      id: 'memory-rhythm',
+      title: 'Memory Rhythm',
+      emoji: '🧠',
+      description: 'Pattern yaad karke repeat! Working memory!',
+      color: '#F59E0B',
+      available: isMemoryRhythmAvailable,
+    },
+    {
+      id: 'speed-rhythm',
+      title: 'Speed Rhythm',
+      emoji: '⚡',
+      description: 'Slow → fast rhythm! Control + flexibility!',
+      color: '#EF4444',
+      available: isSpeedRhythmAvailable,
+    },
+    // Level 5 Session 1: Follow Moving Object
+    {
+      id: 'catch-moving-ball',
+      title: 'Catch the Ball',
+      emoji: '⚽',
+      description: 'Ball screen pe move karta hai → tap karna. Visual tracking + reaction time!',
+      color: '#3B82F6',
+      available: isCatchMovingBallAvailable,
+    },
+    {
+      id: 'follow-the-butterfly',
+      title: 'Follow the Butterfly',
+      emoji: '🦋',
+      description: 'Butterfly ko finger se follow. Smooth eye movement!',
+      color: '#10B981',
+      available: isFollowTheButterflyAvailable,
+    },
+    {
+      id: 'avoid-the-bomb',
+      title: 'Avoid the Bomb',
+      emoji: '💣',
+      description: 'Bomb se bachate hue target tap. Focus + control!',
+      color: '#EF4444',
+      available: isAvoidTheBombAvailable,
+    },
+    {
+      id: 'chase-the-star',
+      title: 'Chase the Star',
+      emoji: '⭐',
+      description: 'Star idhar-udhar bhage. Predictive tracking!',
+      color: '#F59E0B',
+      available: isChaseTheStarAvailable,
+    },
+    {
+      id: 'zigzag-follow',
+      title: 'Zig-zag Follow',
+      emoji: '〰️',
+      description: 'Object zig-zag me chale. Reading line movement prep!',
+      color: '#8B5CF6',
+      available: isZigzagFollowAvailable,
+    },
+    // Level 5 Session 2: Targeted Tapping
+    {
+      id: 'pop-the-bubble',
+      title: 'Pop the Bubble',
+      emoji: '🫧',
+      description: 'Bubble tap karke pop. Tap accuracy!',
+      color: '#0EA5E9',
+      available: isPopTheBubbleAvailable,
+    },
+    {
+      id: 'color-dot-hit',
+      title: 'Color Dot Hit',
+      emoji: '🎨',
+      description: 'Correct color tap. Visual discrimination!',
+      color: '#8B5CF6',
+      available: isColorDotHitAvailable,
+    },
+    {
+      id: 'small-target',
+      title: 'Small Target',
+      emoji: '🎯',
+      description: 'Tiny target tap. Finger precision!',
+      color: '#EF4444',
+      available: isSmallTargetAvailable,
+    },
+    {
+      id: 'moving-target',
+      title: 'Moving Target',
+      emoji: '⚫',
+      description: 'Moving dot tap. Timing control!',
+      color: '#1F2937',
+      available: isMovingTargetAvailable,
+    },
+    {
+      id: 'timed-target',
+      title: 'Timed Target',
+      emoji: '⏱️',
+      description: 'Time ke andar tap. Speed + accuracy!',
+      color: '#10B981',
+      available: isTimedTargetAvailable,
+    },
+    // Level 5 Session 4: Visual Focus
+    {
+      id: 'find-the-star',
+      title: 'Find the Star',
+      emoji: '⭐',
+      description: 'Many objects me star. Visual scanning!',
+      color: '#FCD34D',
+      available: isFindTheStarAvailable,
+    },
+    {
+      id: 'memory-flash',
+      title: 'Memory Flash',
+      emoji: '💫',
+      description: 'Object flash → find. Visual memory!',
+      color: '#8B5CF6',
+      available: isMemoryFlashAvailable,
+    },
+    {
+      id: 'match-shadow',
+      title: 'Match Shadow',
+      emoji: '🕳️',
+      description: 'Object aur shadow match. Depth perception!',
+      color: '#1F2937',
+      available: isMatchShadowAvailable,
+    },
+    {
+      id: 'what-moved',
+      title: 'What Moved?',
+      emoji: '👀',
+      description: 'Change spot karo. Attention control!',
+      color: '#3B82F6',
+      available: isWhatMovedAvailable,
+    },
+    {
+      id: 'spot-the-color',
+      title: 'Spot the Color',
+      emoji: '🎨',
+      description: 'Specific color find. Selective focus!',
+      color: '#EC4899',
+      available: isSpotTheColorAvailable,
+    },
+    // Level 5 Session 5: Moving Eye Control
+    {
+      id: 'side-eye-track',
+      title: 'Side Eye Track',
+      emoji: '👁️',
+      description: 'Left-right moving dot. Reading readiness!',
+      color: '#10B981',
+      available: isSideEyeTrackAvailable,
+    },
+    {
+      id: 'up-down-track',
+      title: 'Up-Down Track',
+      emoji: '⬆️',
+      description: 'Dot upar-neeche. Line shifting!',
+      color: '#6366F1',
+      available: isUpDownTrackAvailable,
+    },
+    {
+      id: 'circular-track',
+      title: 'Circular Track',
+      emoji: '⭕',
+      description: 'Dot circle me. Eye muscle strength!',
+      color: '#F59E0B',
+      available: isCircularTrackAvailable,
+    },
+    {
+      id: 'jump-track',
+      title: 'Jump Track',
+      emoji: '⚡',
+      description: 'Dot ek jagah se doosri. Visual jump control!',
+      color: '#EF4444',
+      available: isJumpTrackAvailable,
+    },
+    {
+      id: 'multi-dot',
+      title: 'Multi Dot',
+      emoji: '⚫',
+      description: '2 dots alternate. Focus switching!',
+      color: '#8B5CF6',
+      available: isMultiDotAvailable,
+    },
+    // Level 5 Session 6: Speed Matching
+    {
+      id: 'fast-catch',
+      title: 'Fast Catch',
+      emoji: '⚡',
+      description: 'Fast ball tap. Reaction speed!',
+      color: '#EF4444',
+      available: isFastCatchAvailable,
+    },
+    {
+      id: 'slow-catch',
+      title: 'Slow Catch',
+      emoji: '🐢',
+      description: 'Slow ball tap. Controlled timing!',
+      color: '#10B981',
+      available: isSlowCatchAvailable,
+    },
+    {
+      id: 'speed-switch',
+      title: 'Speed Switch',
+      emoji: '🔄',
+      description: 'Fast → slow. Adaptability!',
+      color: '#F59E0B',
+      available: isSpeedSwitchAvailable,
+    },
+    {
+      id: 'music-speed',
+      title: 'Music Speed',
+      emoji: '🎵',
+      description: 'Beat ke sath tap. Auditory + visual sync!',
+      color: '#8B5CF6',
+      available: isMusicSpeedAvailable,
+    },
+    {
+      id: 'countdown-hit',
+      title: 'Countdown Hit',
+      emoji: '⏰',
+      description: 'Timer pe tap. Anticipation!',
+      color: '#6366F1',
+      available: isCountdownHitAvailable,
+    },
+    // Level 5 Session 7: Depth & Distance
+    {
+      id: 'near-vs-far',
+      title: 'Near vs Far',
+      emoji: '📏',
+      description: 'Near target tap. Distance judgment!',
+      color: '#3B82F6',
+      available: isNearVsFarAvailable,
+    },
+    {
+      id: 'zoom-touch',
+      title: 'Zoom Touch',
+      emoji: '🔍',
+      description: 'Object bada hota jaye. Depth awareness!',
+      color: '#EC4899',
+      available: isZoomTouchAvailable,
+    },
+    {
+      id: 'falling-objects',
+      title: 'Falling Objects',
+      emoji: '🍎',
+      description: 'Catch before ground. Prediction!',
+      color: '#F97316',
+      available: isFallingObjectsAvailable,
+    },
+    {
+      id: 'shrinking-target',
+      title: 'Shrinking Target',
+      emoji: '🎯',
+      description: 'Target chhota hota. Precision!',
+      color: '#EF4444',
+      available: isShrinkingTargetL5S7Available,
+    },
+    {
+      id: '3-layer-tap',
+      title: '3-Layer Tap',
+      emoji: '📚',
+      description: 'Front vs back. Visual layering!',
+      color: '#8B5CF6',
+      available: is3LayerTapAvailable,
+    },
+    // Level 5 Session 8: Multi-Object Tracking
+    {
+      id: 'follow-red',
+      title: 'Follow Red',
+      emoji: '🔴',
+      description: 'Red object follow. Selective attention!',
+      color: '#EF4444',
+      available: isFollowRedAvailable,
+    },
+    {
+      id: 'two-moving-balls',
+      title: '2 Moving Balls',
+      emoji: '⚽',
+      description: 'Correct one tap. Filtering skill!',
+      color: '#3B82F6',
+      available: isTwoMovingBallsAvailable,
+    },
+    {
+      id: 'distraction-mode',
+      title: 'Distraction Mode',
+      emoji: '🎯',
+      description: 'Extra objects. Focus under load!',
+      color: '#10B981',
+      available: isDistractionModeAvailable,
+    },
+    {
+      id: 'pattern-chase',
+      title: 'Pattern Chase',
+      emoji: '🔢',
+      description: 'Pattern follow. Visual memory!',
+      color: '#8B5CF6',
+      available: isPatternChaseAvailable,
+    },
+    {
+      id: 'speed-objects',
+      title: 'Speed Objects',
+      emoji: '⚡',
+      description: 'Fast & slow mixed. Tracking control!',
+      color: '#F59E0B',
+      available: isSpeedObjectsAvailable,
+    },
+    // Level 5 Session 9: Visual Reaction
+    {
+      id: 'flash-tap',
+      title: 'Flash Tap',
+      emoji: '💡',
+      description: 'Light flash → tap. Reflex!',
+      color: '#FCD34D',
+      available: isFlashTapAvailable,
+    },
+    {
+      id: 'go-stop',
+      title: 'Go / Stop',
+      emoji: '🚦',
+      description: 'Green tap, red no. Inhibition!',
+      color: '#10B981',
+      available: isGoStopAvailable,
+    },
+    {
+      id: 'surprise-pop',
+      title: 'Surprise Pop',
+      emoji: '💥',
+      description: 'Random pop. Alertness!',
+      color: '#F59E0B',
+      available: isSurprisePopAvailable,
+    },
+    {
+      id: 'sound-light',
+      title: 'Sound + Light',
+      emoji: '🎵',
+      description: 'Both match. Multi-sensory!',
+      color: '#8B5CF6',
+      available: isSoundLightAvailable,
+    },
+    {
+      id: 'quick-choice',
+      title: 'Quick Choice',
+      emoji: '⚡',
+      description: '2 options. Decision speed!',
+      color: '#6366F1',
+      available: isQuickChoiceAvailable,
+    },
   ];
 
   // ---------- Game render switches ----------
@@ -3064,9 +4317,9 @@ export default function SessionGamesScreen() {
 
 
   // Level 2 Session 2: Trace Curved Line games
-  // if (currentGame === 'rainbow-trace') {
-  //   return <RainbowTraceGame onBack={() => setCurrentGame('menu')} />;
-  // }
+  if (currentGame === 'rainbow-trace') {
+    return <RainbowCurveTraceGame onBack={() => setCurrentGame('menu')} />;
+  }
 
   if (currentGame === 'snake-slide') {
     return <SnakeSlideGame onBack={() => setCurrentGame('menu')} />;
@@ -3082,6 +4335,26 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'curvy-road-drive') {
     return <CurvyRoadDriveGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'mountain-climb') {
+    return <MountainClimbGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'lightning-bolt') {
+    return <LightningBoltGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'saw-path') {
+    return <SawPathGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'robot-wire-fix') {
+    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'zig-zag-race') {
+    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} />;
   }
 
   // Level 2 Session 3: Speech Therapy Airflow Games
@@ -3105,26 +4378,6 @@ export default function SessionGamesScreen() {
     return <BalloonInflateGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  // Level 2 Session 3: Trace Zig-Zag games (OT)
-  if (currentGame === 'mountain-climb') {
-    return <MountainClimbGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'lightning-bolt') {
-    return <LightningBoltGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'saw-path') {
-    return <SawPathGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'robot-wire-fix') {
-    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'zig-zag-race') {
-    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} />;
-  }
 
   // Level 2 Session 4: Follow Path (Drag) games
   if (currentGame === 'maze-walk') {
@@ -3521,6 +4774,594 @@ export default function SessionGamesScreen() {
     return <BigThrowSmallThrowGame onBack={() => setCurrentGame('menu')} />;
   }
 
+  // Level 3 Session 3 games - Tap with Rhythm (Drum Beats)
+  if (currentGame === 'single-beat-tap') {
+    return <SingleBeatTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'double-beat-copy') {
+    return <DoubleBeatCopyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pause-and-tap') {
+    return <PauseAndTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'fast-beat-challenge') {
+    return <FastBeatChallengeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'slow-beat-calm-mode') {
+    return <SlowBeatCalmModeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 3 games - Fast vs Slow Movements
+  if (currentGame === 'slow-turtle-move') {
+    return <SlowTurtleMoveGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'fast-rabbit-run') {
+    return <FastRabbitRunGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'speed-match') {
+    return <SpeedMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'traffic-light-game') {
+    return <TrafficLightGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'music-speed-control') {
+    return <MusicSpeedControlGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 4 games - Up-Down Gestures & Big vs Small Movements
+  if (currentGame === 'balloon-up') {
+    return <BalloonUpGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'ball-drop') {
+    return <BallDropGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'elevator-game') {
+    return <ElevatorGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jump-arrow') {
+    return <JumpArrowGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'rain-catch') {
+    return <RainCatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'big-tap-l3s4') {
+    return <BigTapL3S4Game onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'small-dot-touch') {
+    return <SmallDotTouchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'big-small-switch') {
+    return <BigSmallSwitchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'balloon-inflate-l3s4') {
+    return <BalloonInflateL3S4Game onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'compare-and-move') {
+    return <CompareAndMoveGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 5 games - Left-Right Swipes
+  if (currentGame === 'car-turn') {
+    return <CarTurnGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'arrow-match') {
+    return <ArrowMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'animal-run') {
+    return <AnimalRunGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'mirror-swipe') {
+    return <MirrorSwipeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'catch-the-ball') {
+    return <CatchTheBallGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 6 games - Jump Imitation (Tap Twice)
+  if (currentGame === 'frog-jump') {
+    return <FrogJumpGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jump-count') {
+    return <JumpCountGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'double-tap-only') {
+    return <DoubleTapOnlyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'rhythm-jump') {
+    return <RhythmJumpGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'obstacle-jump') {
+    return <ObstacleJumpGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 7 games - Swinging Movement Imitation
+  if (currentGame === 'pendulum-copy') {
+    return <PendulumCopyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'monkey-swing') {
+    return <MonkeySwingGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'fan-motion') {
+    return <FanMotionGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'rope-swing-timing') {
+    return <RopeSwingTimingGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'music-swing') {
+    return <MusicSwingGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 8 games - Whole Body Map
+  if (currentGame === 'touch-head') {
+    return <TouchHeadGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'shoulders-tap') {
+    return <ShouldersTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'body-puzzle') {
+    return <BodyPuzzleGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'follow-the-body') {
+    return <FollowTheBodyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'body-flash') {
+    return <BodyFlashGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 9 games - Mirror Movements
+  if (currentGame === 'copy-pose') {
+    return <CopyPoseGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'hand-mirror') {
+    return <HandMirrorGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pattern-copy') {
+    return <PatternCopyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'delayed-mirror') {
+    return <DelayedMirrorGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'fast-copy') {
+    return <FastCopyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 3 Session 10 games - Posture-Based Games
+  if (currentGame === 'freeze-pose') {
+    return <FreezePoseGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'animal-pose') {
+    return <AnimalPoseGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'shape-pose') {
+    return <ShapePoseGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'count-hold') {
+    return <CountHoldGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pose-match') {
+    return <PoseMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 1 games - Drag Object Left → Right
+  if (currentGame === 'ball-transfer') {
+    return <BallTransferGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'feed-the-monster') {
+    return <FeedTheMonsterGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'road-crossing') {
+    return <RoadCrossingGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'color-match-drag') {
+    return <ColorMatchDragGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'timed-drag') {
+    return <TimedDragGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 2 games - Drag Object Right → Left
+  if (currentGame === 'reverse-ball-pass') {
+    return <ReverseBallPassGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'collect-stars') {
+    return <CollectStarsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'reverse-path') {
+    return <ReversePathGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'mirror-drag') {
+    return <MirrorDragGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pattern-drag') {
+    return <PatternDragGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 3 games - Diagonal Dragging
+  if (currentGame === 'top-left-bottom-right') {
+    return <TopLeftToBottomRightGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'x-path-trace') {
+    return <XPathTraceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'diagonal-catch') {
+    return <DiagonalCatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'zigzag-drag') {
+    return <ZigZagDragGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'diagonal-match') {
+    return <DiagonalMatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 4 games - Two-Hand Tapping (Dual Targets)
+  if (currentGame === 'double-circle-tap') {
+    return <DoubleCircleTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'piano-keys') {
+    return <PianoKeysGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'drum-duo') {
+    return <DrumDuoGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'light-up-targets') {
+    return <LightUpTargetsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'hold-and-tap') {
+    return <HoldAndTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 5 games - Alternating Hands
+  if (currentGame === 'left-right-tap') {
+    return <LeftRightTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'walking-hands') {
+    return <WalkingHandsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'flash-side') {
+    return <FlashSideGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'drum-alternate') {
+    return <DrumAlternateGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'speed-alternate') {
+    return <SpeedAlternateGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 6 games - Pass Ball Across Midline
+  if (currentGame === 'hand-to-hand-pass') {
+    return <HandToHandPassGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'throw-catch') {
+    return <ThrowCatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'target-pass') {
+    return <TargetPassGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'rhythm-pass') {
+    return <RhythmPassGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'obstacle-pass') {
+    return <ObstaclePassGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 7 games - Follow Cross-Body Arrows
+  if (currentGame === 'arrow-touch') {
+    return <ArrowTouchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'arrow-swipe') {
+    return <ArrowSwipeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'moving-arrows') {
+    return <MovingArrowsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'arrow-sequence') {
+    return <ArrowSequenceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'speed-arrows') {
+    return <SpeedArrowsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 8 games - Tap Alternating Sides
+  if (currentGame === 'side-lights') {
+    return <SideLightsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'ping-pong-tap') {
+    return <PingPongTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'sound-side-tap') {
+    return <SoundSideTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'count-and-tap') {
+    return <CountAndTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'fast-switch') {
+    return <FastSwitchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 9 games - Drag Two Objects Simultaneously
+  if (currentGame === 'double-drag') {
+    return <DoubleDragGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'match-pair') {
+    return <MatchPairGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'shape-sort') {
+    return <ShapeSortGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'rope-pull') {
+    return <RopePullGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'balance-drag') {
+    return <BalanceDragGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 4 Session 10 games - Cross-Body Rhythm Imitation
+  if (currentGame === 'clap-pattern') {
+    return <ClapPatternGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'tap-shoulder-pattern') {
+    return <TapShoulderPatternGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'music-copy') {
+    return <MusicCopyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'memory-rhythm') {
+    return <MemoryRhythmGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'speed-rhythm') {
+    return <SpeedRhythmGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 5 Session 1 games - Follow Moving Object
+  if (currentGame === 'catch-moving-ball') {
+    return <CatchMovingBallGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'follow-the-butterfly') {
+    return <FollowTheButterflyGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'avoid-the-bomb') {
+    return <AvoidTheBombGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'chase-the-star') {
+    return <ChaseTheStarGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'zigzag-follow') {
+    return <ZigZagFollowGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 5 Session 2: Targeted Tapping
+  if (currentGame === 'pop-the-bubble') {
+    return <PopTheBubbleGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'color-dot-hit') {
+    return <ColorDotHitGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'small-target') {
+    return <SmallTargetGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'moving-target') {
+    return <MovingTargetGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'timed-target') {
+    return <TimedTargetGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+
+  // Level 5 Session 4: Visual Focus
+  if (currentGame === 'find-the-star') {
+    return <FindTheStarGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'memory-flash') {
+    return <MemoryFlashGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'match-shadow') {
+    return <MatchShadowGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'what-moved') {
+    return <WhatMovedGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'spot-the-color') {
+    return <SpotTheColorGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 5 Session 5: Moving Eye Control
+  if (currentGame === 'side-eye-track') {
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'up-down-track') {
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'circular-track') {
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'jump-track') {
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'multi-dot') {
+    return <SideEyeTrackGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 5 Session 6: Speed Matching
+  if (currentGame === 'fast-catch') {
+    return <FastCatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'slow-catch') {
+    return <SlowCatchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'speed-switch') {
+    return <SpeedSwitchGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'music-speed') {
+    return <MusicSpeedGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'countdown-hit') {
+    return <CountdownHitGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 5 Session 7: Depth & Distance
+  if (currentGame === 'near-vs-far') {
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'zoom-touch') {
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'falling-objects') {
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'shrinking-target') {
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === '3-layer-tap') {
+    return <NearVsFarGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 5 Session 8: Multi-Object Tracking
+  if (currentGame === 'follow-red') {
+    return <FollowRedGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'two-moving-balls') {
+    return <TwoMovingBallsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'distraction-mode') {
+    return <DistractionModeGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'pattern-chase') {
+    return <PatternChaseGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'speed-objects') {
+    return <SpeedObjectsGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  // Level 5 Session 9: Visual Reaction
+  if (currentGame === 'flash-tap') {
+    return <FlashTapGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'go-stop') {
+    return <GoStopGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'surprise-pop') {
+    return <SurprisePopGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'sound-light') {
+    return <SoundLightGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'quick-choice') {
+    return <QuickChoiceGame onBack={() => setCurrentGame('menu')} />;
+  }
+
   // ---------- Menu UI ----------
 
   return (
@@ -3639,18 +5480,18 @@ export default function SessionGamesScreen() {
                   if (game.id === 'moon-path') setCurrentGame('moon-path');
                   if (game.id === 'smile-maker') setCurrentGame('smile-maker');
                   if (game.id === 'curvy-road-drive') setCurrentGame('curvy-road-drive');
+                  // Level 2 Session 3 games - Occupational Therapy Trace Zig-Zag
+                  if (game.id === 'mountain-climb') setCurrentGame('mountain-climb');
+                  if (game.id === 'lightning-bolt') setCurrentGame('lightning-bolt');
+                  if (game.id === 'saw-path') setCurrentGame('saw-path');
+                  if (game.id === 'robot-wire-fix') setCurrentGame('robot-wire-fix');
+                  if (game.id === 'zig-zag-race') setCurrentGame('zig-zag-race');
                   // Level 2 Session 3 games - Speech Therapy Airflow
                   if (game.id === 'blow-the-bubble') setCurrentGame('blow-the-bubble');
                   if (game.id === 'move-the-feather') setCurrentGame('move-the-feather');
                   if (game.id === 'windmill-spin') setCurrentGame('windmill-spin');
                   if (game.id === 'blow-out-candle') setCurrentGame('blow-out-candle');
                   if (game.id === 'balloon-inflate') setCurrentGame('balloon-inflate');
-                  // Level 2 Session 3 games - OT Zig-Zag
-                  if (game.id === 'mountain-climb') setCurrentGame('mountain-climb');
-                  if (game.id === 'lightning-bolt') setCurrentGame('lightning-bolt');
-                  if (game.id === 'saw-path') setCurrentGame('saw-path');
-                  if (game.id === 'robot-wire-fix') setCurrentGame('robot-wire-fix');
-                  if (game.id === 'zig-zag-race') setCurrentGame('zig-zag-race');
                   // Level 2 Session 4 games
                   if (game.id === 'maze-walk') setCurrentGame('maze-walk');
                   if (game.id === 'river-boat-guide') setCurrentGame('river-boat-guide');
@@ -3776,6 +5617,42 @@ export default function SessionGamesScreen() {
                   if (game.id === 'body-puzzle') setCurrentGame('body-puzzle');
                   if (game.id === 'follow-the-body') setCurrentGame('follow-the-body');
                   if (game.id === 'body-flash') setCurrentGame('body-flash');
+                  // Level 3 Session 9: Mirror Movements
+                  if (game.id === 'copy-pose') setCurrentGame('copy-pose');
+                  if (game.id === 'hand-mirror') setCurrentGame('hand-mirror');
+                  if (game.id === 'pattern-copy') setCurrentGame('pattern-copy');
+                  if (game.id === 'delayed-mirror') setCurrentGame('delayed-mirror');
+                  if (game.id === 'fast-copy') setCurrentGame('fast-copy');
+                  // Level 3 Session 10: Posture-Based Games
+                  if (game.id === 'freeze-pose') setCurrentGame('freeze-pose');
+                  if (game.id === 'animal-pose') setCurrentGame('animal-pose');
+                  if (game.id === 'shape-pose') setCurrentGame('shape-pose');
+                  if (game.id === 'count-hold') setCurrentGame('count-hold');
+                  if (game.id === 'pose-match') setCurrentGame('pose-match');
+                  // Level 4 Session 1: Drag Object Left → Right
+                  if (game.id === 'ball-transfer') setCurrentGame('ball-transfer');
+                  if (game.id === 'feed-the-monster') setCurrentGame('feed-the-monster');
+                  if (game.id === 'road-crossing') setCurrentGame('road-crossing');
+                  if (game.id === 'color-match-drag') setCurrentGame('color-match-drag');
+                  if (game.id === 'timed-drag') setCurrentGame('timed-drag');
+                  // Level 4 Session 2: Drag Object Right → Left
+                  if (game.id === 'reverse-ball-pass') setCurrentGame('reverse-ball-pass');
+                  if (game.id === 'collect-stars') setCurrentGame('collect-stars');
+                  if (game.id === 'reverse-path') setCurrentGame('reverse-path');
+                  if (game.id === 'mirror-drag') setCurrentGame('mirror-drag');
+                  if (game.id === 'pattern-drag') setCurrentGame('pattern-drag');
+                  // Level 4 Session 3: Diagonal Dragging
+                  if (game.id === 'top-left-bottom-right') setCurrentGame('top-left-bottom-right');
+                  if (game.id === 'x-path-trace') setCurrentGame('x-path-trace');
+                  if (game.id === 'diagonal-catch') setCurrentGame('diagonal-catch');
+                  if (game.id === 'zigzag-drag') setCurrentGame('zigzag-drag');
+                  if (game.id === 'diagonal-match') setCurrentGame('diagonal-match');
+                  // Level 4 Session 4: Two-Hand Tapping (Dual Targets)
+                  if (game.id === 'double-circle-tap') setCurrentGame('double-circle-tap');
+                  if (game.id === 'piano-keys') setCurrentGame('piano-keys');
+                  if (game.id === 'drum-duo') setCurrentGame('drum-duo');
+                  if (game.id === 'light-up-targets') setCurrentGame('light-up-targets');
+                  if (game.id === 'hold-and-tap') setCurrentGame('hold-and-tap');
                   // Level 3 Session 3: Fast vs Slow Movements
                   if (game.id === 'slow-turtle-move') setCurrentGame('slow-turtle-move');
                   if (game.id === 'fast-rabbit-run') setCurrentGame('fast-rabbit-run');
@@ -3794,6 +5671,55 @@ export default function SessionGamesScreen() {
                   if (game.id === 'big-small-switch') setCurrentGame('big-small-switch');
                   if (game.id === 'balloon-inflate-l3s4') setCurrentGame('balloon-inflate-l3s4');
                   if (game.id === 'compare-and-move') setCurrentGame('compare-and-move');
+                  // Level 5 Session 1 games
+                  if (game.id === 'catch-moving-ball') setCurrentGame('catch-moving-ball');
+                  if (game.id === 'follow-the-butterfly') setCurrentGame('follow-the-butterfly');
+                  if (game.id === 'avoid-the-bomb') setCurrentGame('avoid-the-bomb');
+                  if (game.id === 'chase-the-star') setCurrentGame('chase-the-star');
+                  if (game.id === 'zigzag-follow') setCurrentGame('zigzag-follow');
+                  // Level 5 Session 2: Targeted Tapping
+                  if (game.id === 'pop-the-bubble') setCurrentGame('pop-the-bubble');
+                  if (game.id === 'color-dot-hit') setCurrentGame('color-dot-hit');
+                  if (game.id === 'small-target') setCurrentGame('small-target');
+                  if (game.id === 'moving-target') setCurrentGame('moving-target');
+                  if (game.id === 'timed-target') setCurrentGame('timed-target');
+                  // Level 5 Session 3: Drag to Track
+                  // Level 5 Session 4: Visual Focus
+                  if (game.id === 'find-the-star') setCurrentGame('find-the-star');
+                  if (game.id === 'memory-flash') setCurrentGame('memory-flash');
+                  if (game.id === 'match-shadow') setCurrentGame('match-shadow');
+                  if (game.id === 'what-moved') setCurrentGame('what-moved');
+                  if (game.id === 'spot-the-color') setCurrentGame('spot-the-color');
+                  // Level 5 Session 5: Moving Eye Control
+                  if (game.id === 'side-eye-track') setCurrentGame('side-eye-track');
+                  if (game.id === 'up-down-track') setCurrentGame('up-down-track');
+                  if (game.id === 'circular-track') setCurrentGame('circular-track');
+                  if (game.id === 'jump-track') setCurrentGame('jump-track');
+                  if (game.id === 'multi-dot') setCurrentGame('multi-dot');
+                  // Level 5 Session 6: Speed Matching
+                  if (game.id === 'fast-catch') setCurrentGame('fast-catch');
+                  if (game.id === 'slow-catch') setCurrentGame('slow-catch');
+                  if (game.id === 'speed-switch') setCurrentGame('speed-switch');
+                  if (game.id === 'music-speed') setCurrentGame('music-speed');
+                  if (game.id === 'countdown-hit') setCurrentGame('countdown-hit');
+                  // Level 5 Session 7: Depth & Distance
+                  if (game.id === 'near-vs-far') setCurrentGame('near-vs-far');
+                  if (game.id === 'zoom-touch') setCurrentGame('zoom-touch');
+                  if (game.id === 'falling-objects') setCurrentGame('falling-objects');
+                  if (game.id === 'shrinking-target') setCurrentGame('shrinking-target');
+                  if (game.id === '3-layer-tap') setCurrentGame('3-layer-tap');
+                  // Level 5 Session 8: Multi-Object Tracking
+                  if (game.id === 'follow-red') setCurrentGame('follow-red');
+                  if (game.id === 'two-moving-balls') setCurrentGame('two-moving-balls');
+                  if (game.id === 'distraction-mode') setCurrentGame('distraction-mode');
+                  if (game.id === 'pattern-chase') setCurrentGame('pattern-chase');
+                  if (game.id === 'speed-objects') setCurrentGame('speed-objects');
+                  // Level 5 Session 9: Visual Reaction
+                  if (game.id === 'flash-tap') setCurrentGame('flash-tap');
+                  if (game.id === 'go-stop') setCurrentGame('go-stop');
+                  if (game.id === 'surprise-pop') setCurrentGame('surprise-pop');
+                  if (game.id === 'sound-light') setCurrentGame('sound-light');
+                  if (game.id === 'quick-choice') setCurrentGame('quick-choice');
                 }}
                 activeOpacity={0.8}
               >

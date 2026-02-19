@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -177,7 +177,7 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
     try {
       await playError();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Speech.speak('Wait until it\'s smallest!', { rate: 0.78 });
+      speakTTS('Wait until it\'s smallest!', 0.78 );
     } catch {}
 
     const timeout1 = setTimeout(() => {
@@ -297,7 +297,7 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
       try {
         await playSuccess();
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Speech.speak('Perfect! You waited!', { rate: 0.78 });
+        speakTTS('Perfect! You waited!', 0.78 );
       } catch {}
 
       if (roundRef.current >= TOTAL_ROUNDS) {
@@ -370,7 +370,7 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Tap when the star is smallest!', { rate: 0.78 });
+        speakTTS('Tap when the star is smallest!', 0.78 );
       } catch {}
     }
     return () => {

@@ -5,7 +5,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Platform, Pressable, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -116,7 +116,7 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setRound((r) => r + 1);
     setIsDisabled(false);
     try {
-      Speech.speak('Look! The red circle is glowing. Tap the red circle!', { rate: 0.78 });
+      speakTTS('Look! The red circle is glowing. Tap the red circle!', 0.78 );
     } catch {}
   };
 
@@ -150,7 +150,7 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setDone(true);
       setShowCongratulations(true);
       
-      Speech.speak('Amazing work! You completed the game!', { rate: 0.78 });
+      speakTTS('Amazing work! You completed the game!', 0.78 );
 
       // Log game in background (don't wait for it)
       try {

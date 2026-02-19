@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -108,10 +108,10 @@ const ElevatorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak(floor === 'top' ? 'Swipe up to go to top floor!' : 'Swipe down to go to ground floor!', { rate: 0.8 });
+        speakTTS(floor === 'top' ? 'Swipe up to go to top floor!' : 'Swipe down to go to ground floor!', 0.8 );
       }, 300);
     } else {
-      Speech.speak(floor === 'top' ? 'Swipe up to go to top floor!' : 'Swipe down to go to ground floor!', { rate: 0.8 });
+      speakTTS(floor === 'top' ? 'Swipe up to go to top floor!' : 'Swipe down to go to ground floor!', 0.8 );
     }
   }, [elevatorScale, elevatorY]);
 
@@ -120,7 +120,7 @@ const ElevatorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Great! Elevator moved!', { rate: 0.9 });
+    speakTTS('Great! Elevator moved!', 0.9 );
     
     const targetY = targetFloor === 'top' ? TOP_FLOOR_Y : GROUND_FLOOR_Y;
     
@@ -158,7 +158,7 @@ const ElevatorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleMiss = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    Speech.speak(targetFloor === 'top' ? 'Try swiping up!' : 'Try swiping down!', { rate: 0.8 });
+    speakTTS(targetFloor === 'top' ? 'Try swiping up!' : 'Try swiping down!', 0.8 );
     // Reset elevator position
     const startY = targetFloor === 'top' ? GROUND_FLOOR_Y : TOP_FLOOR_Y;
     Animated.timing(elevatorY, {
@@ -208,7 +208,7 @@ const ElevatorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -275,7 +275,7 @@ const ElevatorGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

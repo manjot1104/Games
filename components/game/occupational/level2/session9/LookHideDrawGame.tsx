@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -124,7 +124,7 @@ const LookHideDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log look hide draw game:', e);
       }
 
-      Speech.speak('Pattern remembered!', { rate: 0.78 });
+      speakTTS('Pattern remembered!', 0.78 );
     },
     [router],
   );
@@ -167,7 +167,7 @@ const LookHideDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       try {
         playWarning();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Speech.speak('Try again!', { rate: 0.78 });
+        speakTTS('Try again!', 0.78 );
       } catch {}
     }
   }, [roundActive, done, phase, targetPattern, endGame, playSuccess, playWarning, sparkleX, sparkleY, patternOpacity]);
@@ -181,7 +181,7 @@ const LookHideDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setRoundActive(false);
 
     try {
-      Speech.speak('Look at the pattern carefully', { rate: 0.78 });
+      speakTTS('Look at the pattern carefully', 0.78 );
     } catch {}
 
     // Show pattern
@@ -189,7 +189,7 @@ const LookHideDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setPhase('hide');
       patternOpacity.value = withTiming(0, { duration: 300 });
       try {
-        Speech.speak('Pattern is hidden. Remember it!', { rate: 0.78 });
+        speakTTS('Pattern is hidden. Remember it!', 0.78 );
       } catch {}
     }, SHOW_DURATION);
 
@@ -198,7 +198,7 @@ const LookHideDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setPhase('draw');
       setRoundActive(true);
       try {
-        Speech.speak('Now select the pattern you saw!', { rate: 0.78 });
+        speakTTS('Now select the pattern you saw!', 0.78 );
       } catch {}
     }, SHOW_DURATION + HIDE_DURATION);
 

@@ -14,6 +14,10 @@ export default function Root({ children }: PropsWithChildren) {
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         
+        {/* Required headers for SharedArrayBuffer (needed for speech-to-speech TTS) */}
+        <meta httpEquiv="Cross-Origin-Opener-Policy" content="same-origin" />
+        <meta httpEquiv="Cross-Origin-Embedder-Policy" content="require-corp" />
+        
         {/* Aggressive cache-busting meta tags */}
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
@@ -51,6 +55,60 @@ export default function Root({ children }: PropsWithChildren) {
         />
         
         <ScrollViewStyleReset />
+        
+        {/* Load onnxruntime-web from CDN - required for speech-to-speech TTS */}
+        {/* Try multiple CDN sources for reliability */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const cdnUrls = [
+                  'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.min.js',
+                  'https://unpkg.com/onnxruntime-web@1.22.0/dist/ort.min.js'
+                ];
+                
+                let currentIndex = 0;
+                
+                function loadScript(url) {
+                  return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = url;
+                    script.crossOrigin = 'anonymous';
+                    script.onload = function() {
+                      console.log('[AAC] onnxruntime-web loaded from CDN:', url);
+                      window.__ortReady = true;
+                      window.dispatchEvent(new Event('ortReady'));
+                      resolve();
+                    };
+                    script.onerror = function() {
+                      console.warn('[AAC] Failed to load from:', url);
+                      reject(new Error('Failed to load from ' + url));
+                    };
+                    document.head.appendChild(script);
+                  });
+                }
+                
+                async function tryLoad() {
+                  for (const url of cdnUrls) {
+                    try {
+                      await loadScript(url);
+                      return; // Success
+                    } catch (err) {
+                      console.warn('[AAC] Trying next CDN...');
+                      if (cdnUrls.indexOf(url) === cdnUrls.length - 1) {
+                        // Last URL failed
+                        console.error('[AAC] All CDN sources failed to load onnxruntime-web');
+                        window.__ortReady = false;
+                      }
+                    }
+                  }
+                }
+                
+                tryLoad();
+              })();
+            `,
+          }}
+        />
         
         {/* Using raw CSS styles as a workaround for the View component. */}
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />

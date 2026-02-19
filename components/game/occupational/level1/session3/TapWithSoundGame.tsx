@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -90,7 +90,7 @@ const TapWithSoundGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial instruction - only once
   useEffect(() => {
     try {
-      Speech.speak('Listen to the drum beat and tap with it! Start slow, then tap fast.', { rate: 0.78 });
+      speakTTS('Listen to the drum beat and tap with it! Start slow, then tap fast.', { rate: 0.78 });
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -107,7 +107,7 @@ const TapWithSoundGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         // Switch to fast mode after BEATS_PER_MODE slow beats
         if (newCount >= BEATS_PER_MODE && beatMode === 'slow') {
           setBeatMode('fast');
-          Speech.speak('Now tap fast with the beat!', { rate: 0.78 });
+          speakTTS('Now tap fast with the beat!', 0.78 );
         }
 
         return newCount;
@@ -255,7 +255,7 @@ const TapWithSoundGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log tap with sound game:', e);
       }
 
-      Speech.speak('Great rhythm!', { rate: 0.78 });
+      speakTTS('Great rhythm!', 0.78 );
     },
     [router, syncScore],
   );

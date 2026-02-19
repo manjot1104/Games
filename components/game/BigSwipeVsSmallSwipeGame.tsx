@@ -1,9 +1,9 @@
 import { logGameAndAward } from '@/utils/api';
 import { stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
@@ -63,7 +63,7 @@ export const BigSwipeVsSmallSwipeGame: React.FC<{ onBack?: () => void }> = ({ on
         }).start();
         setBigBarProgress(100);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        Speech.speak('Great! Big swipe!');
+        speakTTS('Great! Big swipe!');
       } else if (targetSwipe === 'small' && distance <= SMALL_SWIPE_THRESHOLD && distance > 10) {
         // Correct small swipe
         setCorrect((c) => c + 1);
@@ -74,12 +74,12 @@ export const BigSwipeVsSmallSwipeGame: React.FC<{ onBack?: () => void }> = ({ on
         }).start();
         setSmallBarProgress(100);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        Speech.speak('Perfect! Small swipe!');
+        speakTTS('Perfect! Small swipe!');
       } else {
         // Wrong swipe
         setWrong((w) => w + 1);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        Speech.speak('Try again!');
+        speakTTS('Try again!');
       }
 
       // Reset and move to next round
@@ -105,7 +105,7 @@ export const BigSwipeVsSmallSwipeGame: React.FC<{ onBack?: () => void }> = ({ on
   const generateTarget = () => {
     const swipeType: SwipeType = Math.random() > 0.5 ? 'big' : 'small';
     setTargetSwipe(swipeType);
-    Speech.speak(swipeType === 'big' ? 'Make a BIG swipe!' : 'Make a SMALL swipe!');
+    speakTTS(swipeType === 'big' ? 'Make a BIG swipe!' : 'Make a SMALL swipe!');
   };
 
   const startGame = () => {
@@ -141,7 +141,7 @@ export const BigSwipeVsSmallSwipeGame: React.FC<{ onBack?: () => void }> = ({ on
       console.error('Failed to save game:', e);
     }
 
-    Speech.speak('Amazing! You mastered big and small swipes!');
+    speakTTS('Amazing! You mastered big and small swipes!');
   };
 
   const bigBarWidth = bigBarAnim.interpolate({

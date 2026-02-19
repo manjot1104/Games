@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -143,7 +143,7 @@ const ShadowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log shadow match game:', e);
       }
 
-      Speech.speak('Shadow matched!', { rate: 0.78 });
+      speakTTS('Shadow matched!', 0.78 );
     },
     [router],
   );
@@ -205,14 +205,14 @@ const ShadowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playWarning();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Match the exact shadow!', { rate: 0.78 });
+          speakTTS('Match the exact shadow!', 0.78 );
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Match the shape to its exact shadow outline!', { rate: 0.78 });
+      speakTTS('Match the shape to its exact shadow outline!', 0.78 );
     } catch {}
     generateRound();
     

@@ -1,9 +1,9 @@
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
@@ -83,7 +83,7 @@ export const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
     totalTapsRef.current = 0;
     lastBeatTimeRef.current = Date.now();
     lastTapTimeRef.current = 0;
-    Speech.speak('Tap when you hear the drum beat!');
+    speakTTS('Tap when you hear the drum beat!');
     startPulse();
   }, [startPulse]);
 
@@ -163,7 +163,7 @@ export const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
           const newInterval = Math.max(MIN_BEAT_INTERVAL, beatInterval - BEAT_INTERVAL_DECREASE);
           setBeatInterval(newInterval);
           setRound((r) => r + 1);
-          Speech.speak(`Round ${round + 1}! Faster beats!`);
+          speakTTS(`Round ${round + 1}! Faster beats!`);
         } else {
           // Game complete
           finishGame();
@@ -207,7 +207,7 @@ export const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
       console.error('Failed to save game:', e);
     }
 
-    Speech.speak('Amazing! You matched the beats perfectly!');
+    speakTTS('Amazing! You matched the beats perfectly!');
   }, [round, beatInterval, router]);
 
   const pulseStyle = {

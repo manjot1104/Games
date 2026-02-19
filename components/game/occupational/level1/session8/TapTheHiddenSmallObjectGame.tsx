@@ -4,7 +4,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -131,7 +131,7 @@ const TapTheHiddenSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
         console.error('Failed to log tap the hidden small object game:', e);
       }
 
-      Speech.speak('Great scanning!', { rate: 0.78 });
+      speakTTS('Great scanning!', 0.78 );
     },
     [router],
   );
@@ -303,7 +303,7 @@ const TapTheHiddenSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
       try {
         await playSuccess();
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Speech.speak('Perfect! Found it!', { rate: 0.78 });
+        speakTTS('Perfect! Found it!', 0.78 );
       } catch {}
 
       // Next round or finish
@@ -388,7 +388,7 @@ const TapTheHiddenSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
         try {
           await playSuccess();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Speech.speak('Found it!', { rate: 0.78 });
+          speakTTS('Found it!', 0.78 );
         } catch {}
 
         // Next round or finish
@@ -423,7 +423,7 @@ const TapTheHiddenSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
         try {
           await playError();
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Keep looking!', { rate: 0.78 });
+          speakTTS('Keep looking!', 0.78 );
         } catch {}
 
         // Hide feedback after a moment
@@ -454,7 +454,7 @@ const TapTheHiddenSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Find and tap the hidden small object!', { rate: 0.78 });
+        speakTTS('Find and tap the hidden small object!', 0.78 );
       } catch {}
     }
     return () => {

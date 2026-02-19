@@ -1,8 +1,9 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -16,7 +17,8 @@ import {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
     useAnimatedStyle,
-    useSharedValue
+    useSharedValue,
+    withTiming
 } from 'react-native-reanimated';
 import { SparkleBurst } from './FX';
 import ResultCard from './ResultCard';
@@ -75,6 +77,7 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [isRolling, setIsRolling] = useState(false);
   const [isHorizontal, setIsHorizontal] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [showRedAlert, setShowRedAlert] = useState(false);
 
   const rollerX = useSharedValue(15);
   const rollerY = useSharedValue(50);
@@ -85,9 +88,12 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const startY = useSharedValue(50);
   const endX = useSharedValue(85);
   const endY = useSharedValue(50);
+  const alertOpacity = useSharedValue(0);
 
   const screenWidth = useRef(400);
   const screenHeight = useRef(600);
+  const lastX = useRef(0);
+  const lastY = useRef(0);
 
   const endGame = useCallback(
     async (finalScore: number) => {
@@ -98,6 +104,9 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setRoundActive(false);
+
+      // Stop all speech when game ends
+      stopAllSpeech();
 
       try {
         await recordGame(xp);
@@ -115,40 +124,113 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log road roller game:', e);
       }
 
-      Speech.speak('Road master!', { rate: 0.78 });
+      speakTTS('Road master!', 0.78);
     },
     [router],
   );
 
   const panGesture = Gesture.Pan()
-    .onStart(() => {
+    .onStart((e) => {
       if (!roundActive || done) return;
+      
+      // Check if touch started on the roller - only allow dragging if started on roller
+      const touchX = (e.x / screenWidth.current) * 100;
+      const touchY = (e.y / screenHeight.current) * 100;
+      
+      // Calculate distance from touch point to roller center
+      const rollerCenterX = rollerX.value;
+      const rollerCenterY = rollerY.value;
+      
+      // Convert ROLLER_SIZE from pixels to percentage for comparison
+      const rollerSizePercentX = (ROLLER_SIZE / screenWidth.current) * 100;
+      const rollerSizePercentY = (ROLLER_SIZE / screenHeight.current) * 100;
+      const rollerRadiusX = rollerSizePercentX / 2;
+      const rollerRadiusY = rollerSizePercentY / 2;
+      
+      // Check if touch is within roller bounds
+      const distX = Math.abs(touchX - rollerCenterX);
+      const distY = Math.abs(touchY - rollerCenterY);
+      const isOnRoller = distX <= rollerRadiusX && distY <= rollerRadiusY;
+      
+      if (!isOnRoller) {
+        return; // Don't start rolling if not on roller
+      }
+      
       setIsRolling(true);
+      setShowRedAlert(false);
+      alertOpacity.value = 0;
+      const startScreenX = (e.x / screenWidth.current) * 100;
+      const startScreenY = (e.y / screenHeight.current) * 100;
+      lastX.current = startScreenX;
+      lastY.current = startScreenY;
     })
     .onUpdate((e) => {
-      if (!roundActive || done) return;
+      if (!roundActive || done || !isRolling) return; // Only update if rolling started on roller
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
       
-      if (isHorizontal) {
-        rollerX.value = Math.max(5, Math.min(95, newX));
-        rollerY.value = startY.value;
-        const dist = Math.abs(newX - startX.value);
-        const totalDist = Math.abs(endX.value - startX.value);
-        rollerRotation.value = (dist / totalDist) * 360;
-        setProgress(Math.min(100, (dist / totalDist) * 100));
-      } else {
-        rollerX.value = startX.value;
-        rollerY.value = Math.max(10, Math.min(90, newY));
-        const dist = Math.abs(newY - startY.value);
-        const totalDist = Math.abs(endY.value - startY.value);
-        rollerRotation.value = (dist / totalDist) * 360;
-        setProgress(Math.min(100, (dist / totalDist) * 100));
+      // Calculate the line from start to end
+      const pathDx = endX.value - startX.value;
+      const pathDy = endY.value - startY.value;
+      const pathLength = Math.sqrt(pathDx * pathDx + pathDy * pathDy);
+      
+      if (pathLength > 0) {
+        // Project finger position onto the line
+        const currentDx = newX - startX.value;
+        const currentDy = newY - startY.value;
+        const projection = (currentDx * pathDx + currentDy * pathDy) / (pathLength * pathLength);
+        
+        // Clamp projection to [0, 1] to stay on the line segment
+        const clampedProjection = Math.max(0, Math.min(1, projection));
+        
+        // Calculate projected position on line
+        const projectedX = startX.value + clampedProjection * pathDx;
+        const projectedY = startY.value + clampedProjection * pathDy;
+        
+        // Calculate distance from finger to line
+        const distanceToLine = Math.sqrt(
+          Math.pow(newX - projectedX, 2) + Math.pow(newY - projectedY, 2)
+        );
+        
+        // Check if deviating from path
+        if (distanceToLine > TOLERANCE) {
+          // Show red alert
+          setShowRedAlert(true);
+          alertOpacity.value = 1;
+          // Don't move the roller if off path
+          return;
+        } else {
+          // Hide alert and allow movement
+          setShowRedAlert(false);
+          alertOpacity.value = 0;
+          
+          // Move roller to projected position on line
+          rollerX.value = projectedX;
+          rollerY.value = projectedY;
+          
+          // Calculate movement direction for rotation
+          const dx = projectedX - lastX.current;
+          const dy = projectedY - lastY.current;
+          if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+            rollerRotation.value = angle;
+          }
+          
+          // Calculate progress
+          const totalDist = pathLength;
+          const projectedDist = clampedProjection * pathLength;
+          setProgress(Math.min(100, Math.max(0, (projectedDist / totalDist) * 100)));
+        }
       }
+      
+      lastX.current = rollerX.value;
+      lastY.current = rollerY.value;
     })
     .onEnd(() => {
       if (!roundActive || done) return;
       setIsRolling(false);
+      setShowRedAlert(false);
+      alertOpacity.value = 0;
 
       const distance = Math.sqrt(
         Math.pow(rollerX.value - endX.value, 2) + Math.pow(rollerY.value - endY.value, 2)
@@ -190,7 +272,7 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playReset();
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Roll along the road!', { rate: 0.78 });
+          speakTTS('Roll along the road!', 0.78);
         } catch {}
       }
     });
@@ -221,13 +303,22 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     rollerRotation.value = 0;
     setProgress(0);
+    lastX.current = rollerX.value;
+    lastY.current = rollerY.value;
 
     try {
-      Speech.speak('Roll the roller along the straight road!', { rate: 0.78 });
+      speakTTS('Roll the roller along the straight road!', 0.78);
     } catch {}
+
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 
@@ -368,6 +459,22 @@ const RoadRollerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             {score > 0 && !isRolling && (
               <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
                 <SparkleBurst />
+              </Animated.View>
+            )}
+
+            {showRedAlert && (
+              <Animated.View 
+                style={[
+                  styles.alertContainer,
+                  {
+                    opacity: alertOpacity,
+                  }
+                ]}
+                pointerEvents="none"
+              >
+                <View style={styles.alertBox}>
+                  <Text style={styles.alertText}>⚠️ Stay on the line!</Text>
+                </View>
               </Animated.View>
             )}
           </Animated.View>
@@ -526,6 +633,33 @@ const styles = StyleSheet.create({
     color: '#22C55E',
     fontWeight: '600',
     marginTop: 16,
+    textAlign: 'center',
+  },
+  alertContainer: {
+    position: 'absolute',
+    top: '10%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  alertBox: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#DC2626',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 8,
+  },
+  alertText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
     textAlign: 'center',
   },
 });

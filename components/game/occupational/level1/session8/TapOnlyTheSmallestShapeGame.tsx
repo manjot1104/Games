@@ -4,7 +4,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -136,7 +136,7 @@ const TapOnlyTheSmallestShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack
         console.error('Failed to log tap only the smallest shape game:', e);
       }
 
-      Speech.speak('Great discrimination!', { rate: 0.78 });
+      speakTTS('Great discrimination!', 0.78 );
     },
     [router],
   );
@@ -282,7 +282,7 @@ const TapOnlyTheSmallestShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack
         try {
           await playSuccess();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Speech.speak('Perfect! You found the smallest!', { rate: 0.78 });
+          speakTTS('Perfect! You found the smallest!', 0.78 );
         } catch {}
       } else {
         // Wrong tap - not the smallest
@@ -338,7 +338,7 @@ const TapOnlyTheSmallestShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack
         try {
           await playError();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Speech.speak('Try the smallest one!', { rate: 0.78 });
+          speakTTS('Try the smallest one!', 0.78 );
         } catch {}
       }
 
@@ -374,7 +374,7 @@ const TapOnlyTheSmallestShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Tap only the smallest shape!', { rate: 0.78 });
+        speakTTS('Tap only the smallest shape!', 0.78 );
       } catch {}
     }
     return () => {

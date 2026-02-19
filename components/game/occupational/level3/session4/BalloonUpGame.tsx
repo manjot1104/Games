@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -88,10 +88,10 @@ const BalloonUpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak('Swipe up to lift the balloon!', { rate: 0.8 });
+        speakTTS('Swipe up to lift the balloon!', 0.8 );
       }, 300);
     } else {
-      Speech.speak('Swipe up to lift the balloon!', { rate: 0.8 });
+      speakTTS('Swipe up to lift the balloon!', 0.8 );
     }
   }, [balloonScale, balloonY]);
 
@@ -100,7 +100,7 @@ const BalloonUpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Great! Balloon lifted!', { rate: 0.9 });
+    speakTTS('Great! Balloon lifted!', 0.9 );
     
     Animated.parallel([
       Animated.timing(balloonY, {
@@ -136,7 +136,7 @@ const BalloonUpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleMiss = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    Speech.speak('Try swiping up!', { rate: 0.8 });
+    speakTTS('Try swiping up!', 0.8 );
     // Reset balloon position
     Animated.timing(balloonY, {
       toValue: BALLOON_START_Y,
@@ -185,7 +185,7 @@ const BalloonUpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -252,7 +252,7 @@ const BalloonUpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

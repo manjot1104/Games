@@ -4,7 +4,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -132,7 +132,7 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
         console.error('Failed to log tap the center of the target game:', e);
       }
 
-      Speech.speak('Great precision!', { rate: 0.78 });
+      speakTTS('Great precision!', 0.78 );
     },
     [router, edgeTaps],
   );
@@ -254,7 +254,7 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
       try {
         await playSuccess();
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Speech.speak('Perfect center!', { rate: 0.78 });
+        speakTTS('Perfect center!', 0.78 );
       } catch {}
 
       // Next round or finish
@@ -321,7 +321,7 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
         try {
           await playSuccess();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Speech.speak('Perfect center!', { rate: 0.78 });
+          speakTTS('Perfect center!', 0.78 );
         } catch {}
       } else if (result === 'edge') {
         // Edge tap - close but not center
@@ -349,7 +349,7 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
 
         try {
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          Speech.speak('Close! Try the center.', { rate: 0.78 });
+          speakTTS('Close! Try the center.', 0.78 );
         } catch {}
       } else {
         // Miss - outside target
@@ -378,7 +378,7 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
         try {
           await playError();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Speech.speak('Try again!', { rate: 0.78 });
+          speakTTS('Try again!', 0.78 );
         } catch {}
       }
 
@@ -417,7 +417,7 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Tap the center of the target!', { rate: 0.78 });
+        speakTTS('Tap the center of the target!', 0.78 );
       } catch {}
     }
     return () => {
@@ -571,7 +571,7 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
                     try {
                       await playError();
                       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                      Speech.speak('Try the center dot!', { rate: 0.78 });
+                      speakTTS('Try the center dot!', 0.78 );
                     } catch {}
 
                     // Next round or finish

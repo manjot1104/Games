@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -82,7 +82,7 @@ const ObstacleJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setTapCount(0);
         firstTapTime.current = null;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-        Speech.speak('Tez se do baar tap karo!', { rate: 0.8 });
+        speakTTS('Tap twice quickly!', 0.8, 'en-US' );
       }
     }
   }, [done, showCharacter, hasJumped, showObstacle]);
@@ -131,7 +131,7 @@ const ObstacleJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       // Assume jump was successful if executed in time
       setScore((s) => s + 1);
-      Speech.speak('Perfect jump! Obstacle clear!', { rate: 0.9 });
+      speakTTS('Perfect jump! Obstacle cleared!', 0.9, 'en-US' );
 
       setTimeout(() => {
         if (round < TOTAL_ROUNDS) {
@@ -174,7 +174,7 @@ const ObstacleJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         // Obstacle hit - didn't jump in time
         setObstacleHit(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        Speech.speak('Obstacle se takra gaya! Double tap se jump karna tha!', { rate: 0.8 });
+        speakTTS('Obstacle se takra gaya! Double tap se jump karna tha!', 0.8 );
         
         setTimeout(() => {
           if (round < TOTAL_ROUNDS) {
@@ -195,10 +195,10 @@ const ObstacleJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak('Rock aa raha hai! Double tap se jump karo!', { rate: 0.8 });
+        speakTTS('Rock is coming! Jump with double tap!', 0.8, 'en-US' );
       }, 300);
     } else {
-      Speech.speak('Rock aa raha hai! Double tap se jump karo!', { rate: 0.8 });
+      speakTTS('Rock aa raha hai! Double tap se jump karo!', 0.8 );
     }
   }, [done, showCharacter, obstacleX, round, characterY, characterScale, showObstacle, hasJumped]);
 
@@ -273,7 +273,7 @@ const ObstacleJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -359,7 +359,7 @@ const ObstacleJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Round {round}/{TOTAL_ROUNDS} • 🪨 Score: {score}
         </Text>
         <Text style={styles.instruction}>
-          {showObstacle ? 'Rock aa raha hai! Double tap se jump karo!' : 'Get ready...'}
+          {showObstacle ? 'Rock is coming! Jump with double tap!' : 'Get ready...'}
         </Text>
         {tapCount > 0 && (
           <Text style={styles.tapIndicator}>

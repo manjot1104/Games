@@ -3,7 +3,7 @@ import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -96,9 +96,9 @@ const BigThrowSmallThrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
     startY.value = 70;
     setIsDragging(false);
     if (round === 1) {
-      Speech.speak('Drag to throw object far vs near! Long drag = far, short drag = near.', { rate: 0.9 });
+      speakTTS('Drag to throw object far vs near! Long drag = far, short drag = near.', { rate: 0.9 });
     } else {
-      Speech.speak(target === 'big' ? 'Throw it FAR!' : 'Throw it NEAR!', { rate: 0.9 });
+      speakTTS(target === 'big' ? 'Throw it FAR!' : 'Throw it NEAR!', 0.9 );
     }
   }, [round, done, ballX, ballY, startX, startY]);
 
@@ -106,7 +106,7 @@ const BigThrowSmallThrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
     return () => {
       // Cleanup: Stop all sounds and speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -200,7 +200,7 @@ const BigThrowSmallThrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
         <TouchableOpacity
           onPress={() => {
             try {
-              Speech.stop();
+              stopTTS();
             } catch (e) {
               // Ignore errors
             }

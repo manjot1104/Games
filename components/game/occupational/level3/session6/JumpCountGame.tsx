@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -65,9 +65,9 @@ const JumpCountGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     ]).start();
 
     if (num === 2) {
-      Speech.speak('2 aaya! Ab jump karo!', { rate: 0.8 });
+      speakTTS('Number 2! Now jump!', 0.8, 'en-US' );
     } else {
-      Speech.speak(`${num} aaya! Jump mat karo!`, { rate: 0.8 });
+      speakTTS(`Number ${num}! Don't jump!`, 0.8, 'en-US' );
     }
 
     // Hide number after 2 seconds
@@ -112,7 +112,7 @@ const JumpCountGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect! 2 pe jump kiya!', { rate: 0.9 });
+    speakTTS('Perfect! 2 pe jump kiya!', 0.9 );
     
     // Jump animation
     Animated.sequence([
@@ -163,9 +163,9 @@ const JumpCountGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     
     if (currentNumber && currentNumber !== 2) {
-      Speech.speak(`${currentNumber} pe jump nahi karna hai! Sirf 2 pe jump karo!`, { rate: 0.8 });
+      speakTTS(`Don't jump on ${currentNumber}! Only jump on 2!`, 0.8, 'en-US' );
     } else {
-      Speech.speak('Sirf 2 pe jump karo!', { rate: 0.8 });
+      speakTTS('Only jump on 2!', 0.8, 'en-US' );
     }
     
     // Shake animation
@@ -248,7 +248,7 @@ const JumpCountGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -331,7 +331,7 @@ const JumpCountGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Round {round}/{TOTAL_ROUNDS} • 🔢 Score: {score}
         </Text>
         <Text style={styles.instruction}>
-          Sirf '2' pe jump karo!
+          Only jump on '2'!
         </Text>
       </View>
 

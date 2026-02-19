@@ -6,7 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
@@ -118,7 +118,7 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
     setDone(true);
     setShowCongratulations(true);
     
-    Speech.speak('Amazing work! You completed the game!', { rate: 0.78 });
+    speakTTS('Amazing work! You completed the game!', 0.78 );
     
     // Log game in background (don't wait for it)
     try {
@@ -139,7 +139,7 @@ export const BigTapTarget: React.FC<BigTapTargetProps> = ({ onBack }) => {
 
   useEffect(() => {
     try {
-      Speech.speak('Tap the big bubble! Burst it to earn a star!', { rate: 0.78 });
+      speakTTS('Tap the big bubble! Burst it to earn a star!', 0.78 );
     } catch {}
     spawnTarget();
     return () => {

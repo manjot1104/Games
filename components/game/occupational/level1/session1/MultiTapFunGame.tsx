@@ -6,7 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -133,7 +133,7 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setDone(true);
       setShowCongratulations(true);
       
-      Speech.speak('Amazing work! You completed the game!', { rate: 0.78 });
+      speakTTS('Amazing work! You completed the game!', 0.78 );
 
       // Log game in background (don't wait for it)
       try {
@@ -243,7 +243,7 @@ const MultiTapFunGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initialize first round
   useEffect(() => {
     try {
-      Speech.speak('Tap all the balloons! Tap each balloon one by one.', { rate: 0.78 });
+      speakTTS('Tap all the balloons! Tap each balloon one by one.', 0.78 );
     } catch {}
     spawnBalloons();
     return () => {

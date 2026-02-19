@@ -2,10 +2,10 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -25,27 +25,15 @@ type Props = {
 };
 
 const OBJECT_SIZE = 130;
-const DEFAULT_TTS_RATE = 0.75;
 const MOVEMENT_DURATION_MS = 6000; // 6 seconds slow movement
 const TAP_DURATION_MS = 3000; // How long object is tappable after stopping
 
-let scheduledSpeechTimers: ReturnType<typeof setTimeout>[] = [];
+// Use shared TTS utility (speech-to-speech on web, expo-speech on native)
+// Imported from @/utils/tts
 
-function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
-  scheduledSpeechTimers = [];
-  try {
-    Speech.stop();
-  } catch {}
-}
-
+// Wrapper function for backward compatibility
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
-  try {
-    clearScheduledSpeech();
-    Speech.speak(text, { rate });
-  } catch (e) {
-    console.warn('speak error', e);
-  }
+  speakTTS(text, rate);
 }
 
 const MOVING_OBJECTS = [

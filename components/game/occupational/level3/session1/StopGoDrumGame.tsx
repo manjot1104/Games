@@ -4,7 +4,7 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, playSound } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -89,7 +89,7 @@ const StopGoDrumGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setIsDrumPlaying(false);
     setBeatCount(0);
     if (round === 1) {
-      Speech.speak('Tap only while the drum is playing! Freeze when it stops.', { rate: 0.9 });
+      speakTTS('Tap only while the drum is playing! Freeze when it stops.', 0.9 );
     }
   }, [round, done]);
 
@@ -156,7 +156,7 @@ const StopGoDrumGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => {
       // Cleanup: Stop all sounds and speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -196,7 +196,7 @@ const StopGoDrumGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <TouchableOpacity
           onPress={() => {
             try {
-              Speech.stop();
+              stopTTS();
             } catch (e) {
               // Ignore errors
             }

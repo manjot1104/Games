@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -174,7 +174,7 @@ const TriangleMountainTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }
         console.error('Failed to log triangle mountain trace game:', e);
       }
 
-      Speech.speak('Mountain traced!', { rate: 0.78 });
+      speakTTS('Mountain traced!', 0.78 );
     },
     [router],
   );
@@ -330,7 +330,7 @@ const TriangleMountainTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Trace the whole triangle!', { rate: 0.78 });
+          speakTTS('Trace the whole triangle!', 0.78 );
         } catch {}
       }
     });
@@ -349,7 +349,7 @@ const TriangleMountainTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }
     progress.value = 0;
     lastProgress.current = 0;
     try {
-      Speech.speak('Trace the triangle mountain with your whole arm!', { rate: 0.78 });
+      speakTTS('Trace the triangle mountain with your whole arm!', 0.78 );
     } catch {}
     updatePaths();
     

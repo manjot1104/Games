@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -62,10 +62,10 @@ const BigSmallSwitchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak(size === 'big' ? 'BIG object! Tap it!' : 'SMALL object! Tap it!', { rate: 0.8 });
+        speakTTS(size === 'big' ? 'BIG object! Tap it!' : 'SMALL object! Tap it!', 0.8 );
       }, 300);
     } else {
-      Speech.speak(size === 'big' ? 'BIG object! Tap it!' : 'SMALL object! Tap it!', { rate: 0.8 });
+      speakTTS(size === 'big' ? 'BIG object! Tap it!' : 'SMALL object! Tap it!', 0.8 );
     }
   }, [objectScale, objectOpacity]);
 
@@ -142,7 +142,7 @@ const BigSmallSwitchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -214,7 +214,7 @@ const BigSmallSwitchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

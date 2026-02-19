@@ -6,7 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -175,7 +175,7 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
     try {
       await playError();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Speech.speak('Try together!', { rate: 0.78 });
+      speakTTS('Try together!', 0.78 );
     } catch {}
 
     setTimeout(() => {
@@ -230,7 +230,7 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
     try {
       await playSuccess();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Speech.speak('Perfect!', { rate: 0.78 });
+      speakTTS('Perfect!', 0.78 );
     } catch {}
 
     if (roundRef.current >= TOTAL_ROUNDS) {
@@ -419,7 +419,7 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Tap both targets at the same time with two fingers!', { rate: 0.78 });
+        speakTTS('Tap both targets at the same time with two fingers!', 0.78 );
       } catch {}
     }
     return () => {

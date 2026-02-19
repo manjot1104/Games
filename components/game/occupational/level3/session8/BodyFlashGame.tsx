@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -95,7 +95,7 @@ const BodyFlashGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         // Time's up - no tap
         if (!hasTapped) {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          Speech.speak(`${BODY_PARTS[part].label} tap karna tha! Dobara try karo!`, { rate: 0.8 });
+          speakTTS(`${BODY_PARTS[part].label} tap karna tha! Dobara try karo!`, 0.8 );
           
           setTimeout(() => {
             if (round < TOTAL_ROUNDS) {
@@ -134,7 +134,7 @@ const BodyFlashGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setTapsCount((c) => c + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak(`Perfect! ${BODY_PARTS[currentPart].label} tap ho gaya!`, { rate: 0.9 });
+    speakTTS(`Perfect! ${BODY_PARTS[currentPart].label} tap ho gaya!`, 0.9 );
     
     // Success animation
     Animated.sequence([
@@ -207,7 +207,7 @@ const BodyFlashGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     // Start flashing after a delay
     setTimeout(() => {
       flashBodyPart();
-      Speech.speak('Body part flash hoga! Jaldi se tap karo!', { rate: 0.8 });
+      speakTTS('Body part flash hoga! Jaldi se tap karo!', 0.8 );
     }, 500);
   }, [partScale, partOpacity, flashBodyPart]);
 
@@ -258,7 +258,7 @@ const BodyFlashGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

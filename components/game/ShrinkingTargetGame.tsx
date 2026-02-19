@@ -6,7 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Pressable,
@@ -150,7 +150,7 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log shrinking target game:', e);
       }
 
-      Speech.speak('Excellent precision!', { rate: 0.78 });
+      speakTTS('Excellent precision!', 0.78 );
     },
     [router],
   );
@@ -205,7 +205,7 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       if (newMissCount >= MISS_THRESHOLD) {
         setCurrentSize((s) => Math.min(MAX_SIZE, s + SIZE_INCREASE));
         setMissCount(0); // Reset after adapting
-        Speech.speak('Target is bigger now!', { rate: 0.78 });
+        speakTTS('Target is bigger now!', 0.78 );
       }
 
       return newMissCount;
@@ -219,14 +219,14 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initialize first target
   useEffect(() => {
     try {
-      Speech.speak('Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you.', { rate: 0.78 });
+      speakTTS('Tap the target! It gets smaller each time. If you struggle, it grows bigger to help you.', { rate: 0.78 });
     } catch {}
     spawnTarget();
     
     // Cleanup: Stop speech when component unmounts
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -238,7 +238,7 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleBack = useCallback(() => {
     try {
-      Speech.stop();
+      stopTTS();
     } catch (e) {
       // Ignore errors
     }

@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -85,7 +85,7 @@ const PendulumCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     swings.start(() => {
       setPhase('copy');
-      Speech.speak('Ab tum side-to-side swing karo!', { rate: 0.8 });
+      speakTTS('Ab tum side-to-side swing karo!', 0.8 );
     });
   }, [done, demoPendulumX]);
 
@@ -149,7 +149,7 @@ const PendulumCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect swing copy!', { rate: 0.9 });
+    speakTTS('Perfect swing copy!', 0.9 );
     
     Animated.parallel([
       Animated.sequence([
@@ -241,7 +241,7 @@ const PendulumCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

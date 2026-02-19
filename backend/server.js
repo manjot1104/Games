@@ -1,4 +1,3 @@
-import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
 import fs from 'fs';
@@ -22,48 +21,91 @@ const app = express();
 // Behind proxies (Vercel/Render/Nginx), respect X-Forwarded-* headers
 app.set('trust proxy', true);
 
-// Handle OPTIONS requests FIRST - before any middleware that might redirect
+// Define allowed origins
+const allowedOrigins = [
+  'https://child-wellness.vercel.app',
+  'https://games-zeta-one.vercel.app',
+  'https://autismplay.in',
+  'https://www.autismplay.in',
+  'http://localhost:19006',
+  'http://localhost:3000',
+  'http://localhost:8081',
+  'http://localhost:8080',
+  'http://127.0.0.1:8081', // Also allow 127.0.0.1 for web
+];
+
+// CRITICAL: Handle OPTIONS preflight requests FIRST - before ANY other middleware
+// This MUST be the absolute first middleware to catch all OPTIONS requests
+app.use((req, res, next) => {
+  // Handle OPTIONS preflight requests immediately
+  if (req.method === 'OPTIONS') {
+    const origin = req.headers.origin;
+    const url = req.originalUrl || req.path;
+    console.log(`[CORS] ===== OPTIONS PREFLIGHT REQUEST =====`);
+    console.log(`[CORS] Origin: ${origin}`);
+    console.log(`[CORS] URL: ${url}`);
+    console.log(`[CORS] Allowed origins:`, allowedOrigins);
+    
+    // Set CORS headers for allowed origins
+    if (origin && allowedOrigins.includes(origin)) {
+      console.log(`[CORS] ✅ ALLOWING OPTIONS request from ${origin} to ${url}`);
+      // Use writeHead to ensure headers are written before response ends
+      const headers = {
+        'Access-Control-Allow-Origin': origin,
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-auth0-id, x-auth0-email, x-auth0-name',
+        'Access-Control-Max-Age': '86400'
+      };
+      console.log(`[CORS] Setting headers:`, headers);
+      res.writeHead(204, headers);
+      res.end();
+      console.log(`[CORS] ✅ OPTIONS response sent successfully`);
+      return;
+    } else {
+      console.warn(`[CORS] ❌ OPTIONS request from disallowed origin: ${origin || 'none'}`);
+      // Still send response to prevent hanging, but without CORS headers
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+  }
+  
+  next();
+});
+
+// Also register app.options('*') as a backup (runs after middleware but before routes)
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    'https://child-wellness.vercel.app',
-    'https://games-zeta-one.vercel.app',
-    'https://autismplay.in',
-    'https://www.autismplay.in',
-    'http://localhost:19006',
-    'http://localhost:3000',
-    'http://localhost:8081',
-    'http://localhost:8080',
-  ];
+  console.log(`[CORS] app.options('*') handler triggered from origin: ${origin} to ${req.originalUrl || req.path}`);
   
+  if (origin && allowedOrigins.includes(origin)) {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-auth0-id, x-auth0-email, x-auth0-name',
+      'Access-Control-Max-Age': '86400'
+    });
+    return res.end();
+  }
+  res.writeHead(204);
+  return res.end();
+});
+
+// CORS middleware for all requests (non-OPTIONS)
+// This handles CORS headers for actual API requests
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Set CORS headers for all responses if origin is allowed
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-auth0-id, x-auth0-email, x-auth0-name');
-    res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
   }
-  res.status(204).end();
+  
+  next();
 });
-
-// CORS configuration - single instance with proper options
-app.use(cors({
-  origin: [
-    'https://child-wellness.vercel.app',
-    'https://games-zeta-one.vercel.app',
-    'https://autismplay.in',
-    'https://www.autismplay.in',
-    'http://localhost:19006',
-    'http://localhost:3000',
-    'http://localhost:8081',
-    'http://localhost:8080',
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth0-id', 'x-auth0-email', 'x-auth0-name'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204
-}));
 
 // TODO: Auth0 JWT middleware goes here
 // app.use(auth0JWTMiddleware());
@@ -83,7 +125,7 @@ const storage = multer.diskStorage({
   },
   filename: (_, file, cb) => {
     const ext = path.extname(file.originalname || '');
-    const name = ${Date.now()}-${Math.round(Math.random() * 1e6)}${ext};
+    const name = `${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`;
     console.log('Multer filename:', name);
     cb(null, name);
   },
@@ -115,8 +157,8 @@ app.post('/api/upload', requireAuth, upload.single('file'), (req, res) => {
   // public URL for the image (proxy-safe) + relative path for future-proofing
   const proto = (req.get('x-forwarded-proto') || req.protocol || 'https').split(',')[0].trim();
   const host = (req.get('x-forwarded-host') || req.get('host'));
-  const rel = /static/uploads/${req.file.filename};
-  const url = ${proto}://${host}${rel};
+  const rel = `/static/uploads/${req.file.filename}`;
+  const url = `${proto}://${host}${rel}`;
   console.log('Generated URL:', url);
   res.json({ ok: true, url, path: rel });
 });
@@ -131,6 +173,28 @@ app.use(express.json());
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ ok: true });
+});
+
+// Test therapy endpoint (no auth) to verify routing works
+app.get('/api/therapy/test', (req, res) => {
+  console.log('[THERAPY TEST] Test endpoint hit');
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  res.json({ ok: true, message: 'Therapy route is accessible', path: req.path });
+});
+
+// Test subscription endpoint (no auth) to verify routing works
+app.get('/api/subscription/test', (req, res) => {
+  console.log('[SUBSCRIPTION TEST] Test endpoint hit');
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  res.json({ ok: true, message: 'Subscription route is accessible', path: req.path });
 });
 
 const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/child_wellness';
@@ -162,9 +226,9 @@ async function ensureUser(auth0Id, email, name) {
   );
 
   if (user.isNew) {
-    console.log(Created new user: ${auth0Id} with email: ${email});
+    console.log(`Created new user: ${auth0Id} with email: ${email}`);
   } else {
-    console.log(Found existing user: ${auth0Id} with email: ${email});
+    console.log(`Found existing user: ${auth0Id} with email: ${email}`);
   }
 
   return user;
@@ -172,11 +236,19 @@ async function ensureUser(auth0Id, email, name) {
 
 // Replace requireAuth to extract Auth0 user info from request body or JWT
 function requireAuth(req, res, next) {
+  // Skip authentication for OPTIONS requests (CORS preflight)
+  if (req.method === 'OPTIONS') {
+    console.log('[REQUIRE AUTH] Skipping auth for OPTIONS request');
+    return next();
+  }
+  
   // For now, get auth0Id from request body or headers (we'll send it from frontend)
   // TODO: In production, parse Auth0 JWT from Authorization header
   const auth0Id = req.body?.auth0Id || req.headers['x-auth0-id'] || 'auth0_test_user';
   const email = req.body?.email || req.headers['x-auth0-email'] || '';
   const name = req.body?.name || req.headers['x-auth0-name'] || '';
+
+  console.log(`[REQUIRE AUTH] ${req.method} ${req.originalUrl || req.path} - auth0Id: ${auth0Id}`);
 
   req.auth0Id = auth0Id;
   req.auth0Email = email;
@@ -184,14 +256,78 @@ function requireAuth(req, res, next) {
   req.userId = auth0Id; // Keep for backward compatibility
   next();
 }
+// Explicit OPTIONS handlers for specific API routes (backup)
+app.options('/api/therapy/progress', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`[CORS] Explicit OPTIONS handler for /api/therapy/progress from origin: ${origin}`);
+  if (origin && allowedOrigins.includes(origin)) {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-auth0-id, x-auth0-email, x-auth0-name',
+      'Access-Control-Max-Age': '86400'
+    });
+    return res.end();
+  }
+  res.writeHead(204);
+  return res.end();
+});
+
+// Explicit OPTIONS handlers for subscription routes (must be before routes are mounted)
+app.options('/api/subscription/status', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`[CORS] Explicit OPTIONS handler for /api/subscription/status from origin: ${origin}`);
+  if (origin && allowedOrigins.includes(origin)) {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-auth0-id, x-auth0-email, x-auth0-name',
+      'Access-Control-Max-Age': '86400'
+    });
+    return res.end();
+  }
+  res.writeHead(204);
+  return res.end();
+});
+
+app.options('/api/subscription/*', (req, res) => {
+  const origin = req.headers.origin;
+  console.log(`[CORS] Explicit OPTIONS handler for /api/subscription/* from origin: ${origin} to ${req.originalUrl || req.path}`);
+  if (origin && allowedOrigins.includes(origin)) {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-auth0-id, x-auth0-email, x-auth0-name',
+      'Access-Control-Max-Age': '86400'
+    });
+    return res.end();
+  }
+  res.writeHead(204);
+  return res.end();
+});
+
 // Add tap game routes
 app.use('/api/tap', requireAuth, tapGame);
 app.use('/api/smart-explorer', requireAuth, smartExplorerRouter);
-app.use('/api/therapy', requireAuth, therapyProgressRouter);
+
+// Therapy routes with logging
+app.use('/api/therapy', (req, res, next) => {
+  console.log(`[THERAPY ROUTE] ${req.method} ${req.originalUrl || req.path}`);
+  console.log(`[THERAPY ROUTE] Origin: ${req.headers.origin}`);
+  next();
+}, requireAuth, therapyProgressRouter);
+
 app.use('/api/games', requireAuth, gameRoutes);
 
-// Subscription and payment routes (require auth)
-app.use('/api/subscription', requireAuth, subscriptionRouter);
+// Subscription and payment routes (require auth) with logging
+app.use('/api/subscription', (req, res, next) => {
+  console.log(`[SUBSCRIPTION ROUTE] ${req.method} ${req.originalUrl || req.path}`);
+  console.log(`[SUBSCRIPTION ROUTE] Origin: ${req.headers.origin}`);
+  next();
+}, requireAuth, subscriptionRouter);
 
 // Razorpay webhook (NO auth required - uses signature verification)
 app.use('/api/webhooks', razorpayWebhookRouter);
@@ -898,30 +1034,101 @@ app.post('/api/me/contact', requireAuth, async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 4000;
-
-async function startServer() {
-  try {
-    await mongoose.connect(mongoUri);
-    console.log('Connected to MongoDB');
-    app.listen(port, '0.0.0.0', () => console.log(API listening on 0.0.0.0:${port}));
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    process.exit(1);
+// Global error handler - ensures CORS headers are set on error responses
+app.use((err, req, res, next) => {
+  console.error('[GLOBAL ERROR HANDLER] Error caught:', err);
+  console.error('[GLOBAL ERROR HANDLER] Request:', req.method, req.originalUrl || req.path);
+  console.error('[GLOBAL ERROR HANDLER] Error stack:', err.stack);
+  
+  // Set CORS headers on error response
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
   }
-}
+  
+  // Don't send response if headers already sent
+  if (res.headersSent) {
+    return next(err);
+  }
+  
+  res.status(err.status || 500).json({
+    ok: false,
+    error: err.message || 'Internal server error',
+  });
+});
 
-startServer();
+// 404 handler - ensures CORS headers on 404 responses
+app.use((req, res) => {
+  // Set CORS headers on 404 response
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  res.status(404).json({
+    ok: false,
+    error: 'Route not found',
+  });
+});
 
 const port = process.env.PORT || 4000;
 
+// Handle unhandled promise rejections to prevent crashes
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[UNHANDLED REJECTION] Unhandled Rejection at:', promise);
+  console.error('[UNHANDLED REJECTION] Reason:', reason);
+  // Don't exit - log and continue
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('[UNCAUGHT EXCEPTION] Uncaught Exception:', error);
+  console.error('[UNCAUGHT EXCEPTION] Stack:', error.stack);
+  // Exit on uncaught exception to prevent undefined behavior
+  process.exit(1);
+});
+
 async function startServer() {
   try {
+    console.log('[SERVER] Connecting to MongoDB...');
     await mongoose.connect(mongoUri);
-    console.log('Connected to MongoDB');
-    app.listen(port, '0.0.0.0', () => console.log(API listening on 0.0.0.0:${port}));
+    console.log('[SERVER] ✅ Connected to MongoDB');
+    
+    const server = app.listen(port, '0.0.0.0', () => {
+      console.log(`[SERVER] ✅ API listening on 0.0.0.0:${port}`);
+      console.log(`[SERVER] Health check: http://localhost:${port}/api/health`);
+      console.log(`[SERVER] Subscription status: http://localhost:${port}/api/subscription/status`);
+    });
+    
+    server.on('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`\n❌ Port ${port} is already in use!`);
+        console.error('Please either:');
+        console.error(`  1. Stop the process using port ${port}`);
+        console.error(`  2. Or set a different port: PORT=4001 npm start\n`);
+        process.exit(1);
+      } else {
+        console.error('[SERVER] Server error:', error);
+        process.exit(1);
+      }
+    });
+    
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      console.log('[SERVER] SIGTERM received, shutting down gracefully...');
+      server.close(() => {
+        console.log('[SERVER] Server closed');
+        mongoose.connection.close(false, () => {
+          console.log('[SERVER] MongoDB connection closed');
+          process.exit(0);
+        });
+      });
+    });
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error('[SERVER] ❌ MongoDB connection error:', error);
+    console.error('[SERVER] Error stack:', error.stack);
     process.exit(1);
   }
 }

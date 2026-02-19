@@ -4,7 +4,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -144,7 +144,7 @@ const TapTheBigOneGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log tap the big one game:', e);
       }
 
-      Speech.speak('Great job!', { rate: 0.78 });
+      speakTTS('Great job!', 0.78 );
     },
     [router],
   );
@@ -287,7 +287,7 @@ const TapTheBigOneGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           await playError();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Speech.speak('Try the big one!', { rate: 0.78 });
+          speakTTS('Try the big one!', 0.78 );
         } catch {}
 
         // Retry - don't advance round
@@ -303,7 +303,7 @@ const TapTheBigOneGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Tap the big circle!', { rate: 0.78 });
+        speakTTS('Tap the big circle!', 0.78 );
       } catch {}
       startRound();
     }

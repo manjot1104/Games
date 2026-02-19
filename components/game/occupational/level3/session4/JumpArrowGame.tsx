@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -122,10 +122,10 @@ const JumpArrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak(direction === 'up' ? 'Arrow upar aaye! Swipe up!' : 'Arrow neeche aaye! Swipe down!', { rate: 0.8 });
+        speakTTS(direction === 'up' ? 'Arrow upar aaye! Swipe up!' : 'Arrow neeche aaye! Swipe down!', 0.8 );
       }, 300);
     } else {
-      Speech.speak(direction === 'up' ? 'Arrow upar aaye! Swipe up!' : 'Arrow neeche aaye! Swipe down!', { rate: 0.8 });
+      speakTTS(direction === 'up' ? 'Arrow upar aaye! Swipe up!' : 'Arrow neeche aaye! Swipe down!', 0.8 );
     }
   }, [arrowScale, arrowY, arrowOpacity, characterY]);
 
@@ -134,7 +134,7 @@ const JumpArrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect! Great response!', { rate: 0.9 });
+    speakTTS('Perfect! Great response!', 0.9 );
     
     // Animate character jump
     const jumpY = arrowDirection === 'up' 
@@ -190,7 +190,7 @@ const JumpArrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleMiss = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    Speech.speak(arrowDirection === 'up' ? 'Try swiping up!' : 'Try swiping down!', { rate: 0.8 });
+    speakTTS(arrowDirection === 'up' ? 'Try swiping up!' : 'Try swiping down!', 0.8 );
     // Shake arrow
     Animated.sequence([
       Animated.timing(arrowY, {
@@ -251,7 +251,7 @@ const JumpArrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -321,7 +321,7 @@ const JumpArrowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

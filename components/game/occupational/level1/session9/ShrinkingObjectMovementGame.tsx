@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -185,7 +185,7 @@ const ShrinkingObjectMovementGame: React.FC<{ onBack?: () => void }> = ({ onBack
     try {
       await playError();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Speech.speak('Try again!', { rate: 0.78 });
+      speakTTS('Try again!', 0.78 );
     } catch {}
 
     const timeout1 = setTimeout(() => {
@@ -340,7 +340,7 @@ const ShrinkingObjectMovementGame: React.FC<{ onBack?: () => void }> = ({ onBack
       try {
         await playSuccess();
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Speech.speak('Perfect timing!', { rate: 0.78 });
+        speakTTS('Perfect timing!', 0.78 );
       } catch {}
 
       if (roundRef.current >= TOTAL_ROUNDS) {
@@ -433,7 +433,7 @@ const ShrinkingObjectMovementGame: React.FC<{ onBack?: () => void }> = ({ onBack
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Tap the moving object as it shrinks!', { rate: 0.78 });
+        speakTTS('Tap the moving object as it shrinks!', 0.78 );
       } catch {}
     }
     return () => {

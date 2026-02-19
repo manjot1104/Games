@@ -5,7 +5,7 @@ import { isPointOnPath, Point, snapToPath } from '@/utils/pathUtils';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -26,7 +26,6 @@ type Props = {
   requiredRounds?: number;
 };
 
-const DEFAULT_TTS_RATE = 0.75;
 const TOTAL_ROUNDS = 5;
 const MAX_SPEED = 3; // Pixels per frame (auto-limited)
 const ROAD_WIDTH = 60;
@@ -44,14 +43,14 @@ function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
   scheduledSpeechTimers = [];
   try {
-    Speech.stop();
+    stopTTS();
   } catch {}
 }
 
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
   try {
     clearScheduledSpeech();
-    Speech.speak(text, { rate });
+    speakTTS(text, rate);
   } catch (e) {
     console.warn('speak error', e);
   }

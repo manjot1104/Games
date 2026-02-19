@@ -2,10 +2,10 @@ import { SparkleBurst } from '@/components/game/FX';
 import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -183,7 +183,7 @@ const ShrinkingCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
     try {
       await playError();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Speech.speak(message || 'Try again!', { rate: 0.78 });
+      speakTTS(message || 'Try again!', 0.78);
     } catch {}
 
     // Gentle reset and retry after showing feedback
@@ -299,7 +299,7 @@ const ShrinkingCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
       try {
         await playSuccess();
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Speech.speak('Perfect!', { rate: 0.78 });
+        speakTTS('Perfect!', 0.78);
       } catch {}
 
       // Next round or finish
@@ -392,7 +392,7 @@ const ShrinkingCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Tap the circle as it shrinks!', { rate: 0.78 });
+        speakTTS('Tap the circle as it shrinks!', 0.78);
       } catch {}
     }
     return () => {

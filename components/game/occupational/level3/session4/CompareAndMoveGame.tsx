@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -95,7 +95,7 @@ const CompareAndMoveGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak(
+        speakTTS(
           size === 'big' 
             ? 'BIG object! Make a BIG swipe!' 
             : 'SMALL object! Make a SMALL swipe!', 
@@ -103,7 +103,7 @@ const CompareAndMoveGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         );
       }, 300);
     } else {
-      Speech.speak(
+      speakTTS(
         size === 'big' 
           ? 'BIG object! Make a BIG swipe!' 
           : 'SMALL object! Make a SMALL swipe!', 
@@ -192,7 +192,7 @@ const CompareAndMoveGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -265,7 +265,7 @@ const CompareAndMoveGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

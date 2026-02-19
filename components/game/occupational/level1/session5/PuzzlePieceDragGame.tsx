@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -127,7 +127,7 @@ const PuzzlePieceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log puzzle piece drag game:', e);
       }
 
-      Speech.speak('Puzzle master!', { rate: 0.78 });
+      speakTTS('Puzzle master!', 0.78 );
     },
     [router],
   );
@@ -197,7 +197,7 @@ const PuzzlePieceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playSuccess();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Speech.speak('Perfect match!', { rate: 0.78 });
+          speakTTS('Perfect match!', 0.78 );
         } catch {}
       } else {
         // Return to start
@@ -206,7 +206,7 @@ const PuzzlePieceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Drag to the matching outline!', { rate: 0.78 });
+          speakTTS('Drag to the matching outline!', 0.78 );
         } catch {}
       }
     });
@@ -214,7 +214,7 @@ const PuzzlePieceDragGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial instruction - only once
   useEffect(() => {
     try {
-      Speech.speak('Drag the puzzle piece to its matching outline. Match the shapes!', { rate: 0.78 });
+      speakTTS('Drag the puzzle piece to its matching outline. Match the shapes!', 0.78 );
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount

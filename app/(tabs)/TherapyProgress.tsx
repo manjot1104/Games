@@ -9,10 +9,12 @@ import {
 } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as Linking from 'expo-linking';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Platform,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -20,6 +22,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+
+// Therapy Avatar website URL
+const THERAPY_AVATAR_URL = 'https://therapy-avatar.vercel.app';
 
 const THERAPIES = [
   { id: 'speech', label: 'Speech Therapy', desc: 'Improve communication and speech skills', color: '#2563EB', icon: 'mic' },
@@ -119,7 +124,37 @@ export default function TherapyProgressScreen() {
     return <Paywall onSuccess={checkSubscriptionAccess} />;
   }
 
-  const handleSelectTherapy = (therapyId: string) => {
+  const handleSelectTherapy = async (therapyId: string) => {
+    // If Therapy Avatar is selected, open the external website
+    if (therapyId === 'therapy-avatar') {
+      try {
+        const url = THERAPY_AVATAR_URL;
+        console.log('[TherapyProgress] Opening Therapy Avatar website:', url);
+        
+        if (Platform.OS === 'web') {
+          // On web, open in new tab
+          if (typeof window !== 'undefined' && window.open) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+          } else {
+            Alert.alert('Error', 'Could not open the Therapy Avatar website. Please check your browser settings.');
+          }
+        } else {
+          // On native (iOS/Android), open in browser
+          const canOpen = await Linking.canOpenURL(url);
+          if (canOpen) {
+            await Linking.openURL(url);
+          } else {
+            Alert.alert('Error', 'Could not open the Therapy Avatar website. Please check the URL.');
+          }
+        }
+      } catch (error: any) {
+        console.error('[TherapyProgress] Failed to open Therapy Avatar website:', error);
+        Alert.alert('Error', error?.message || 'Could not open the Therapy Avatar website.');
+      }
+      return;
+    }
+    
+    // For other therapies, proceed with normal flow
     setSelectedTherapy(therapyId);
     setSelectedLevel(null);
     setMode('levels');

@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -94,10 +94,10 @@ const SpeedMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak(speed === 'FAST' ? 'FAST! Swipe quickly!' : 'SLOW! Swipe slowly!', { rate: 0.8 });
+        speakTTS(speed === 'FAST' ? 'FAST! Swipe quickly!' : 'SLOW! Swipe slowly!', 0.8 );
       }, 300);
     } else {
-      Speech.speak(speed === 'FAST' ? 'FAST! Swipe quickly!' : 'SLOW! Swipe slowly!', { rate: 0.8 });
+      speakTTS(speed === 'FAST' ? 'FAST! Swipe quickly!' : 'SLOW! Swipe slowly!', 0.8 );
     }
   }, [instructionScale, instructionOpacity]);
 
@@ -180,7 +180,7 @@ const SpeedMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -251,7 +251,7 @@ const SpeedMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

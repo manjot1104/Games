@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -160,7 +160,7 @@ const HiddenShapeRevealGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         console.error('Failed to log hidden shape reveal game:', e);
       }
 
-      Speech.speak('Shape revealed!', { rate: 0.78 });
+      speakTTS('Shape revealed!', 0.78 );
     },
     [router],
   );
@@ -218,14 +218,14 @@ const HiddenShapeRevealGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       try {
         playWarning();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Speech.speak(`Tap dot ${currentDotIndex === 0 ? 1 : currentDotIndex + 1}!`, { rate: 0.78 });
+        speakTTS(`Tap dot ${currentDotIndex === 0 ? 1 : currentDotIndex + 1}!`, 0.78 );
       } catch {}
     }
   }, [currentDotIndex, dots, roundActive, done, endGame, playSuccess, playWarning, shapeOpacity]);
 
   useEffect(() => {
     try {
-      Speech.speak('Connect the dots in order to reveal the hidden shape!', { rate: 0.78 });
+      speakTTS('Connect the dots in order to reveal the hidden shape!', 0.78 );
     } catch {}
     generateDots();
     

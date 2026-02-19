@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -213,7 +213,7 @@ const PaintTheShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log paint the shape game:', e);
       }
 
-      Speech.speak('Shape painted!', { rate: 0.78 });
+      speakTTS('Shape painted!', 0.78 );
     },
     [router],
   );
@@ -371,14 +371,14 @@ const PaintTheShapeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Paint the whole shape!', { rate: 0.78 });
+          speakTTS('Paint the whole shape!', 0.78 );
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Trace to fill the shape with color!', { rate: 0.78 });
+      speakTTS('Trace to fill the shape with color!', 0.78 );
     } catch {}
     const shapes: ShapeType[] = ['star', 'heart', 'pentagon'];
     const shape = shapes[Math.floor(Math.random() * shapes.length)];

@@ -3,7 +3,7 @@ import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -94,9 +94,9 @@ const BigPathTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setTracePath([]);
     setIsTracing(false);
     if (round === 1) {
-      Speech.speak('Trace wide road vs thin road!', { rate: 0.9 });
+      speakTTS('Trace wide road vs thin road!', 0.9 );
     } else {
-      Speech.speak(wide ? 'Trace the wide road!' : 'Trace the thin road!', { rate: 0.9 });
+      speakTTS(wide ? 'Trace the wide road!' : 'Trace the thin road!', 0.9 );
     }
   }, [round, done]);
 
@@ -104,7 +104,7 @@ const BigPathTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => {
       // Cleanup: Stop all sounds and speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -231,7 +231,7 @@ const BigPathTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <TouchableOpacity
           onPress={() => {
             try {
-              Speech.stop();
+              stopTTS();
             } catch (e) {
               // Ignore errors
             }

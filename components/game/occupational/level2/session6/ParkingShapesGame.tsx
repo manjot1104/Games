@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -142,7 +142,7 @@ const ParkingShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log parking shapes game:', e);
       }
 
-      Speech.speak('Parked perfectly!', { rate: 0.78 });
+      speakTTS('Parked perfectly!', 0.78 );
     },
     [router],
   );
@@ -207,7 +207,7 @@ const ParkingShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playWarning();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Rotate and align!', { rate: 0.78 });
+          speakTTS('Rotate and align!', 0.78 );
         } catch {}
       }
     });
@@ -222,7 +222,7 @@ const ParkingShapesGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => {
     try {
-      Speech.speak('Rotate and align the shape correctly!', { rate: 0.78 });
+      speakTTS('Rotate and align the shape correctly!', 0.78 );
     } catch {}
     generateRound();
     

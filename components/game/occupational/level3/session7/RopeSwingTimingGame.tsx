@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -123,7 +123,7 @@ const RopeSwingTimingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         } else {
           // Not enough swipe
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          Speech.speak('Zada swipe karo!', { rate: 0.8 });
+          speakTTS('Zada swipe karo!', 0.8 );
         }
       },
     })
@@ -138,7 +138,7 @@ const RopeSwingTimingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect timing!', { rate: 0.9 });
+    speakTTS('Perfect timing!', 0.9 );
     
     // Success animation
     Animated.parallel([
@@ -177,7 +177,7 @@ const RopeSwingTimingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleMiss = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    Speech.speak('Sahi timing pe swipe karo! Rope peak pe ho tab swipe karo!', { rate: 0.8 });
+    speakTTS('Sahi timing pe swipe karo! Rope peak pe ho tab swipe karo!', 0.8 );
     
     // Shake animation
     const current = currentAngle;
@@ -233,7 +233,7 @@ const RopeSwingTimingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     // Start swinging
     setTimeout(() => {
       startSwingAnimation();
-      Speech.speak('Rope swing ho rahi hai! Peak pe aane pe swipe karo!', { rate: 0.8 });
+      speakTTS('Rope swing ho rahi hai! Peak pe aane pe swipe karo!', 0.8 );
     }, 500);
   }, [ropeScale, ropeAngle, startSwingAnimation]);
 
@@ -281,7 +281,7 @@ const RopeSwingTimingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

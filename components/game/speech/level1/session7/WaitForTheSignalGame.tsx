@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -26,7 +26,6 @@ type Props = {
 
 const OBJECT_SIZE = 150;
 const SPINNER_SIZE = 60;
-const DEFAULT_TTS_RATE = 0.75;
 const SPIN_DURATION_MS = 2500; // How long spinner spins before showing color (increased for anticipation)
 const GREEN_DURATION_MS = 3000; // How long green signal shows (increased for better response time)
 const RED_DURATION_MS = 2500; // How long red signal shows (increased for better waiting practice)
@@ -38,14 +37,14 @@ function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
   scheduledSpeechTimers = [];
   try {
-    Speech.stop();
+    stopTTS();
   } catch {}
 }
 
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
   try {
     clearScheduledSpeech();
-    Speech.speak(text, { rate });
+    speakTTS(text, rate);
   } catch (e) {
     console.warn('speak error', e);
   }

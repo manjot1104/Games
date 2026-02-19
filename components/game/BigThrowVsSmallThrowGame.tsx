@@ -3,7 +3,7 @@ import { stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
@@ -93,11 +93,11 @@ export const BigThrowVsSmallThrowGame: React.FC<{ onBack?: () => void }> = ({ on
       if (isCorrect) {
         setCorrect((c) => c + 1);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        Speech.speak(targetThrow === 'big' ? 'Great throw! Far!' : 'Perfect! Short throw!');
+        speakTTS(targetThrow === 'big' ? 'Great throw! Far!' : 'Perfect! Short throw!');
       } else {
         setWrong((w) => w + 1);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        Speech.speak('Try again!');
+        speakTTS('Try again!');
       }
 
       setIsDragging(false);
@@ -122,7 +122,7 @@ export const BigThrowVsSmallThrowGame: React.FC<{ onBack?: () => void }> = ({ on
   const generateTarget = () => {
     const throwType: ThrowType = Math.random() > 0.5 ? 'big' : 'small';
     setTargetThrow(throwType);
-    Speech.speak(throwType === 'big' ? 'Throw it FAR! Drag long!' : 'Throw it NEAR! Drag short!');
+    speakTTS(throwType === 'big' ? 'Throw it FAR! Drag long!' : 'Throw it NEAR! Drag short!');
   };
 
   const startGame = () => {
@@ -160,7 +160,7 @@ export const BigThrowVsSmallThrowGame: React.FC<{ onBack?: () => void }> = ({ on
       console.error('Failed to save game:', e);
     }
 
-    Speech.speak('Amazing! You mastered big and small throws!');
+    speakTTS('Amazing! You mastered big and small throws!');
   };
 
   // Results screen

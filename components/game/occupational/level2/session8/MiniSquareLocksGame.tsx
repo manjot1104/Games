@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -175,7 +175,7 @@ const MiniSquareLocksGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log mini square locks game:', e);
       }
 
-      Speech.speak('Lock traced!', { rate: 0.78 });
+      speakTTS('Lock traced!', 0.78 );
     },
     [router],
   );
@@ -332,14 +332,14 @@ const MiniSquareLocksGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Trace the whole lock!', { rate: 0.78 });
+          speakTTS('Trace the whole lock!', 0.78 );
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Trace the mini square lock with precision!', { rate: 0.78 });
+      speakTTS('Trace the mini square lock with precision!', 0.78 );
     } catch {}
     const centerX = 50;
     const centerY = 50;

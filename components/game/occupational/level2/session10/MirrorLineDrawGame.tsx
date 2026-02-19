@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -107,7 +107,7 @@ const MirrorLineDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log mirror line draw game:', e);
       }
 
-      Speech.speak('Mirror drawing complete!', { rate: 0.78 });
+      speakTTS('Mirror drawing complete!', 0.78 );
     },
     [router],
   );
@@ -173,7 +173,7 @@ const MirrorLineDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playWarning();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Draw a longer line!', { rate: 0.78 });
+          speakTTS('Draw a longer line!', 0.78 );
         } catch {}
       }
     });
@@ -183,7 +183,7 @@ const MirrorLineDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setRightPath([]);
     setRoundActive(true);
     try {
-      Speech.speak('Draw on the left side, and it will mirror on the right!', { rate: 0.78 });
+      speakTTS('Draw on the left side, and it will mirror on the right!', { rate: 0.78 });
     } catch {}
     
     return () => {

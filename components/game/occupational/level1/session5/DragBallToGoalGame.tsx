@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -118,7 +118,7 @@ const DragBallToGoalGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log drag ball to goal game:', e);
       }
 
-      Speech.speak('Great dragging!', { rate: 0.78 });
+      speakTTS('Great dragging!', 0.78 );
     },
     [router],
   );
@@ -185,7 +185,7 @@ const DragBallToGoalGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playReset();
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Drag to the goal!', { rate: 0.78 });
+          speakTTS('Drag to the goal!', 0.78 );
         } catch {}
       }
     });
@@ -193,7 +193,7 @@ const DragBallToGoalGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial instruction - only once
   useEffect(() => {
     try {
-      Speech.speak('Press the ball and drag it to the goal box. Release when it\'s inside!', { rate: 0.78 });
+      speakTTS('Press the ball and drag it to the goal box. Release when it\'s inside!', 0.78 );
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount

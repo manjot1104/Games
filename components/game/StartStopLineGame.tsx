@@ -1,8 +1,9 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -76,6 +77,7 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isHorizontal, setIsHorizontal] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [showRedAlert, setShowRedAlert] = useState(false);
 
   const dotX = useSharedValue(15);
   const dotY = useSharedValue(50);
@@ -86,6 +88,7 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const startY = useSharedValue(50);
   const endX = useSharedValue(85);
   const endY = useSharedValue(50);
+  const alertOpacity = useSharedValue(0);
 
   const screenWidth = useRef(400);
   const screenHeight = useRef(600);
@@ -99,6 +102,9 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setRoundActive(false);
+
+      // Stop all speech when game ends
+      stopAllSpeech();
 
       try {
         await recordGame(xp);
@@ -116,39 +122,95 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log start stop line game:', e);
       }
 
-      Speech.speak('Line master!', { rate: 0.78 });
+      speakTTS('Line master!', 0.78);
     },
     [router],
   );
 
   const panGesture = Gesture.Pan()
-    .onStart(() => {
+    .onStart((e) => {
       if (!roundActive || done) return;
+      
+      // Check if touch started on the dot - only allow dragging if started on dot
+      const touchX = (e.x / screenWidth.current) * 100;
+      const touchY = (e.y / screenHeight.current) * 100;
+      
+      // Calculate distance from touch point to dot center
+      const dotCenterX = dotX.value;
+      const dotCenterY = dotY.value;
+      
+      // Convert DOT_SIZE from pixels to percentage for comparison
+      const dotSizePercentX = (DOT_SIZE / screenWidth.current) * 100;
+      const dotSizePercentY = (DOT_SIZE / screenHeight.current) * 100;
+      const dotRadiusX = dotSizePercentX / 2;
+      const dotRadiusY = dotSizePercentY / 2;
+      
+      // Check if touch is within dot bounds
+      const distX = Math.abs(touchX - dotCenterX);
+      const distY = Math.abs(touchY - dotCenterY);
+      const isOnDot = distX <= dotRadiusX && distY <= dotRadiusY;
+      
+      if (!isOnDot) {
+        return; // Don't start dragging if not on dot
+      }
+      
       setIsDragging(true);
+      setShowRedAlert(false);
+      alertOpacity.value = 0;
       dotScale.value = withSpring(1.2, { damping: 10, stiffness: 200 });
     })
     .onUpdate((e) => {
-      if (!roundActive || done) return;
+      if (!roundActive || done || !isDragging) return; // Only update if dragging started on dot
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
       
       if (isHorizontal) {
-        dotX.value = Math.max(5, Math.min(95, newX));
-        dotY.value = startY.value;
-        const dist = Math.abs(newX - startX.value);
-        const totalDist = Math.abs(endX.value - startX.value);
-        setProgress(Math.min(100, (dist / totalDist) * 100));
+        // Check if deviating from horizontal line
+        const distanceToLine = Math.abs(newY - startY.value);
+        if (distanceToLine > TOLERANCE) {
+          setShowRedAlert(true);
+          alertOpacity.value = 1;
+          return; // Don't move if off path
+        } else {
+          setShowRedAlert(false);
+          alertOpacity.value = 0;
+          // Constrain to line and clamp X between start and end
+          const minX = Math.min(startX.value, endX.value);
+          const maxX = Math.max(startX.value, endX.value);
+          const clampedX = Math.max(minX, Math.min(maxX, newX));
+          dotX.value = clampedX;
+          dotY.value = startY.value;
+          const dist = Math.abs(clampedX - startX.value);
+          const totalDist = Math.abs(endX.value - startX.value);
+          setProgress(Math.min(100, (dist / totalDist) * 100));
+        }
       } else {
-        dotX.value = startX.value;
-        dotY.value = Math.max(10, Math.min(90, newY));
-        const dist = Math.abs(newY - startY.value);
-        const totalDist = Math.abs(endY.value - startY.value);
-        setProgress(Math.min(100, (dist / totalDist) * 100));
+        // Check if deviating from vertical line
+        const distanceToLine = Math.abs(newX - startX.value);
+        if (distanceToLine > TOLERANCE) {
+          setShowRedAlert(true);
+          alertOpacity.value = 1;
+          return; // Don't move if off path
+        } else {
+          setShowRedAlert(false);
+          alertOpacity.value = 0;
+          // Constrain to line and clamp Y between start and end
+          const minY = Math.min(startY.value, endY.value);
+          const maxY = Math.max(startY.value, endY.value);
+          const clampedY = Math.max(minY, Math.min(maxY, newY));
+          dotX.value = startX.value;
+          dotY.value = clampedY;
+          const dist = Math.abs(clampedY - startY.value);
+          const totalDist = Math.abs(endY.value - startY.value);
+          setProgress(Math.min(100, (dist / totalDist) * 100));
+        }
       }
     })
     .onEnd(() => {
       if (!roundActive || done) return;
       setIsDragging(false);
+      setShowRedAlert(false);
+      alertOpacity.value = 0;
       dotScale.value = withSpring(1, { damping: 10, stiffness: 200 });
 
       const distance = Math.sqrt(
@@ -189,7 +251,7 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playReset();
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Drag from green to red!', { rate: 0.78 });
+          speakTTS('Drag from green to red!', 0.78);
         } catch {}
       }
     });
@@ -221,11 +283,18 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setProgress(0);
 
     try {
-      Speech.speak('Drag from the green dot to the red dot!', { rate: 0.78 });
+      speakTTS('Drag from the green dot to the red dot!', 0.78);
     } catch {}
+
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 
@@ -380,6 +449,22 @@ const StartStopLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             {score > 0 && !isDragging && (
               <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
                 <SparkleBurst />
+              </Animated.View>
+            )}
+
+            {showRedAlert && (
+              <Animated.View 
+                style={[
+                  styles.alertContainer,
+                  {
+                    opacity: alertOpacity,
+                  }
+                ]}
+                pointerEvents="none"
+              >
+                <View style={styles.alertBox}>
+                  <Text style={styles.alertText}>⚠️ Stay on the line!</Text>
+                </View>
               </Animated.View>
             )}
           </Animated.View>
@@ -567,6 +652,33 @@ const styles = StyleSheet.create({
     color: '#22C55E',
     fontWeight: '600',
     marginTop: 16,
+    textAlign: 'center',
+  },
+  alertContainer: {
+    position: 'absolute',
+    top: '10%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  alertBox: {
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: '#DC2626',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 8,
+  },
+  alertText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '800',
     textAlign: 'center',
   },
 });

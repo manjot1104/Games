@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -129,7 +129,7 @@ const FastMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log fast match game:', e);
       }
 
-      Speech.speak('Fast match!', { rate: 0.78 });
+      speakTTS('Fast match!', 0.78 );
     },
     [router],
   );
@@ -191,14 +191,14 @@ const FastMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playWarning();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Match faster!', { rate: 0.78 });
+          speakTTS('Match faster!', 0.78 );
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Match shapes quickly! No rotation needed.', { rate: 0.78 });
+      speakTTS('Match shapes quickly! No rotation needed.', 0.78 );
     } catch {}
     generateRound();
     

@@ -2,7 +2,7 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -97,10 +97,12 @@ const AntTrailFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [roundActive, setRoundActive] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [isOffTrack, setIsOffTrack] = useState(false);
+  const [hasGoneOffTrack, setHasGoneOffTrack] = useState(false);
   const progress = useSharedValue(0);
   const [trailDots, setTrailDots] = useState<Array<{ x: number; y: number }>>([]);
 
   const pathPoints = useRef<Array<{ x: number; y: number }>>([]);
+  const hasGoneOffTrackRef = useRef(false); // Track if user ever went off track
 
   const objectX = useSharedValue(20);
   const objectY = useSharedValue(50);
@@ -163,7 +165,7 @@ const AntTrailFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log ant trail follow game:', e);
       }
 
-      Speech.speak('Ant trail followed!', { rate: 0.78 });
+      speakTTS('Ant trail followed!', 0.78 );
     },
     [router],
   );
@@ -194,6 +196,8 @@ const AntTrailFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       if (minDist > LINE_TOLERANCE) {
         if (!isOffTrack) {
           setIsOffTrack(true);
+          setHasGoneOffTrack(true);
+          hasGoneOffTrackRef.current = true; // Mark as off track
           const now = Date.now();
           if (now - lastWarningTime.current > 500) {
             lastWarningTime.current = now;
@@ -268,7 +272,8 @@ const AntTrailFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Math.pow(objectX.value - lastPoint.x, 2) + Math.pow(objectY.value - lastPoint.y, 2),
       );
 
-      if (distToEnd <= LINE_TOLERANCE * 2 && progress.value >= 0.75) {
+      // Only complete if reached end point, have sufficient progress, AND never went off track
+      if (distToEnd <= LINE_TOLERANCE * 2 && progress.value >= 0.75 && !hasGoneOffTrackRef.current) {
         sparkleX.value = lastPoint.x;
         sparkleY.value = lastPoint.y;
 
@@ -283,6 +288,8 @@ const AntTrailFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               setRound((r) => r + 1);
               progress.value = 0;
               setIsOffTrack(false);
+              setHasGoneOffTrack(false);
+              hasGoneOffTrackRef.current = false; // Reset for new round
               const firstPoint = pathPoints.current[0];
               objectX.value = withSpring(firstPoint.x, { damping: 10, stiffness: 100 });
               objectY.value = withSpring(firstPoint.y, { damping: 10, stiffness: 100 });
@@ -302,17 +309,19 @@ const AntTrailFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         objectY.value = withSpring(firstPoint.y, { damping: 10, stiffness: 100 });
         progress.value = 0;
         setIsOffTrack(false);
+        setHasGoneOffTrack(false);
+        hasGoneOffTrackRef.current = false; // Reset for retry
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Stay on the dotted trail!', { rate: 0.78 });
+          speakTTS('Stay on the dotted trail!', 0.78 );
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Follow the dotted trail! Stay on the path made of dots.', { rate: 0.78 });
+      speakTTS('Follow the dotted trail! Stay on the path made of dots.', 0.78 );
     } catch {}
     // Generate wavy trail path
     const points: Array<{ x: number; y: number }> = [];
@@ -335,6 +344,9 @@ const AntTrailFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectX.value = startX;
     objectY.value = startY;
     progress.value = 0;
+    setIsOffTrack(false);
+    setHasGoneOffTrack(false);
+    hasGoneOffTrackRef.current = false; // Reset for new round
     generateTrailDots();
   }, [round, generateTrailDots]);
 
@@ -391,6 +403,8 @@ const AntTrailFollowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 setFinalStats(null);
                 setLogTimestamp(null);
                 progress.value = 0;
+                setHasGoneOffTrack(false);
+                hasGoneOffTrackRef.current = false; // Reset for restart
                 setRoundActive(true);
               }}
             />

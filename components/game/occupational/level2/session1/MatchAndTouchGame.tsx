@@ -17,7 +17,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn, runOnJS } from 'react-native-reanimated';
@@ -147,7 +147,7 @@ export const MatchAndTouchGame: React.FC<MatchAndTouchGameProps> = ({ onBack }) 
     const target = SHAPES[shapeIndex];
     setTargetShape(target);
     try {
-      Speech.speak('Find the matching shape below!', { rate: 0.78 });
+      speakTTS('Find the matching shape below!', 0.78 );
     } catch {}
     
     // Create options: correct shape + 2 random wrong shapes

@@ -4,7 +4,7 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, playSound } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -82,7 +82,7 @@ const BigTapSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     setTimeout(() => {
       setShowTarget(true);
-      Speech.speak(target === 'big' ? 'BIG!' : 'SMALL!', { rate: 0.9 });
+      speakTTS(target === 'big' ? 'BIG!' : 'SMALL!', 0.9 );
     }, 500);
   }, [round, done]);
 
@@ -114,7 +114,7 @@ const BigTapSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => {
     if (round === 1 && !done) {
-      Speech.speak('Tap big circle when "BIG" appears, tiny circle when "SMALL"!', { rate: 0.9 });
+      speakTTS('Tap big circle when "BIG" appears, tiny circle when "SMALL"!', { rate: 0.9 });
     }
   }, [round, done]);
 
@@ -122,7 +122,7 @@ const BigTapSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => {
       // Cleanup: Stop all sounds and speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -156,7 +156,7 @@ const BigTapSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <TouchableOpacity
           onPress={() => {
             try {
-              Speech.stop();
+              stopTTS();
             } catch (e) {
               // Ignore errors
             }

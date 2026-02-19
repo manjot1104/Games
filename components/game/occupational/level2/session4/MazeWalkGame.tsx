@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -124,24 +124,35 @@ const MazeWalkGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setMazePathStr(path);
 
     if (progress.value > 0) {
-      const totalSegments = pathPoints.current.length - 1;
-      const progressSegment = Math.floor(progress.value * totalSegments);
-      const segmentProgress = (progress.value * totalSegments) - progressSegment;
-      const clampedSegment = Math.min(progressSegment, totalSegments - 1);
+      // If progress is >= 0.99, draw the complete path including last point
+      // This ensures last part is covered with color when path is complete
+      if (progress.value >= 0.99) {
+        let progressPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
+        for (let i = 1; i < pathPoints.current.length; i++) {
+          progressPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
+        }
+        setProgressPathStr(progressPath);
+      } else {
+        // Draw partial path based on progress
+        const totalSegments = pathPoints.current.length - 1;
+        const progressSegment = Math.floor(progress.value * totalSegments);
+        const segmentProgress = (progress.value * totalSegments) - progressSegment;
+        const clampedSegment = Math.min(progressSegment, totalSegments - 1);
 
-      let progressPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
-      for (let i = 1; i <= clampedSegment; i++) {
-        progressPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
-      }
+        let progressPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
+        for (let i = 1; i <= clampedSegment; i++) {
+          progressPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
+        }
 
-      if (segmentProgress > 0 && clampedSegment < totalSegments) {
-        const startPt = pathPoints.current[clampedSegment];
-        const endPt = pathPoints.current[clampedSegment + 1];
-        const x = startPt.x + (endPt.x - startPt.x) * segmentProgress;
-        const y = startPt.y + (endPt.y - startPt.y) * segmentProgress;
-        progressPath += ` L ${x} ${y}`;
+        if (segmentProgress > 0 && clampedSegment < totalSegments) {
+          const startPt = pathPoints.current[clampedSegment];
+          const endPt = pathPoints.current[clampedSegment + 1];
+          const x = startPt.x + (endPt.x - startPt.x) * segmentProgress;
+          const y = startPt.y + (endPt.y - startPt.y) * segmentProgress;
+          progressPath += ` L ${x} ${y}`;
+        }
+        setProgressPathStr(progressPath);
       }
-      setProgressPathStr(progressPath);
     } else {
       setProgressPathStr('');
     }
@@ -173,7 +184,7 @@ const MazeWalkGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log maze walk game:', e);
       }
 
-      Speech.speak('Maze completed!', { rate: 0.78 });
+      speakTTS('Maze completed!', 0.78 );
     },
     [router],
   );
@@ -266,7 +277,22 @@ const MazeWalkGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         const segStartDist = segmentDists.slice(0, bestSegment).reduce((a, b) => a + b, 0);
         const distAlongSeg = segmentDists[bestSegment] * bestParam;
         const currentDist = segStartDist + distAlongSeg;
-        const newProgress = totalDist > 0 ? Math.min(1, Math.max(progress.value, currentDist / totalDist)) : 0;
+        let calculatedProgress = totalDist > 0 ? Math.min(1, currentDist / totalDist) : 0;
+        
+        // Check if user has reached end point - set progress to 1.0
+        const lastPoint = pathPoints.current[pathPoints.current.length - 1];
+        const distToEnd = Math.sqrt(
+          Math.pow(objectX.value - lastPoint.x, 2) + Math.pow(objectY.value - lastPoint.y, 2),
+        );
+        
+        let newProgress = calculatedProgress;
+        // If close to end point, ensure progress reaches 1.0 to complete path coloring
+        if (distToEnd <= LINE_TOLERANCE) {
+          newProgress = 1.0;
+        }
+        
+        // Always monotonic - only increase progress
+        newProgress = Math.max(progress.value, newProgress);
         
         if (newProgress > progress.value) {
           progress.value = newProgress;
@@ -323,14 +349,14 @@ const MazeWalkGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackType.Light);
-          Speech.speak('Stay on the path!', { rate: 0.78 });
+          speakTTS('Stay on the path!', 0.78 );
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Follow the clear path through the maze. Stay on track!', { rate: 0.78 });
+      speakTTS('Follow the clear path through the maze. Stay on track!', 0.78 );
     } catch {}
     // Generate simple maze path (easy - one clear path)
     const points: Array<{ x: number; y: number }> = [];

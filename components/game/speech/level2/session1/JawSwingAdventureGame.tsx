@@ -5,7 +5,7 @@ import type { MouthLandmarks } from '@/hooks/useJawDetectionWeb';
 import { logGameAndAward } from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
@@ -36,7 +36,6 @@ type Props = {
   requiredRounds?: number;
 };
 
-const DEFAULT_TTS_RATE = 0.75;
 const ROUND_DURATION_MS = 5000; // 5 seconds per round
 const TOTAL_ROUNDS = 6;
 const COLLECTION_THRESHOLD = 0.3; // Distance threshold for collecting items
@@ -54,14 +53,14 @@ function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
   scheduledSpeechTimers = [];
   try {
-    Speech.stop();
+    stopTTS();
   } catch {}
 }
 
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
   try {
     clearScheduledSpeech();
-    Speech.speak(text, { rate });
+    speakTTS(text, rate);
   } catch (e) {
     console.warn('speak error', e);
   }

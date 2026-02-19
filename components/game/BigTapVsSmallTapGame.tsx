@@ -1,9 +1,9 @@
 import { logGameAndAward } from '@/utils/api';
 import { stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
@@ -43,7 +43,7 @@ export const BigTapVsSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack
   const generateTarget = useCallback(() => {
     const type: TargetType = Math.random() > 0.5 ? 'big' : 'small';
     setTargetType(type);
-    Speech.speak(type === 'big' ? 'Tap the BIG circle!' : 'Tap the SMALL circle!');
+    speakTTS(type === 'big' ? 'Tap the BIG circle!' : 'Tap the SMALL circle!');
   }, []);
 
   const startGame = () => {
@@ -74,11 +74,11 @@ export const BigTapVsSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack
         }),
       ]).start();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      Speech.speak('Perfect!');
+      speakTTS('Perfect!');
     } else {
       setWrong((w) => w + 1);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      Speech.speak('Try the small one!');
+      speakTTS('Try the small one!');
     }
 
     nextRound();
@@ -104,11 +104,11 @@ export const BigTapVsSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack
         }),
       ]).start();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      Speech.speak('Great!');
+      speakTTS('Great!');
     } else {
       setWrong((w) => w + 1);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      Speech.speak('Try the big one!');
+      speakTTS('Try the big one!');
     }
 
     nextRound();
@@ -149,7 +149,7 @@ export const BigTapVsSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack
       console.error('Failed to save game:', e);
     }
 
-    Speech.speak('Amazing! You mastered big and small taps!');
+    speakTTS('Amazing! You mastered big and small taps!');
   };
 
   useEffect(() => {
@@ -231,7 +231,7 @@ export const BigTapVsSmallTapGame: React.FC<{ onBack?: () => void }> = ({ onBack
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch {
             // Ignore errors
           }

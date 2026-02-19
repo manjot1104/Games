@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -91,10 +91,10 @@ const FollowTheBodyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     demo.start(() => {
       // Demo complete, now user copies
       setPhase('copy');
-      Speech.speak(`Character ne ${BODY_PARTS[part].label} touch kiya! Ab tum bhi ${BODY_PARTS[part].label} touch karo!`, { rate: 0.8 });
+      speakTTS(`Character ne ${BODY_PARTS[part].label} touch kiya! Ab tum bhi ${BODY_PARTS[part].label} touch karo!`, 0.8 );
     });
 
-    Speech.speak(`${BODY_PARTS[part].label} touch kar raha hai!`, { rate: 0.8 });
+    speakTTS(`${BODY_PARTS[part].label} touch kar raha hai!`, 0.8 );
   }, [done, showBody, hasCopied, demoScale, demoOpacity]);
 
   const handleUserTap = useCallback((part: BodyPart) => {
@@ -108,7 +108,7 @@ const FollowTheBodyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setScore((s) => s + 1);
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      Speech.speak(`Perfect! ${BODY_PARTS[part].label} touch ho gaya!`, { rate: 0.9 });
+      speakTTS(`Perfect! ${BODY_PARTS[part].label} touch ho gaya!`, 0.9 );
       
       // Success animation
       Animated.sequence([
@@ -157,7 +157,7 @@ const FollowTheBodyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     } else {
       // Wrong part
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      Speech.speak(`${BODY_PARTS[targetPart].label} touch karna hai! Dobara try karo!`, { rate: 0.8 });
+      speakTTS(`${BODY_PARTS[targetPart].label} touch karna hai! Dobara try karo!`, 0.8 );
       
       // Shake animation
       Animated.sequence([
@@ -245,7 +245,7 @@ const FollowTheBodyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

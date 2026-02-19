@@ -4,7 +4,7 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { playSound } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     SafeAreaView,
@@ -82,7 +82,7 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     if (done) return;
     if (round === 1 && beatCount === 0) {
-      Speech.speak('Tap when the drum plays! Start with 1 beat per second, then get faster.', { rate: 0.9 });
+      speakTTS('Tap when the drum plays! Start with 1 beat per second, then get faster.', { rate: 0.9 });
     }
     setIsPlaying(false);
     setBeatCount(0);
@@ -143,7 +143,7 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => {
       // Cleanup: Stop all sounds and speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -181,7 +181,7 @@ const BeatMatchTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <TouchableOpacity
           onPress={() => {
             try {
-              Speech.stop();
+              stopTTS();
             } catch (e) {
               // Ignore errors
             }

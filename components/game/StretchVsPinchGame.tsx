@@ -3,7 +3,7 @@ import { stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, PanResponder, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
@@ -77,15 +77,15 @@ export const StretchVsPinchGame: React.FC<{ onBack?: () => void }> = ({ onBack }
         if (targetAction === 'stretch' && delta >= STRETCH_THRESHOLD) {
           setCorrect((c) => c + 1);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          Speech.speak('Perfect! You stretched it!');
+          speakTTS('Perfect! You stretched it!');
         } else if (targetAction === 'pinch' && delta <= PINCH_THRESHOLD) {
           setCorrect((c) => c + 1);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          Speech.speak('Great! You pinched it!');
+          speakTTS('Great! You pinched it!');
         } else {
           setWrong((w) => w + 1);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-          Speech.speak('Try again!');
+          speakTTS('Try again!');
         }
 
         // Reset
@@ -110,7 +110,7 @@ export const StretchVsPinchGame: React.FC<{ onBack?: () => void }> = ({ onBack }
   const generateTarget = () => {
     const action: TargetAction = Math.random() > 0.5 ? 'stretch' : 'pinch';
     setTargetAction(action);
-    Speech.speak(action === 'stretch' ? 'Make it BIG! Stretch with two fingers!' : 'Make it SMALL! Pinch with two fingers!');
+    speakTTS(action === 'stretch' ? 'Make it BIG! Stretch with two fingers!' : 'Make it SMALL! Pinch with two fingers!');
   };
 
   const startGame = () => {
@@ -148,7 +148,7 @@ export const StretchVsPinchGame: React.FC<{ onBack?: () => void }> = ({ onBack }
       console.error('Failed to save game:', e);
     }
 
-    Speech.speak('Amazing! You mastered stretch and pinch!');
+    speakTTS('Amazing! You mastered stretch and pinch!');
   };
 
   // Results screen

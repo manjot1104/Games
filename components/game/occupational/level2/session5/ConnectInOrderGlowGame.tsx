@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -215,7 +215,7 @@ const ConnectInOrderGlowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
         console.error('Failed to log connect in order glow game:', e);
       }
 
-      Speech.speak('Perfect sequence!', { rate: 0.78 });
+      speakTTS('Perfect sequence!', 0.78 );
     },
     [router],
   );
@@ -303,14 +303,14 @@ const ConnectInOrderGlowGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
       try {
         playWarning();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Speech.speak(`Tap dot ${currentDotIndex === 0 ? 1 : currentDotIndex + 1}!`, { rate: 0.78 });
+        speakTTS(`Tap dot ${currentDotIndex === 0 ? 1 : currentDotIndex + 1}!`, 0.78 );
       } catch {}
     }
   }, [currentDotIndex, dots, roundActive, done, endGame, playSuccess, playWarning]);
 
   useEffect(() => {
     try {
-      Speech.speak('Tap the glowing dot in order!', { rate: 0.78 });
+      speakTTS('Tap the glowing dot in order!', 0.78 );
     } catch {}
     generateDots();
     

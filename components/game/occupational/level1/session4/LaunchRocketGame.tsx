@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -74,7 +74,7 @@ const LaunchRocketGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial speech on mount
   useEffect(() => {
     try {
-      Speech.speak('Press and hold to fill the fuel bar. Release when full to launch!', { rate: 0.78 });
+      speakTTS('Press and hold to fill the fuel bar. Release when full to launch!', 0.78 );
     } catch {}
   }, []);
   const [done, setDone] = useState(false);
@@ -132,7 +132,7 @@ const LaunchRocketGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           withTiming(0.3, { duration: 300, easing: Easing.inOut(Easing.ease) }),
         );
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Speech.speak('Release to launch!', { rate: 0.85 });
+        speakTTS('Release to launch!', 0.85 );
       } else {
         progressTimerRef.current = setTimeout(updateProgress, 50);
       }
@@ -214,7 +214,7 @@ const LaunchRocketGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Speech.speak('Fill the fuel bar completely!', { rate: 0.78 });
+        speakTTS('Fill the fuel bar completely!', 0.78 );
       } catch {}
     }
   }, [isPressed, isLaunching, fuelProgress, fuelBarHeight, releaseFlash, rocketY, rocketOpacity, rocketScale, sparkleX, sparkleY, playLaunch]);
@@ -246,7 +246,7 @@ const LaunchRocketGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log launch rocket game:', e);
       }
 
-      Speech.speak('Amazing launches!', { rate: 0.78 });
+      speakTTS('Amazing launches!', 0.78 );
     },
     [router],
   );

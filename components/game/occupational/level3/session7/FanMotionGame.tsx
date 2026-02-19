@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -105,7 +105,7 @@ const FanMotionGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         if (progress < MIN_CIRCLE_PROGRESS) {
           // Not enough progress
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          Speech.speak('Zada circle banaye! Complete circle swing karo!', { rate: 0.8 });
+          speakTTS('Zada circle banaye! Complete circle swing karo!', 0.8 );
           
           // Reset
           Animated.spring(fanRotation, {
@@ -138,7 +138,7 @@ const FanMotionGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       useNativeDriver: true,
     }).start();
 
-    Speech.speak('Fan ko circular swing karao! Complete circle banaye!', { rate: 0.8 });
+    speakTTS('Fan ko circular swing karao! Complete circle banaye!', 0.8 );
   }, [fanScale, fanRotation]);
 
   const handleSuccess = useCallback(() => {
@@ -146,7 +146,7 @@ const FanMotionGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect circular swing!', { rate: 0.9 });
+    speakTTS('Perfect circular swing!', 0.9 );
     
     // Success animation
     Animated.sequence([
@@ -225,7 +225,7 @@ const FanMotionGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

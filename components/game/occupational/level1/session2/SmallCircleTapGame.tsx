@@ -6,7 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -155,7 +155,7 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log small circle tap game:', e);
       }
 
-      Speech.speak('Great precision!', { rate: 0.78 });
+      speakTTS('Great precision!', 0.78 );
     },
     [router],
   );
@@ -163,7 +163,7 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initialize first target
   useEffect(() => {
     try {
-      Speech.speak('Use your index finger to tap the small circle. Be precise!', { rate: 0.78 });
+      speakTTS('Use your index finger to tap the small circle. Be precise!', 0.78 );
     } catch {}
     spawnTarget();
   }, [spawnTarget]);

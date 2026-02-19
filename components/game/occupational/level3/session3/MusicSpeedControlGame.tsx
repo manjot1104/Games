@@ -6,7 +6,7 @@ import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -111,10 +111,10 @@ const MusicSpeedControlGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak(speed === 'fast' ? 'Fast music! Move fast!' : 'Slow music! Move slow!', { rate: 0.8 });
+        speakTTS(speed === 'fast' ? 'Fast music! Move fast!' : 'Slow music! Move slow!', 0.8 );
       }, 300);
     } else {
-      Speech.speak(speed === 'fast' ? 'Fast music! Move fast!' : 'Slow music! Move slow!', { rate: 0.8 });
+      speakTTS(speed === 'fast' ? 'Fast music! Move fast!' : 'Slow music! Move slow!', 0.8 );
     }
   }, [musicScale, musicOpacity, playMusic]);
 
@@ -205,7 +205,7 @@ const MusicSpeedControlGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -281,7 +281,7 @@ const MusicSpeedControlGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

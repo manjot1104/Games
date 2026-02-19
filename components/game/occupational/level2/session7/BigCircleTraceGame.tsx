@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -183,7 +183,7 @@ const BigCircleTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log big circle trace game:', e);
       }
 
-      Speech.speak('Circle traced!', { rate: 0.78 });
+      speakTTS('Circle traced!', 0.78 );
     },
     [router],
   );
@@ -296,7 +296,7 @@ const BigCircleTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Trace the whole circle!', { rate: 0.78 });
+          speakTTS('Trace the whole circle!', 0.78 );
         } catch {}
       }
     });
@@ -308,7 +308,7 @@ const BigCircleTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectY.value = centerY.value;
     updatePaths();
     try {
-      Speech.speak('Trace the big circle with your whole arm!', { rate: 0.78 });
+      speakTTS('Trace the big circle with your whole arm!', 0.78 );
     } catch {}
     
     return () => {

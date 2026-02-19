@@ -5,7 +5,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -45,7 +45,7 @@ const useSoundEffect = (uri: string) => {
       soundRef.current?.unloadAsync().catch(() => {});
       // Cleanup: Stop speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -93,7 +93,7 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial instruction - only once
   useEffect(() => {
     try {
-      Speech.speak('Tap and hold the button for 2 seconds. Don\'t let go!', { rate: 0.78 });
+      speakTTS('Tap and hold the button for 2 seconds. Don\'t let go!', 0.78 );
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -225,7 +225,7 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     try {
       await playSuccess();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Speech.speak('Great hold!', { rate: 0.78 });
+      speakTTS('Great hold!', 0.78 );
     } catch {}
 
     // Move to next round or finish
@@ -258,7 +258,7 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setDone(true);
       setShowCongratulations(true);
       
-      Speech.speak('Amazing work! You completed the game!', { rate: 0.78 });
+      speakTTS('Amazing work! You completed the game!', 0.78 );
 
       // Log game in background (don't wait for it)
       try {

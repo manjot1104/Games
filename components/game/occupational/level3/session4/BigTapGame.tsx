@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -81,10 +81,10 @@ const BigTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak('BIG! Tap or swipe anywhere on screen!', { rate: 0.8 });
+        speakTTS('BIG! Tap or swipe anywhere on screen!', 0.8 );
       }, 300);
     } else {
-      Speech.speak('BIG! Tap or swipe anywhere on screen!', { rate: 0.8 });
+      speakTTS('BIG! Tap or swipe anywhere on screen!', 0.8 );
     }
   }, [circleScale, circleOpacity]);
 
@@ -165,7 +165,7 @@ const BigTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -232,7 +232,7 @@ const BigTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

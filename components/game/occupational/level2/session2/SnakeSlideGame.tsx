@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -63,7 +63,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
-// Calculate distance to bezier curve
+// Calculate distance to bezier curve and return both distance and t parameter
 const distanceToBezier = (
   px: number,
   py: number,
@@ -77,14 +77,18 @@ const distanceToBezier = (
   y2: number,
 ) => {
   let minDist = Infinity;
-  for (let t = 0; t <= 1; t += 0.02) {
+  let bestT = 0;
+  for (let t = 0; t <= 1; t += 0.01) {
     const mt = 1 - t;
     const x = mt * mt * mt * x1 + 3 * mt * mt * t * cx1 + 3 * mt * t * t * cx2 + t * t * t * x2;
     const y = mt * mt * mt * y1 + 3 * mt * mt * t * cy1 + 3 * mt * t * t * cy2 + t * t * t * y2;
     const dist = Math.sqrt(Math.pow(px - x, 2) + Math.pow(py - y, 2));
-    if (dist < minDist) minDist = dist;
+    if (dist < minDist) {
+      minDist = dist;
+      bestT = t;
+    }
   }
-  return minDist;
+  return { dist: minDist, t: bestT };
 };
 
 const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
@@ -100,9 +104,12 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [roundActive, setRoundActive] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [isOffTrack, setIsOffTrack] = useState(false);
+  const [hasGoneOffTrack, setHasGoneOffTrack] = useState(false); // Track if user ever went off track in current round
+  const [offTrackCounter, setOffTrackCounter] = useState(0); // Force re-render for warning display
   const progress = useSharedValue(0);
   const [snakePathStr, setSnakePathStr] = useState('');
   const [progressPathStr, setProgressPathStr] = useState('');
+  const pathPoints = useRef<Array<{ x: number; y: number }>>([]);
 
   // Snake curve parameters (bezier curve)
   const startX = useSharedValue(15);
@@ -123,16 +130,55 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const screenWidth = useRef(400);
   const screenHeight = useRef(600);
   const lastWarningTime = useRef(0);
+  const hasGoneOffTrackRef = useRef(false); // Use ref for immediate access
+  const isOffTrackRef = useRef(false); // Use ref for immediate warning display
+  const currentPointerX = useSharedValue(15); // Track current pointer position
+  const currentPointerY = useSharedValue(50);
 
   const updatePaths = useCallback(() => {
-    setSnakePathStr(`M ${startX.value} ${startY.value} C ${controlX1.value} ${controlY1.value}, ${controlX2.value} ${controlY2.value}, ${endX.value} ${endY.value}`);
-    
-    if (progress.value > 0) {
-      const t = progress.value;
+    // Generate points along bezier curve
+    pathPoints.current = [];
+    for (let i = 0; i <= 100; i++) {
+      const t = i / 100;
       const mt = 1 - t;
       const x = mt * mt * mt * startX.value + 3 * mt * mt * t * controlX1.value + 3 * mt * t * t * controlX2.value + t * t * t * endX.value;
       const y = mt * mt * mt * startY.value + 3 * mt * mt * t * controlY1.value + 3 * mt * t * t * controlY2.value + t * t * t * endY.value;
-      setProgressPathStr(`M ${startX.value} ${startY.value} C ${controlX1.value} ${controlY1.value}, ${controlX2.value} ${controlY2.value}, ${x} ${y}`);
+      pathPoints.current.push({ x, y });
+    }
+
+    // Generate full path string
+    let fullPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
+    for (let i = 1; i < pathPoints.current.length; i++) {
+      fullPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
+    }
+    setSnakePathStr(fullPath);
+
+    // Generate progress path based on progress value
+    if (progress.value > 0) {
+      if (progress.value >= 0.99) {
+        // Draw complete path
+        setProgressPathStr(fullPath);
+      } else {
+        // Draw partial path based on progress
+        const totalSegments = pathPoints.current.length - 1;
+        const progressSegment = Math.floor(progress.value * totalSegments);
+        const segmentProgress = (progress.value * totalSegments) - progressSegment;
+        const clampedSegment = Math.min(progressSegment, totalSegments - 1);
+
+        let progressPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
+        for (let i = 1; i <= clampedSegment; i++) {
+          progressPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
+        }
+
+        if (segmentProgress > 0 && clampedSegment < totalSegments) {
+          const startPt = pathPoints.current[clampedSegment];
+          const endPt = pathPoints.current[clampedSegment + 1];
+          const x = startPt.x + (endPt.x - startPt.x) * segmentProgress;
+          const y = startPt.y + (endPt.y - startPt.y) * segmentProgress;
+          progressPath += ` L ${x} ${y}`;
+        }
+        setProgressPathStr(progressPath);
+      }
     } else {
       setProgressPathStr('');
     }
@@ -164,7 +210,7 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log snake slide game:', e);
       }
 
-      Speech.speak('Excellent smooth sliding!', { rate: 0.78 });
+      speakTTS('Excellent smooth sliding!', 0.78 );
     },
     [router],
   );
@@ -180,12 +226,14 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
 
-      objectX.value = Math.max(5, Math.min(95, newX));
-      objectY.value = Math.max(10, Math.min(90, newY));
+      // Always update pointer position for continuous checking
+      currentPointerX.value = newX;
+      currentPointerY.value = newY;
 
-      const dist = distanceToBezier(
-        objectX.value,
-        objectY.value,
+      // First check if pointer is on track
+      const { dist, t } = distanceToBezier(
+        newX,
+        newY,
         startX.value,
         startY.value,
         controlX1.value,
@@ -197,26 +245,54 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       );
 
       if (dist > LINE_TOLERANCE) {
-        if (!isOffTrack) {
-          setIsOffTrack(true);
-          const now = Date.now();
-          if (now - lastWarningTime.current > 500) {
-            lastWarningTime.current = now;
-            try {
-              playWarning();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            } catch {}
-          }
+        // Pointer is off track - ALWAYS show error and mark as off track
+        // Always update state to ensure warning is visible - use counter to force re-render
+        setIsOffTrack(true);
+        isOffTrackRef.current = true;
+        setHasGoneOffTrack(true); // Update state for UI
+        hasGoneOffTrackRef.current = true; // Update ref for immediate check - this prevents completion
+        setOffTrackCounter((prev) => (prev >= 1000 ? 1 : prev + 1)); // Force re-render every frame when off track
+        
+        // Play warning sound/vibration periodically (not every frame to avoid spam)
+        const now = Date.now();
+        if (now - lastWarningTime.current > 500) {
+          lastWarningTime.current = now;
+          try {
+            playWarning();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          } catch {}
         }
+        
+        // CRITICAL: Don't move object, don't update progress when off track - return early
+        // Object stays at last valid position
+        return;
       } else {
-        setIsOffTrack(false);
-        // Estimate progress along curve
-        const totalDist = Math.sqrt(Math.pow(endX.value - startX.value, 2) + Math.pow(endY.value - startY.value, 2));
-        const currentDist = Math.sqrt(
-          Math.pow(objectX.value - startX.value, 2) + Math.pow(objectY.value - startY.value, 2),
+        // Pointer is on track - allow object movement
+        if (isOffTrack) {
+          setIsOffTrack(false);
+          setOffTrackCounter(0); // Reset counter when back on track
+        }
+        isOffTrackRef.current = false;
+        
+        // Update object position only when on track
+        objectX.value = Math.max(5, Math.min(95, newX));
+        objectY.value = Math.max(10, Math.min(90, newY));
+
+        // Use t parameter from bezier curve as progress - this accurately represents progress along the curve
+        // Ensure progress is monotonic (only increases)
+        const newProgress = Math.max(progress.value, Math.min(1, Math.max(0, t)));
+        
+        // Check if close to end point - ensure progress reaches 1.0 only if actual progress is high
+        const distToEnd = Math.sqrt(
+          Math.pow(objectX.value - endX.value, 2) + Math.pow(objectY.value - endY.value, 2),
         );
-        progress.value = Math.min(1, Math.max(0, currentDist / (totalDist * 1.5)));
-        updatePaths();
+        // Only set to 1.0 if close to end AND calculated progress is high
+        const finalProgress = (distToEnd <= LINE_TOLERANCE && newProgress >= 0.95) ? 1.0 : newProgress;
+        
+        if (finalProgress > progress.value) {
+          progress.value = finalProgress;
+          updatePaths();
+        }
       }
     })
     .onEnd(() => {
@@ -228,7 +304,9 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Math.pow(objectX.value - endX.value, 2) + Math.pow(objectY.value - endY.value, 2),
       );
 
-      if (distToEnd <= LINE_TOLERANCE && progress.value >= 0.75) {
+      // Only allow completion if user reached the end AND never went off track AND progress is complete
+      // Check both state and ref to ensure we catch it
+      if (distToEnd <= LINE_TOLERANCE && progress.value >= 0.99 && !hasGoneOffTrack && !hasGoneOffTrackRef.current) {
         sparkleX.value = endX.value;
         sparkleY.value = endY.value;
 
@@ -242,7 +320,12 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             setTimeout(() => {
               setRound((r) => r + 1);
               progress.value = 0;
+              updatePaths();
               setIsOffTrack(false);
+              setHasGoneOffTrack(false); // Reset for new round
+              hasGoneOffTrackRef.current = false; // Reset ref for new round
+              isOffTrackRef.current = false; // Reset off-track ref
+              setOffTrackCounter(0); // Reset counter
               objectX.value = withSpring(startX.value, { damping: 10, stiffness: 100 });
               objectY.value = withSpring(startY.value, { damping: 10, stiffness: 100 });
               setRoundActive(true);
@@ -259,19 +342,27 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         objectX.value = withSpring(startX.value, { damping: 10, stiffness: 100 });
         objectY.value = withSpring(startY.value, { damping: 10, stiffness: 100 });
         progress.value = 0;
-        setIsOffTrack(false);
         updatePaths();
+        setIsOffTrack(false);
+        setHasGoneOffTrack(false); // Reset for retry
+        hasGoneOffTrackRef.current = false; // Reset ref for retry
+        isOffTrackRef.current = false; // Reset off-track ref
+        setOffTrackCounter(0); // Reset counter
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Follow the smooth curve!', { rate: 0.78 });
+          if (hasGoneOffTrack) {
+            speakTTS('Stay on the path! Try again.', 0.78 );
+          } else {
+            speakTTS('Follow the smooth curve!', 0.78 );
+          }
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Follow the smooth snake curve!', { rate: 0.78 });
+      speakTTS('Follow the smooth snake curve!', 0.78 );
     } catch {}
     // Create smooth S-curve
     startX.value = 15;
@@ -286,6 +377,11 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectX.value = startX.value;
     objectY.value = startY.value;
     progress.value = 0;
+    setIsOffTrack(false);
+    setHasGoneOffTrack(false); // Reset off-track flag for new round
+    hasGoneOffTrackRef.current = false; // Reset ref for new round
+    isOffTrackRef.current = false; // Reset off-track ref
+    setOffTrackCounter(0); // Reset counter
     updatePaths();
     
     return () => {
@@ -427,9 +523,9 @@ const SnakeSlideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               </Animated.View>
             )}
 
-            {isOffTrack && (
+            {(isOffTrack || offTrackCounter > 0) && (
               <View style={styles.warningBox}>
-                <Text style={styles.warningText}>Stay on the curve! ⚠️</Text>
+                <Text style={styles.warningText}>❌ Stay on the path! Game won't complete if you go off track! ⚠️</Text>
               </View>
             )}
           </Animated.View>

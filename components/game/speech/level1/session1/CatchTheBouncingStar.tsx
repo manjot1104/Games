@@ -2,10 +2,10 @@ import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import ResultCard from '@/components/game/ResultCard';
 import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { logGameAndAward } from '@/utils/api';
+import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -19,9 +19,6 @@ import {
     useWindowDimensions,
     View,
 } from 'react-native';
-import CongratulationsScreen from '@/components/game/CongratulationsScreen';
-import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
-import { logGameAndAward } from '@/utils/api';
 
 type Props = {
   onBack: () => void;
@@ -30,93 +27,14 @@ type Props = {
 };
 
 const STAR_SIZE = 100;
-const DEFAULT_TTS_RATE = 0.75;
 const BOUNCE_SPEED = 2000; // Duration for one bounce cycle
 
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
-let webSpeechSynthesis: SpeechSynthesis | null = null;
-let webUtterance: SpeechSynthesisUtterance | null = null;
-let webTTSActivated = false; // Track if TTS has been activated by user interaction
+// Use shared TTS utility (speech-to-speech on web, expo-speech on native)
+// Imported from @/utils/tts
 
-// Initialize web speech synthesis
-if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-  webSpeechSynthesis = window.speechSynthesis;
-}
-
-// Wake up speech synthesis on web (required for browser autoplay policy)
-function activateWebTTS() {
-  if (Platform.OS === 'web' && webSpeechSynthesis && !webTTSActivated) {
-    try {
-      // Speak a silent utterance to activate TTS (browser requires user interaction)
-      const silentUtterance = new SpeechSynthesisUtterance('');
-      silentUtterance.volume = 0;
-      silentUtterance.onend = () => {
-        webTTSActivated = true;
-      };
-      webSpeechSynthesis.speak(silentUtterance);
-    } catch (e) {
-      console.warn('Failed to activate web TTS:', e);
-      webTTSActivated = true; // Mark as activated even if it fails
-    }
-  }
-}
-
-function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
-  scheduledSpeechTimers = [];
-  try {
-    if (Platform.OS === 'web' && webSpeechSynthesis) {
-      webSpeechSynthesis.cancel();
-      webUtterance = null;
-    } else {
-      Speech.stop();
-    }
-  } catch {}
-}
-
+// Wrapper function for backward compatibility
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
-  try {
-    clearScheduledSpeech();
-    
-    if (Platform.OS === 'web' && webSpeechSynthesis) {
-      // Ensure TTS is activated before speaking
-      if (!webTTSActivated) {
-        activateWebTTS();
-        // Wait a bit for activation, then speak
-        setTimeout(() => {
-          if (webSpeechSynthesis) {
-            webUtterance = new SpeechSynthesisUtterance(text);
-            webUtterance.rate = Math.max(0.5, Math.min(2, rate * 1.33));
-            webUtterance.pitch = 1;
-            webUtterance.volume = 1;
-            webUtterance.onerror = (e) => {
-              console.warn('Web TTS error:', e);
-            };
-            webSpeechSynthesis.speak(webUtterance);
-          }
-        }, 100);
-      } else {
-        // Use browser's native SpeechSynthesis API for web
-        webUtterance = new SpeechSynthesisUtterance(text);
-        // Convert rate: expo-speech uses 0-1, browser uses 0.1-10, default 1
-        // Map 0.75 (default) to ~0.75, scale appropriately
-        webUtterance.rate = Math.max(0.5, Math.min(2, rate * 1.33)); // Scale to browser range
-        webUtterance.pitch = 1;
-        webUtterance.volume = 1;
-        
-        webUtterance.onerror = (e) => {
-          console.warn('Web TTS error:', e);
-        };
-        
-        webSpeechSynthesis.speak(webUtterance);
-      }
-    } else {
-      // Use expo-speech for native platforms
-      Speech.speak(text, { rate });
-    }
-  } catch (e) {
-    console.warn('speak error', e);
-  }
+  speakTTS(text, rate);
 }
 
 export const CatchTheBouncingStar: React.FC<Props> = ({
@@ -307,13 +225,8 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
     // Activate TTS on first user interaction (web browser requirement)
     if (!userInteracted) {
       setUserInteracted(true);
-      if (Platform.OS === 'web') {
-        activateWebTTS();
-        // Play initial instruction after activation
-        setTimeout(() => {
-          speak('Catch the bouncing star! Tap it when you see it!');
-        }, 200);
-      }
+      // Shared TTS utility handles activation automatically
+      speak('Catch the bouncing star! Tap it when you see it!');
     }
     if (gameFinished) return;
 
@@ -399,12 +312,12 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
         xpAwarded={finalStats.successfulTaps * 10}
         onContinue={() => {
           clearScheduledSpeech();
-          Speech.stop();
+          stopTTS();
           onComplete?.();
         }}
         onHome={() => {
           clearScheduledSpeech();
-          Speech.stop();
+          stopTTS();
           onBack();
         }}
       />
@@ -431,7 +344,7 @@ export const CatchTheBouncingStar: React.FC<Props> = ({
           <TouchableOpacity
             onPress={() => {
               clearScheduledSpeech();
-              Speech.stop();
+              stopTTS();
               onBack();
             }}
             style={styles.backButton}

@@ -1,8 +1,9 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -27,6 +28,7 @@ const RESET_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_fli
 const TOTAL_ROUNDS = 8;
 const LASER_WIDTH = 8;
 const TOLERANCE = 30;
+const FINGER_SIZE = 30; // Size of finger pointer (matches style width/height)
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
@@ -101,6 +103,9 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setDone(true);
       setRoundActive(false);
 
+      // Stop all speech when game ends
+      stopAllSpeech();
+
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -117,38 +122,76 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log light the laser game:', e);
       }
 
-      Speech.speak('Laser master!', { rate: 0.78 });
+      speakTTS('Laser master!', 0.78);
     },
     [router],
   );
 
   const panGesture = Gesture.Pan()
-    .onStart(() => {
+    .onStart((e) => {
       if (!roundActive || done) return;
+      
+      // Check if touch started on the finger - only allow dragging if started on finger
+      const touchX = (e.x / screenWidth.current) * 100;
+      const touchY = (e.y / screenHeight.current) * 100;
+      
+      // Calculate distance from touch point to finger center
+      const fingerCenterX = fingerX.value;
+      const fingerCenterY = fingerY.value;
+      
+      // Convert FINGER_SIZE from pixels to percentage for comparison
+      const fingerSizePercentX = (FINGER_SIZE / screenWidth.current) * 100;
+      const fingerSizePercentY = (FINGER_SIZE / screenHeight.current) * 100;
+      const fingerRadiusX = fingerSizePercentX / 2;
+      const fingerRadiusY = fingerSizePercentY / 2;
+      
+      // Check if touch is within finger bounds
+      const distX = Math.abs(touchX - fingerCenterX);
+      const distY = Math.abs(touchY - fingerCenterY);
+      const isOnFinger = distX <= fingerRadiusX && distY <= fingerRadiusY;
+      
+      if (!isOnFinger) {
+        return; // Don't start tracing if not on finger
+      }
+      
       setIsTracing(true);
       pathPoints.current = [];
       laserOpacity.value = withTiming(1, { duration: 200 });
     })
     .onUpdate((e) => {
-      if (!roundActive || done) return;
+      if (!roundActive || done || !isTracing) return; // Only update if tracing started on finger
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
       
       pathPoints.current.push({ x: newX, y: newY });
       
       if (isHorizontal) {
-        fingerX.value = Math.max(5, Math.min(95, newX));
+        // Clamp finger position between start and end
+        const minX = Math.min(startX.value, endX.value);
+        const maxX = Math.max(startX.value, endX.value);
+        const clampedX = Math.max(minX, Math.min(maxX, newX));
+        fingerX.value = clampedX;
         fingerY.value = startY.value;
-        const dist = Math.abs(newX - startX.value);
+        
+        // Calculate laser length as actual distance from start to finger
+        const dist = Math.abs(clampedX - startX.value);
         const totalDist = Math.abs(endX.value - startX.value);
-        laserLength.value = (dist / totalDist) * 100;
+        // Laser length should be percentage of total distance, but clamped to finger position
+        laserLength.value = totalDist > 0 ? (dist / totalDist) * 100 : 0;
         setProgress(Math.min(100, (dist / totalDist) * 100));
       } else {
+        // Clamp finger position between start and end
+        const minY = Math.min(startY.value, endY.value);
+        const maxY = Math.max(startY.value, endY.value);
+        const clampedY = Math.max(minY, Math.min(maxY, newY));
         fingerX.value = startX.value;
-        fingerY.value = Math.max(10, Math.min(90, newY));
-        const dist = Math.abs(newY - startY.value);
+        fingerY.value = clampedY;
+        
+        // Calculate laser length as actual distance from start to finger
+        const dist = Math.abs(clampedY - startY.value);
         const totalDist = Math.abs(endY.value - startY.value);
-        laserLength.value = (dist / totalDist) * 100;
+        // Laser length should be percentage of total distance, but clamped to finger position
+        laserLength.value = totalDist > 0 ? (dist / totalDist) * 100 : 0;
         setProgress(Math.min(100, (dist / totalDist) * 100));
       }
     })
@@ -198,7 +241,7 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playReset();
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Trace the full line!', { rate: 0.78 });
+          speakTTS('Trace the full line!', 0.78);
         } catch {}
       }
     });
@@ -232,11 +275,18 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setProgress(0);
 
     try {
-      Speech.speak('Trace your finger along the line to light the laser!', { rate: 0.78 });
+      speakTTS('Trace your finger along the line to light the laser!', 0.78);
     } catch {}
+
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 
@@ -251,11 +301,23 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const laserStyle = useAnimatedStyle(() => {
     if (isHorizontal) {
+      const lineStartX = Math.min(startX.value, endX.value);
+      const lineEndX = Math.max(startX.value, endX.value);
+      const totalDist = lineEndX - lineStartX;
+      
+      // Calculate actual distance from start to current finger position
+      // Clamp finger position between start and end
+      const clampedFingerX = Math.max(lineStartX, Math.min(lineEndX, fingerX.value));
+      const actualDist = clampedFingerX - lineStartX;
+      
+      // Use actual distance (already clamped, so it won't exceed total distance)
+      const laserWidthPercent = Math.max(0, Math.min(actualDist, totalDist));
+      
       return {
         position: 'absolute',
-        left: `${startX.value}%`,
+        left: `${lineStartX}%`,
         top: `${startY.value}%`,
-        width: `${laserLength.value}%`,
+        width: `${laserWidthPercent}%`,
         height: LASER_WIDTH,
         transform: [{ translateY: -LASER_WIDTH / 2 }],
         backgroundColor: '#EF4444',
@@ -266,12 +328,24 @@ const LightTheLaserGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         elevation: 5,
       };
     } else {
+      const lineStartY = Math.min(startY.value, endY.value);
+      const lineEndY = Math.max(startY.value, endY.value);
+      const totalDist = lineEndY - lineStartY;
+      
+      // Calculate actual distance from start to current finger position
+      // Clamp finger position between start and end
+      const clampedFingerY = Math.max(lineStartY, Math.min(lineEndY, fingerY.value));
+      const actualDist = clampedFingerY - lineStartY;
+      
+      // Use actual distance (already clamped, so it won't exceed total distance)
+      const laserHeightPercent = Math.max(0, Math.min(actualDist, totalDist));
+      
       return {
         position: 'absolute',
         left: `${startX.value}%`,
-        top: `${startY.value}%`,
+        top: `${lineStartY}%`,
         width: LASER_WIDTH,
-        height: `${laserLength.value}%`,
+        height: `${laserHeightPercent}%`,
         transform: [{ translateX: -LASER_WIDTH / 2 }],
         backgroundColor: '#EF4444',
         opacity: laserOpacity.value,

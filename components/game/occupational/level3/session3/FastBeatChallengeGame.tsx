@@ -5,7 +5,7 @@ import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -187,7 +187,7 @@ const FastBeatChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -214,10 +214,10 @@ const FastBeatChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
           setShowInfo(false);
           if (Platform.OS === 'web') {
             setTimeout(() => {
-              Speech.speak('Fast beats coming! Tap quickly!', { rate: 0.8 });
+              speakTTS('Fast beats coming! Tap quickly!', 0.8 );
             }, 300);
           } else {
-            Speech.speak('Fast beats coming! Tap quickly!', { rate: 0.8 });
+            speakTTS('Fast beats coming! Tap quickly!', 0.8 );
           }
         }}
         onBack={() => {
@@ -267,7 +267,7 @@ const FastBeatChallengeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

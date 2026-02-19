@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated, Easing,
@@ -241,7 +241,7 @@ const MultipleSmallTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBack })
         console.error('Failed to log multiple small targets game:', e);
       }
 
-      Speech.speak('Excellent precision!', { rate: 0.78 });
+      speakTTS('Excellent precision!', 0.78 );
     },
     [router],
   );
@@ -249,7 +249,7 @@ const MultipleSmallTargetsGame: React.FC<{ onBack?: () => void }> = ({ onBack })
   // Initialize first round
   useEffect(() => {
     try {
-      Speech.speak('Tap all the small dots to clear the screen!', { rate: 0.78 });
+      speakTTS('Tap all the small dots to clear the screen!', 0.78 );
     } catch {}
     spawnDots();
   }, []);

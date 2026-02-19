@@ -4,7 +4,7 @@ import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, playSound } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -59,7 +59,7 @@ const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
   useEffect(() => {
     if (done) return;
     if (round === 1) {
-      Speech.speak('Listen to the instrument, then choose which one it was!', { rate: 0.9 });
+      speakTTS('Listen to the instrument, then choose which one it was!', { rate: 0.9 });
     }
     setTimeout(() => playInstrument(), 500);
   }, [round, done, playInstrument]);
@@ -146,7 +146,7 @@ const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     return () => {
       // Cleanup: Stop all sounds and speech when component unmounts
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -182,7 +182,7 @@ const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         <TouchableOpacity
           onPress={() => {
             try {
-              Speech.stop();
+              stopTTS();
             } catch (e) {
               // Ignore errors
             }

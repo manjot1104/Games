@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -99,7 +99,7 @@ const TouchHeadGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Head touch ho gaya!', { rate: 0.9 });
+    speakTTS('Head touch ho gaya!', 0.9 );
     
     // Success animation
     Animated.sequence([
@@ -157,7 +157,7 @@ const TouchHeadGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     // Start highlighting after a delay
     setTimeout(() => {
       startHighlight();
-      Speech.speak('Head highlight ho raha hai! Head ko touch karo!', { rate: 0.8 });
+      speakTTS('Head highlight ho raha hai! Head ko touch karo!', 0.8 );
     }, 500);
   }, [headScale, headOpacity, glowScale, glowOpacity, startHighlight]);
 
@@ -205,7 +205,7 @@ const TouchHeadGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

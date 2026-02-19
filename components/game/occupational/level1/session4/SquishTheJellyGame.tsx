@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -76,7 +76,7 @@ const SquishTheJellyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial speech on mount
   useEffect(() => {
     try {
-      Speech.speak('Press and hold to compress the jelly. Release to let it spring back!', { rate: 0.78 });
+      speakTTS('Press and hold to compress the jelly. Release to let it spring back!', 0.78 );
     } catch {}
   }, []);
   const [done, setDone] = useState(false);
@@ -147,7 +147,7 @@ const SquishTheJellyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playSplat();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Too much pressure!', { rate: 0.78 });
+          speakTTS('Too much pressure!', 0.78 );
         } catch {}
 
         setTimeout(() => {
@@ -249,7 +249,7 @@ const SquishTheJellyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log squish the jelly game:', e);
       }
 
-      Speech.speak('Great squishing!', { rate: 0.78 });
+      speakTTS('Great squishing!', 0.78 );
     },
     [router],
   );

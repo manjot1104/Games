@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -43,7 +43,12 @@ const ArrowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 5 || Math.abs(gestureState.dy) > 5;
+      },
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (evt) => {
         swipeStartX.current = evt.nativeEvent.pageX;
         swipeDistance.current = 0;
@@ -99,15 +104,15 @@ const ArrowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     ]).start();
 
     const instruction = dir === 'left' 
-      ? 'Arrow left hai, left swipe karo!' 
-      : 'Arrow right hai, right swipe karo!';
+      ? 'Arrow points left, swipe left!' 
+      : 'Arrow points right, swipe right!';
     
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak(instruction, { rate: 0.8 });
+        speakTTS(instruction, 0.8, 'en-US' );
       }, 300);
     } else {
-      Speech.speak(instruction, { rate: 0.8 });
+      speakTTS(instruction, 0.8, 'en-US' );
     }
   }, [arrowScale, arrowOpacity]);
 
@@ -116,7 +121,7 @@ const ArrowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect match!', { rate: 0.9 });
+    speakTTS('Perfect match!', 0.9, 'en-US' );
     
     Animated.sequence([
       Animated.parallel([
@@ -160,7 +165,7 @@ const ArrowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleMiss = useCallback(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     const correctDirection = arrowDirection === 'left' ? 'left' : 'right';
-    Speech.speak(`Arrow ${correctDirection} hai, ${correctDirection} swipe karo!`, { rate: 0.8 });
+    speakTTS(`Arrow points ${correctDirection}, swipe ${correctDirection}!`, { rate: 0.8, language: 'en-US' });
     
     // Shake animation
     Animated.sequence([
@@ -222,7 +227,7 @@ const ArrowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -280,7 +285,7 @@ const ArrowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container} {...panResponder.panHandlers}>
+    <SafeAreaView style={styles.container}>
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => {
@@ -289,20 +294,20 @@ const ArrowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           onBack?.();
         }}
       >
-        <Text style={styles.backButtonText}>← Back</Text>
+        <Text style={styles.backButtonText} selectable={false}>← Back</Text>
       </TouchableOpacity>
 
       <View style={styles.header}>
-        <Text style={styles.title}>Arrow Match</Text>
-        <Text style={styles.subtitle}>
+        <Text style={styles.title} selectable={false}>Arrow Match</Text>
+        <Text style={styles.subtitle} selectable={false}>
           Round {round}/{TOTAL_ROUNDS} • ⬅️ Score: {score}
         </Text>
-        <Text style={styles.instruction}>
-          Arrow ki direction ke hisab se swipe karo!
+        <Text style={styles.instruction} selectable={false}>
+          Swipe in the direction the arrow points!
         </Text>
       </View>
 
-      <View style={styles.gameArea}>
+      <View style={styles.gameArea} {...panResponder.panHandlers}>
         {showArrow && (
           <Animated.View
             style={[
@@ -313,10 +318,10 @@ const ArrowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               },
             ]}
           >
-            <Text style={styles.arrowEmoji}>
+            <Text style={styles.arrowEmoji} selectable={false}>
               {arrowDirection === 'left' ? '⬅️' : '➡️'}
             </Text>
-            <Text style={styles.arrowLabel}>
+            <Text style={styles.arrowLabel} selectable={false}>
               {arrowDirection === 'left' ? 'LEFT SWIPE' : 'RIGHT SWIPE'}
             </Text>
           </Animated.View>
@@ -324,16 +329,16 @@ const ArrowMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         {!showArrow && (
           <View style={styles.waitingContainer}>
-            <Text style={styles.waitingText}>Get ready...</Text>
+            <Text style={styles.waitingText} selectable={false}>Get ready...</Text>
           </View>
         )}
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>
+        <Text style={styles.footerText} selectable={false}>
           Skills: Visual-motor link • Direction matching
         </Text>
-        <Text style={styles.footerSubtext}>
+        <Text style={styles.footerSubtext} selectable={false}>
           Match the arrow direction with your swipe!
         </Text>
       </View>
@@ -345,6 +350,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F0F9FF',
+    ...(Platform.OS === 'web' && {
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      MozUserSelect: 'none',
+      msUserSelect: 'none',
+    } as any),
+  },
+  gameArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    marginVertical: 40,
+    ...(Platform.OS === 'web' && {
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      touchAction: 'pan-y pan-x',
+    } as any),
   },
   backButton: {
     position: 'absolute',
@@ -382,13 +405,6 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     fontWeight: '600',
     textAlign: 'center',
-  },
-  gameArea: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    marginVertical: 40,
   },
   arrowContainer: {
     alignItems: 'center',

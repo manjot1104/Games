@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -131,7 +131,7 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log follow the arrows game:', e);
       }
 
-      Speech.speak('Great direction following!', { rate: 0.78 });
+      speakTTS('Great direction following!', 0.78 );
     },
     [router],
   );
@@ -165,7 +165,7 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setShowSequence(false);
         setRoundActive(true);
         try {
-          Speech.speak('Watch the arrow sequence, then tap them in the same order!', { rate: 0.78 });
+          speakTTS('Watch the arrow sequence, then tap them in the same order!', { rate: 0.78 });
         } catch {}
         return;
       }
@@ -229,7 +229,7 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playSuccess();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Speech.speak('Perfect sequence!', { rate: 0.78 });
+          speakTTS('Perfect sequence!', 0.78 );
         } catch {}
       } else {
         setCurrentSequenceIndex(newIndex);
@@ -255,7 +255,7 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       try {
         playError();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Speech.speak('Watch the sequence again!', { rate: 0.78 });
+        speakTTS('Watch the sequence again!', 0.78 );
       } catch {}
 
       // Show sequence again

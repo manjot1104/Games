@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -218,7 +218,7 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log race the dot game:', e);
       }
 
-      Speech.speak('Great racing!', { rate: 0.78 });
+      speakTTS('Great racing!', 0.78 );
     },
     [router],
   );
@@ -226,7 +226,7 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initialize first round
   useEffect(() => {
     try {
-      Speech.speak(isFastMode ? 'Tap fast repeatedly to race the dot to the goal!' : 'Tap to keep the dot moving slowly toward the goal!', { rate: 0.78 });
+      speakTTS(isFastMode ? 'Tap fast repeatedly to race the dot to the goal!' : 'Tap to keep the dot moving slowly toward the goal!', 0.78 );
     } catch {}
     startRound();
   }, []);

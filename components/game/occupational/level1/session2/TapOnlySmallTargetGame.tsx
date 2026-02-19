@@ -4,7 +4,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -255,7 +255,7 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
         try {
           await playError();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Tap the small one!', { rate: 0.78 });
+          speakTTS('Tap the small one!', 0.78 );
         } catch {}
       }
     },
@@ -288,7 +288,7 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
         console.error('Failed to log tap only small game:', e);
       }
 
-      Speech.speak('Great targeting!', { rate: 0.78 });
+      speakTTS('Great targeting!', 0.78 );
     },
     [router],
   );
@@ -296,7 +296,7 @@ const TapOnlySmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
   // Initialize first round
   useEffect(() => {
     try {
-      Speech.speak('Watch for the small shape to glow, then tap only the small one!', { rate: 0.78 });
+      speakTTS('Watch for the small shape to glow, then tap only the small one!', { rate: 0.78 });
     } catch {}
     startRound();
   }, []);

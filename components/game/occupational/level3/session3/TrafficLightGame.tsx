@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -105,10 +105,10 @@ const TrafficLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak(light === 'green' ? 'Green light! Go fast!' : 'Yellow light! Go slow!', { rate: 0.8 });
+        speakTTS(light === 'green' ? 'Green light! Go fast!' : 'Yellow light! Go slow!', 0.8 );
       }, 300);
     } else {
-      Speech.speak(light === 'green' ? 'Green light! Go fast!' : 'Yellow light! Go slow!', { rate: 0.8 });
+      speakTTS(light === 'green' ? 'Green light! Go fast!' : 'Yellow light! Go slow!', 0.8 );
     }
   }, [lightScale, lightOpacity]);
 
@@ -191,7 +191,7 @@ const TrafficLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -261,7 +261,7 @@ const TrafficLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

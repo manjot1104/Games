@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -62,7 +62,7 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         warningOpacity.setValue(1);
         
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-        Speech.speak('Single tap ignore hota hai! Do baar tap karo!', { rate: 0.8 });
+        speakTTS('Single tap is ignored! Tap twice!', 0.8, 'en-US' );
         
         // Hide warning after 1 second
         singleTapTimeoutRef.current = setTimeout(() => {
@@ -98,7 +98,7 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         warningOpacity.setValue(1);
         
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        Speech.speak('Single tap ignore hota hai! Tez se do baar tap karo!', { rate: 0.8 });
+        speakTTS('Single tap is ignored! Tap twice quickly!', 0.8, 'en-US' );
         
         singleTapTimeoutRef.current = setTimeout(() => {
           Animated.timing(warningOpacity, {
@@ -122,7 +122,7 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     warningOpacity.setValue(0);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect double tap!', { rate: 0.9 });
+    speakTTS('Perfect double tap!', 0.9, 'en-US' );
     
     // Jump animation
     Animated.sequence([
@@ -184,10 +184,10 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak('Single tap ignore hota hai! Sirf double tap se jump hoga!', { rate: 0.8 });
+        speakTTS('Single tap is ignored! Only double tap will make it jump!', 0.8, 'en-US' );
       }, 300);
     } else {
-      Speech.speak('Single tap ignore hota hai! Sirf double tap se jump hoga!', { rate: 0.8 });
+      speakTTS('Single tap ignore hota hai! Sirf double tap se jump hoga!', 0.8 );
     }
   }, [characterScale, characterY, warningOpacity]);
 
@@ -231,7 +231,7 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -251,7 +251,7 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <GameInfoScreen
         title="Double Tap Only"
         emoji="👆"
-        description="Single tap ignore hota hai! Sirf double tap se jump hoga!"
+        description="Single tap is ignored! Only double tap will make it jump!"
         skills={['Control', 'Precision']}
         suitableFor="Children learning control and precision with double tap gestures"
         onStart={() => {
@@ -316,7 +316,7 @@ const DoubleTapOnlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Round {round}/{TOTAL_ROUNDS} • 👆 Score: {score}
         </Text>
         <Text style={styles.instruction}>
-          Single tap ignore hota hai! Sirf double tap se jump!
+          Single tap is ignored! Only double tap to jump!
         </Text>
         {tapCount > 0 && (
           <Text style={styles.tapIndicator}>

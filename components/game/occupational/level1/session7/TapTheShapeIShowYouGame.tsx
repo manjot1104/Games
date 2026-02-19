@@ -4,7 +4,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -114,7 +114,7 @@ const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
         console.error('Failed to log tap the shape I show you game:', e);
       }
 
-      Speech.speak('Great job!', { rate: 0.78 });
+      speakTTS('Great job!', 0.78 );
     },
     [router],
   );
@@ -239,7 +239,7 @@ const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
         try {
           await playError();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Speech.speak('Try again!', { rate: 0.78 });
+          speakTTS('Try again!', 0.78 );
         } catch {}
 
         // Retry - don't advance round
@@ -258,7 +258,7 @@ const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Watch the shape, then tap the same one!', { rate: 0.78 });
+        speakTTS('Watch the shape, then tap the same one!', { rate: 0.78 });
       } catch {}
     }
     return () => {

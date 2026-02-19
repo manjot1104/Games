@@ -1,11 +1,12 @@
 import { SparkleBurst } from '@/components/game/FX';
+import GameInfoScreen from '@/components/game/GameInfoScreen';
 import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -27,8 +28,8 @@ import Svg, { Path } from 'react-native-svg';
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const WARNING_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const TOTAL_ROUNDS = 6;
-const OBJECT_SIZE = 45;
-const LINE_TOLERANCE = 35;
+const OBJECT_SIZE = 50;
+const LINE_TOLERANCE = 25;
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
@@ -63,6 +64,7 @@ const useSoundEffect = (uri: string) => {
   return play;
 };
 
+// Distance to line segment
 const distanceToLineSegment = (
   px: number,
   py: number,
@@ -75,11 +77,14 @@ const distanceToLineSegment = (
   const B = py - y1;
   const C = x2 - x1;
   const D = y2 - y1;
+
   const dot = A * C + B * D;
   const lenSq = C * C + D * D;
   let param = -1;
   if (lenSq !== 0) param = dot / lenSq;
+
   let xx, yy;
+
   if (param < 0) {
     xx = x1;
     yy = y1;
@@ -90,18 +95,10 @@ const distanceToLineSegment = (
     xx = x1 + param * C;
     yy = y1 + param * D;
   }
+
   const dx = px - xx;
   const dy = py - yy;
   return Math.sqrt(dx * dx + dy * dy);
-};
-
-const distanceToZigZag = (px: number, py: number, points: Array<{ x: number; y: number }>) => {
-  let minDist = Infinity;
-  for (let i = 0; i < points.length - 1; i++) {
-    const dist = distanceToLineSegment(px, py, points[i].x, points[i].y, points[i + 1].x, points[i + 1].y);
-    if (dist < minDist) minDist = dist;
-  }
-  return minDist;
 };
 
 const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
@@ -109,6 +106,7 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
   const playWarning = useSoundEffect(WARNING_SOUND);
 
+  const [showInfo, setShowInfo] = useState(true);
   const [round, setRound] = useState(1);
   const [score, setScore] = useState(0);
   const [done, setDone] = useState(false);
@@ -117,14 +115,16 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [roundActive, setRoundActive] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [isOffTrack, setIsOffTrack] = useState(false);
+  const [hasGoneOffTrack, setHasGoneOffTrack] = useState(false);
+  const [offTrackCounter, setOffTrackCounter] = useState(0);
   const progress = useSharedValue(0);
-  const [wirePathStr, setWirePathStr] = useState('');
+  const [pathStr, setPathStr] = useState('');
   const [progressPathStr, setProgressPathStr] = useState('');
 
   const pathPoints = useRef<Array<{ x: number; y: number }>>([]);
 
-  const objectX = useSharedValue(15);
-  const objectY = useSharedValue(50);
+  const objectX = useSharedValue(20);
+  const objectY = useSharedValue(70);
   const objectScale = useSharedValue(1);
   const sparkleX = useSharedValue(0);
   const sparkleY = useSharedValue(0);
@@ -132,6 +132,10 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const screenWidth = useRef(400);
   const screenHeight = useRef(600);
   const lastWarningTime = useRef(0);
+  const hasGoneOffTrackRef = useRef(false);
+  const isOffTrackRef = useRef(false);
+  const currentPointerX = useSharedValue(20);
+  const currentPointerY = useSharedValue(70);
 
   const updatePaths = useCallback(() => {
     if (pathPoints.current.length === 0) return;
@@ -140,27 +144,35 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     for (let i = 1; i < pathPoints.current.length; i++) {
       path += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
     }
-    setWirePathStr(path);
+    setPathStr(path);
 
     if (progress.value > 0) {
-      const totalSegments = pathPoints.current.length - 1;
-      const progressSegment = Math.floor(progress.value * totalSegments);
-      const segmentProgress = (progress.value * totalSegments) - progressSegment;
-      const clampedSegment = Math.min(progressSegment, totalSegments - 1);
+      if (progress.value >= 0.99) {
+        let progressPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
+        for (let i = 1; i < pathPoints.current.length; i++) {
+          progressPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
+        }
+        setProgressPathStr(progressPath);
+      } else {
+        const totalSegments = pathPoints.current.length - 1;
+        const progressSegment = Math.floor(progress.value * totalSegments);
+        const segmentProgress = (progress.value * totalSegments) - progressSegment;
+        const clampedSegment = Math.min(progressSegment, totalSegments - 1);
 
-      let progressPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
-      for (let i = 1; i <= clampedSegment; i++) {
-        progressPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
-      }
+        let progressPath = `M ${pathPoints.current[0].x} ${pathPoints.current[0].y}`;
+        for (let i = 1; i <= clampedSegment; i++) {
+          progressPath += ` L ${pathPoints.current[i].x} ${pathPoints.current[i].y}`;
+        }
 
-      if (segmentProgress > 0 && clampedSegment < totalSegments) {
-        const startPt = pathPoints.current[clampedSegment];
-        const endPt = pathPoints.current[clampedSegment + 1];
-        const x = startPt.x + (endPt.x - startPt.x) * segmentProgress;
-        const y = startPt.y + (endPt.y - startPt.y) * segmentProgress;
-        progressPath += ` L ${x} ${y}`;
+        if (segmentProgress > 0 && clampedSegment < totalSegments) {
+          const startPt = pathPoints.current[clampedSegment];
+          const endPt = pathPoints.current[clampedSegment + 1];
+          const x = startPt.x + (endPt.x - startPt.x) * segmentProgress;
+          const y = startPt.y + (endPt.y - startPt.y) * segmentProgress;
+          progressPath += ` L ${x} ${y}`;
+        }
+        setProgressPathStr(progressPath);
       }
-      setProgressPathStr(progressPath);
     } else {
       setProgressPathStr('');
     }
@@ -184,7 +196,7 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           total,
           accuracy,
           xpAwarded: xp,
-          skillTags: ['direction-change', 'motor-planning', 'zig-zag-wire-tracing'],
+          skillTags: ['direction-change', 'motor-planning', 'zig-zag-tracking', 'wire-following'],
         });
         setLogTimestamp(result?.last?.at ?? null);
         router.setParams({ refreshStats: Date.now().toString() });
@@ -192,7 +204,7 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log robot wire fix game:', e);
       }
 
-      Speech.speak('Wire fixed! Great job!', { rate: 0.78 });
+      speakTTS('Robot wire fixed perfectly!', 0.78 );
     },
     [router],
   );
@@ -208,26 +220,50 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
 
-      objectX.value = Math.max(5, Math.min(95, newX));
-      objectY.value = Math.max(10, Math.min(90, newY));
+      currentPointerX.value = newX;
+      currentPointerY.value = newY;
 
-      const dist = distanceToZigZag(objectX.value, objectY.value, pathPoints.current);
+      // Check distance to path
+      let minDist = Infinity;
+      for (let i = 0; i < pathPoints.current.length - 1; i++) {
+        const dist = distanceToLineSegment(
+          newX,
+          newY,
+          pathPoints.current[i].x,
+          pathPoints.current[i].y,
+          pathPoints.current[i + 1].x,
+          pathPoints.current[i + 1].y,
+        );
+        if (dist < minDist) minDist = dist;
+      }
 
-      if (dist > LINE_TOLERANCE) {
-        if (!isOffTrack) {
-          setIsOffTrack(true);
-          const now = Date.now();
-          if (now - lastWarningTime.current > 500) {
-            lastWarningTime.current = now;
-            try {
-              playWarning();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            } catch {}
-          }
+      if (minDist > LINE_TOLERANCE) {
+        setIsOffTrack(true);
+        isOffTrackRef.current = true;
+        setHasGoneOffTrack(true);
+        hasGoneOffTrackRef.current = true;
+        setOffTrackCounter((prev) => (prev >= 1000 ? 1 : prev + 1));
+
+        const now = Date.now();
+        if (now - lastWarningTime.current > 500) {
+          lastWarningTime.current = now;
+          try {
+            playWarning();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          } catch {}
         }
+        return;
       } else {
-        setIsOffTrack(false);
-        // Calculate progress along path - find closest segment
+        if (isOffTrack) {
+          setIsOffTrack(false);
+          setOffTrackCounter(0);
+        }
+        isOffTrackRef.current = false;
+
+        objectX.value = Math.max(5, Math.min(95, newX));
+        objectY.value = Math.max(10, Math.min(90, newY));
+
+        // Update progress
         let totalDist = 0;
         const segmentDists: number[] = [];
         for (let i = 0; i < pathPoints.current.length - 1; i++) {
@@ -239,8 +275,7 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           totalDist += segDist;
         }
 
-        // Find the closest point on any segment
-        let minDist = Infinity;
+        let minDistForProgress = Infinity;
         let bestSegment = 0;
         let bestParam = 0;
 
@@ -264,18 +299,30 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             Math.pow(objectY.value - closestY, 2)
           );
           
-          if (dist < minDist) {
-            minDist = dist;
+          if (dist < minDistForProgress) {
+            minDistForProgress = dist;
             bestSegment = i;
             bestParam = t;
           }
         }
 
-        // Calculate progress based on closest segment
         const segStartDist = segmentDists.slice(0, bestSegment).reduce((a, b) => a + b, 0);
         const distAlongSeg = segmentDists[bestSegment] * bestParam;
         const currentDist = segStartDist + distAlongSeg;
-        const newProgress = totalDist > 0 ? Math.min(1, Math.max(progress.value, currentDist / totalDist)) : 0;
+        let calculatedProgress = totalDist > 0 ? Math.min(1, currentDist / totalDist) : 0;
+        
+        const lastPoint = pathPoints.current[pathPoints.current.length - 1];
+        const distToEnd = Math.sqrt(
+          Math.pow(objectX.value - lastPoint.x, 2) + Math.pow(objectY.value - lastPoint.y, 2),
+        );
+        
+        let newProgress = calculatedProgress;
+        // Only set to 1.0 if close to end AND calculated progress is high
+        if (distToEnd <= LINE_TOLERANCE && calculatedProgress >= 0.95) {
+          newProgress = 1.0;
+        }
+        
+        newProgress = Math.max(progress.value, newProgress);
         
         if (newProgress > progress.value) {
           progress.value = newProgress;
@@ -293,7 +340,7 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Math.pow(objectX.value - lastPoint.x, 2) + Math.pow(objectY.value - lastPoint.y, 2),
       );
 
-      if (distToEnd <= LINE_TOLERANCE && progress.value >= 0.75) {
+      if (distToEnd <= LINE_TOLERANCE && progress.value >= 0.99 && !hasGoneOffTrack && !hasGoneOffTrackRef.current) {
         sparkleX.value = lastPoint.x;
         sparkleY.value = lastPoint.y;
 
@@ -309,6 +356,10 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               progress.value = 0;
               updatePaths();
               setIsOffTrack(false);
+              setHasGoneOffTrack(false);
+              hasGoneOffTrackRef.current = false;
+              isOffTrackRef.current = false;
+              setOffTrackCounter(0);
               const firstPoint = pathPoints.current[0];
               objectX.value = withSpring(firstPoint.x, { damping: 10, stiffness: 100 });
               objectY.value = withSpring(firstPoint.y, { damping: 10, stiffness: 100 });
@@ -329,44 +380,52 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         progress.value = 0;
         updatePaths();
         setIsOffTrack(false);
+        setHasGoneOffTrack(false);
+        hasGoneOffTrackRef.current = false;
+        isOffTrackRef.current = false;
+        setOffTrackCounter(0);
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Follow the wire!', { rate: 0.78 });
+          if (hasGoneOffTrack) {
+            speakTTS('Stay on the path! Try again.', 0.78 );
+          } else {
+            speakTTS('Follow the zig-zag wire!', 0.78 );
+          }
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Follow the zig-zag wire to fix the robot! Trace the path carefully.', { rate: 0.78 });
+      speakTTS('Follow the zig-zag wire to fix the robot!', 0.78 );
     } catch {}
     // Generate zig-zag wire path
-    const points: Array<{ x: number; y: number }> = [];
-    const numSegments = 7 + Math.floor(Math.random() * 3);
-    const startX = 15;
-    const startY = 50;
-    const endX = 85;
-    const endY = 50;
-
-    points.push({ x: startX, y: startY });
-
+    pathPoints.current = [];
+    const startX = 20;
+    const startY = 70;
+    const endX = 80;
+    const endY = 30;
+    const numSegments = 6;
+    
+    pathPoints.current.push({ x: startX, y: startY });
     for (let i = 1; i < numSegments; i++) {
       const t = i / numSegments;
       const baseX = startX + (endX - startX) * t;
-      const amplitude = 20 + Math.random() * 20;
-      const offset = (i % 2 === 0 ? 1 : -1) * amplitude;
-      points.push({
-        x: baseX,
-        y: startY + offset,
-      });
+      const baseY = startY + (endY - startY) * t;
+      const zigZag = (i % 2 === 0 ? 1 : -1) * 10;
+      pathPoints.current.push({ x: baseX + zigZag, y: baseY });
     }
-    points.push({ x: endX, y: endY });
+    pathPoints.current.push({ x: endX, y: endY });
 
-    pathPoints.current = points;
     objectX.value = startX;
     objectY.value = startY;
     progress.value = 0;
+    setIsOffTrack(false);
+    setHasGoneOffTrack(false);
+    hasGoneOffTrackRef.current = false;
+    isOffTrackRef.current = false;
+    setOffTrackCounter(0);
     updatePaths();
     
     return () => {
@@ -401,6 +460,23 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     top: `${sparkleY.value}%`,
   }));
 
+  // Show info screen
+  if (showInfo) {
+    return (
+      <GameInfoScreen
+        title="Robot Wire Fix"
+        emoji="🤖"
+        description="Follow the zig-zag wire to fix the robot! Navigate the wire path carefully."
+        skills={['Direction change', 'Motor planning', 'Zig-zag tracking', 'Wire following']}
+        suitableFor="Children developing direction change skills and wire following abilities"
+        onStart={() => {
+          setShowInfo(false);
+        }}
+        onBack={handleBack}
+      />
+    );
+  }
+
   if (done && finalStats) {
     const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
     return (
@@ -418,9 +494,9 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         >
           <View style={styles.resultCard}>
             <Text style={{ fontSize: 64, marginBottom: 16 }}>🤖</Text>
-            <Text style={styles.resultTitle}>Wire Fixed!</Text>
+            <Text style={styles.resultTitle}>Robot Wire Fix Complete!</Text>
             <Text style={styles.resultSubtitle}>
-              You fixed {finalStats.correct} wires out of {finalStats.total}!
+              You fixed {finalStats.correct} robot wires out of {finalStats.total}!
             </Text>
             <ResultCard
               correct={finalStats.correct}
@@ -457,7 +533,7 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Round {round}/{TOTAL_ROUNDS} • 🤖 Score: {score}
         </Text>
         <Text style={styles.helper}>
-          Follow the zig-zag wire to fix the robot! Trace the path carefully.
+          Follow the zig-zag wire to fix the robot. Stay on the path!
         </Text>
       </View>
 
@@ -472,21 +548,19 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           <Animated.View style={styles.gestureArea}>
             <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
               <Path
-                d={wirePathStr}
+                d={pathStr}
                 stroke="rgba(148, 163, 184, 0.5)"
-                strokeWidth="2.5"
+                strokeWidth="2"
                 fill="none"
                 strokeLinecap="round"
-                strokeLinejoin="round"
               />
               {progressPathStr ? (
                 <Path
                   d={progressPathStr}
-                  stroke="#8B5CF6"
-                  strokeWidth="2.5"
+                  stroke="#10B981"
+                  strokeWidth="2"
                   fill="none"
                   strokeLinecap="round"
-                  strokeLinejoin="round"
                 />
               ) : null}
             </Svg>
@@ -496,7 +570,7 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 style={[
                   styles.object,
                   {
-                    backgroundColor: isOffTrack ? '#EF4444' : '#8B5CF6',
+                    backgroundColor: isOffTrack ? '#EF4444' : '#10B981',
                   },
                 ]}
               >
@@ -510,9 +584,9 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               </Animated.View>
             )}
 
-            {isOffTrack && (
+            {(isOffTrack || offTrackCounter > 0) && (
               <View style={styles.warningBox}>
-                <Text style={styles.warningText}>Stay on the wire! ⚠️</Text>
+                <Text style={styles.warningText}>❌ Stay on the path! Game won't complete if you go off track! ⚠️</Text>
               </View>
             )}
           </Animated.View>
@@ -521,10 +595,10 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       <View style={styles.footerBox}>
         <Text style={styles.footerMain}>
-          Skills: direction change • motor planning • zig-zag wire tracing
+          Skills: direction change • motor planning • zig-zag tracking
         </Text>
         <Text style={styles.footerSub}>
-          Fix the robot by following the zig-zag wire path!
+          Follow the zig-zag wire carefully!
         </Text>
       </View>
     </SafeAreaView>
@@ -534,7 +608,7 @@ const RobotWireFixGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F3FF',
+    backgroundColor: '#F0FDF4',
     paddingHorizontal: 16,
     paddingTop: 48,
   },
@@ -615,23 +689,27 @@ const styles = StyleSheet.create({
   },
   warningBox: {
     position: 'absolute',
-    top: '20%',
+    top: '15%',
     left: '50%',
-    transform: [{ translateX: -80 }],
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
+    transform: [{ translateX: -120 }],
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 24,
     shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+    borderWidth: 3,
+    borderColor: '#DC2626',
+    zIndex: 100,
   },
   warningText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '900',
+    textAlign: 'center',
   },
   footerBox: {
     paddingVertical: 14,
@@ -679,4 +757,3 @@ const styles = StyleSheet.create({
 });
 
 export default RobotWireFixGame;
-

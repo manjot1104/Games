@@ -1,14 +1,25 @@
 import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS, stopTTS, DEFAULT_TTS_RATE } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
 
 const TOTAL_ROUNDS = 10;
+
+// Use shared TTS utility (speech-to-speech on web, expo-speech on native)
+// Helper function for safe speech with error handling
+const speak = (text: string, rate = DEFAULT_TTS_RATE) => {
+  try {
+    stopAllSpeech(); // Stop any existing speech first
+    speakTTS(text, rate);
+  } catch (e) {
+    console.warn('Speech error:', e);
+  }
+};
 
 type GamePhase = 'idle' | 'listening' | 'choosing' | 'finished';
 type Instrument = 'drum' | 'bell' | 'clap';
@@ -84,7 +95,7 @@ export const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack
     const randomInstrument = INSTRUMENTS[Math.floor(Math.random() * INSTRUMENTS.length)];
     
     setPhase('listening');
-    Speech.speak('Listen to the sound!');
+    speak('Listen to the sound!');
     
     // Play the sound after a short delay
     const timer1 = setTimeout(() => {
@@ -93,7 +104,7 @@ export const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack
       // After sound plays, show choices
       const timer2 = setTimeout(() => {
         setPhase('choosing');
-        Speech.speak('Which instrument was that?');
+        speak('Which instrument was that?');
       }, 1500);
       speechTimersRef.current.push(timer2);
     }, 500);
@@ -110,22 +121,32 @@ export const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack
     setFinalStats({ correct, total, accuracy, xp });
 
     try {
-      const result = await logGameAndAward({
-        type: 'quiz' as any, // Using quiz type as closest match
-        correct,
-        total,
-        accuracy,
-        xpAwarded: xp,
-        skillTags: ['sound-discrimination', 'auditory-identification', 'instrument-recognition'],
-        meta: { rounds: round },
-      });
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('API call timeout')), 10000)
+      );
+      
+      const result = await Promise.race([
+        logGameAndAward({
+          type: 'quiz' as any, // Using quiz type as closest match
+          correct,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['sound-discrimination', 'auditory-identification', 'instrument-recognition'],
+          meta: { rounds: round },
+        }),
+        timeoutPromise,
+      ]) as any;
+      
       setLogTimestamp(result?.last?.at ?? null);
       router.setParams({ refreshStats: Date.now().toString() });
     } catch (e) {
       console.error('Failed to save game:', e);
+      // Continue even if API call fails - don't block the user
     }
 
-    Speech.speak('Amazing! You identified all the instruments!');
+    speak('Amazing! You identified all the instruments!');
   }, [correct, wrong, round, router]);
 
   const handleInstrumentChoice = useCallback((chosenInstrument: Instrument) => {
@@ -135,7 +156,7 @@ export const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack
     
     if (isCorrect) {
       setCorrect((c) => c + 1);
-      Speech.speak('Correct!');
+      speak('Correct!');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       
       // Success animation
@@ -155,7 +176,7 @@ export const InstrumentChoiceGame: React.FC<{ onBack?: () => void }> = ({ onBack
       ]).start();
     } else {
       setWrong((w) => w + 1);
-      Speech.speak('Try again!');
+      speak('Try again!');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     }
 

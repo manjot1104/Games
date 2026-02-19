@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -123,7 +123,7 @@ const HalfShapeCompleteGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         console.error('Failed to log half shape complete game:', e);
       }
 
-      Speech.speak('Shape complete!', { rate: 0.78 });
+      speakTTS('Shape complete!', 0.78 );
     },
     [router],
   );
@@ -185,7 +185,7 @@ const HalfShapeCompleteGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         try {
           playWarning();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Draw the missing half!', { rate: 0.78 });
+          speakTTS('Draw the missing half!', 0.78 );
         } catch {}
       }
     });
@@ -196,7 +196,7 @@ const HalfShapeCompleteGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
     setUserPath([]);
     setRoundActive(true);
     try {
-      Speech.speak('Draw the missing half of the shape on the right!', { rate: 0.78 });
+      speakTTS('Draw the missing half of the shape on the right!', 0.78 );
     } catch {}
     
     return () => {

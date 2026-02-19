@@ -3,7 +3,7 @@ import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
@@ -100,7 +100,7 @@ export const LoudSoftRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }
     setWrong(0);
     currentBeatIndexRef.current = 0;
     beatSequenceRef.current = generateBeatSequence();
-    Speech.speak('Use big button for loud beats, small button for soft beats!');
+    speakTTS('Use big button for loud beats, small button for soft beats!');
     
     // Start playing beats
     playBeat(beatSequenceRef.current[0]);
@@ -181,7 +181,7 @@ export const LoudSoftRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }
       console.error('Failed to save game:', e);
     }
 
-    Speech.speak('Amazing! You matched all the loud and soft beats!');
+    speakTTS('Amazing! You matched all the loud and soft beats!');
   }, [correct, wrong, round, router]);
 
   useEffect(() => {

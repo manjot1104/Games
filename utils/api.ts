@@ -516,21 +516,57 @@ export type SmartSceneDetail = {
 };
 
 async function apiGet(path: string) {
-  const headers = await authHeaders();
-  
-  // Ensure x-auth0-id header is set (fallback for localhost)
-  if (!headers['x-auth0-id'] && !auth0UserInfo?.auth0Id) {
-    headers['x-auth0-id'] = 'dev_local_tester'; // fallback for dev/testing
+  try {
+    const headers = await authHeaders();
+    
+    // Ensure x-auth0-id header is set (fallback for localhost)
+    if (!headers['x-auth0-id'] && !auth0UserInfo?.auth0Id) {
+      headers['x-auth0-id'] = 'dev_local_tester'; // fallback for dev/testing
+    }
+    
+    const url = `${API_BASE_URL}${path}`;
+    console.log(`[API] GET ${url}`);
+    console.log(`[API] Headers:`, Object.keys(headers));
+    
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
+    try {
+      const res = await fetch(url, {
+        headers,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        console.error(`[API] HTTP ${res.status} error for ${url}:`, text);
+        throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+      }
+      
+      return res.json();
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      console.error(`[API] Fetch error for ${url}:`, fetchError);
+      
+      // Provide more helpful error messages
+      if (fetchError.name === 'AbortError' || fetchError.name === 'TimeoutError') {
+        throw new Error(`Request to ${url} timed out after 30 seconds. Please check if the server is running.`);
+      } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
+        throw new Error(`Failed to connect to server at ${API_BASE_URL}. Please ensure the backend server is running on port 4000.`);
+      }
+      throw fetchError;
+    }
+  } catch (error: any) {
+    console.error(`[API] Error in apiGet for ${path}:`, error);
+    // Re-throw with more context
+    if (error.message) {
+      throw error;
+    }
+    throw new Error(`Failed to fetch ${path}: ${error.message || 'Unknown error'}`);
   }
-  
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
-  }
-  return res.json();
 }
 
 async function apiPost(path: string, body?: any) {

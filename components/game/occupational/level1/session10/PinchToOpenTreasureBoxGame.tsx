@@ -6,7 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -215,7 +215,7 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void }> = ({ onBack 
     try {
       await playError();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Speech.speak('Pinch both locks!', { rate: 0.78 });
+      speakTTS('Pinch both locks!', 0.78 );
     } catch {}
 
     setTimeout(() => {
@@ -246,7 +246,7 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void }> = ({ onBack 
     try {
       await playSuccess();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Speech.speak('Treasure!', { rate: 0.78 });
+      speakTTS('Treasure!', 0.78 );
     } catch {}
 
     if (roundRef.current >= TOTAL_ROUNDS) {
@@ -511,7 +511,7 @@ const PinchToOpenTreasureBoxGame: React.FC<{ onBack?: () => void }> = ({ onBack 
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Pinch to open the treasure box!', { rate: 0.78 });
+        speakTTS('Pinch to open the treasure box!', 0.78 );
       } catch {}
     }
     return () => {

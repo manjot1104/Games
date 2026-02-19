@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -98,7 +98,7 @@ const MusicSwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           // After all beats, allow swinging
           setTimeout(() => {
             setPhase('swing');
-            Speech.speak('Ab music ke sath swing karo! Beat ko follow karo!', { rate: 0.8 });
+            speakTTS('Ab music ke sath swing karo! Beat ko follow karo!', 0.8 );
           }, 300);
         }
       }, BEAT_INTERVAL) as unknown as NodeJS.Timeout;
@@ -144,7 +144,7 @@ const MusicSwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             setUserSwings(newSwings);
             
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-            Speech.speak('Perfect beat!', { rate: 0.9 });
+            speakTTS('Perfect beat!', 0.9 );
             
             // Success animation
             Animated.sequence([
@@ -174,7 +174,7 @@ const MusicSwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           } else {
             // Off beat
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-            Speech.speak('Beat ke sath swing karo! Music follow karo!', { rate: 0.8 });
+            speakTTS('Beat ke sath swing karo! Music follow karo!', 0.8 );
             
             // Reset position
             Animated.spring(swingX, {
@@ -187,7 +187,7 @@ const MusicSwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         } else {
           // Not enough swipe
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-          Speech.speak('Zada swing karo!', { rate: 0.8 });
+          speakTTS('Zada swing karo!', 0.8 );
         }
       },
     })
@@ -202,7 +202,7 @@ const MusicSwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect music swing!', { rate: 0.9 });
+    speakTTS('Perfect music swing!', 0.9 );
     
     // Success animation
     Animated.parallel([
@@ -299,7 +299,7 @@ const MusicSwingGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

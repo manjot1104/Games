@@ -4,7 +4,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -134,7 +134,7 @@ const MovingSmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         console.error('Failed to log moving small target game:', e);
       }
 
-      Speech.speak('Great tracking!', { rate: 0.78 });
+      speakTTS('Great tracking!', 0.78 );
     },
     [router],
   );
@@ -310,7 +310,7 @@ const MovingSmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         try {
           await playSuccess();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Speech.speak('Perfect timing!', { rate: 0.78 });
+          speakTTS('Perfect timing!', 0.78 );
         } catch {}
 
         // Next round or finish
@@ -365,7 +365,7 @@ const MovingSmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         try {
           await playError();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Speech.speak('Wait for the zone!', { rate: 0.78 });
+          speakTTS('Wait for the zone!', 0.78 );
         } catch {}
 
         // Next round or finish
@@ -472,7 +472,7 @@ const MovingSmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         try {
           await playSuccess();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Speech.speak('Perfect timing!', { rate: 0.78 });
+          speakTTS('Perfect timing!', 0.78 );
         } catch {}
 
         // Next round or finish
@@ -527,7 +527,7 @@ const MovingSmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         try {
           await playError();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Speech.speak('Wait for the zone!', { rate: 0.78 });
+          speakTTS('Wait for the zone!', 0.78 );
         } catch {}
 
         // Next round or finish
@@ -575,7 +575,7 @@ const MovingSmallTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Tap the moving small target!', { rate: 0.78 });
+        speakTTS('Tap the moving small target!', 0.78 );
       } catch {}
     }
     return () => {

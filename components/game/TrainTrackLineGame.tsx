@@ -1,8 +1,9 @@
 import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { speak as speakTTS } from '@/utils/tts';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -99,6 +100,9 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setDone(true);
       setRoundActive(false);
 
+      // Stop all speech when game ends
+      stopAllSpeech();
+
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -115,19 +119,43 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log train track line game:', e);
       }
 
-      Speech.speak('Great job!', { rate: 0.78 });
+      speakTTS('Great job!', 0.78);
     },
     [router],
   );
 
   const panGesture = Gesture.Pan()
-    .onStart(() => {
+    .onStart((e) => {
       if (!roundActive || done) return;
+      
+      // Check if touch started on the train - only allow dragging if started on train
+      const touchX = (e.x / screenWidth.current) * 100;
+      const touchY = (e.y / screenHeight.current) * 100;
+      
+      // Calculate distance from touch point to train center
+      const trainCenterX = trainX.value;
+      const trainCenterY = trainY.value;
+      
+      // Convert TRAIN_SIZE from pixels to percentage for comparison
+      const trainSizePercentX = (TRAIN_SIZE / screenWidth.current) * 100;
+      const trainSizePercentY = (TRAIN_SIZE / screenHeight.current) * 100;
+      const trainRadiusX = trainSizePercentX / 2;
+      const trainRadiusY = trainSizePercentY / 2;
+      
+      // Check if touch is within train bounds (circular/rectangular area)
+      const distX = Math.abs(touchX - trainCenterX);
+      const distY = Math.abs(touchY - trainCenterY);
+      const isOnTrain = distX <= trainRadiusX && distY <= trainRadiusY;
+      
+      if (!isOnTrain) {
+        return; // Don't start dragging if not on train
+      }
+      
       setIsDragging(true);
       trainScale.value = withSpring(1.2, { damping: 10, stiffness: 200 });
     })
     .onUpdate((e) => {
-      if (!roundActive || done) return;
+      if (!roundActive || done || !isDragging) return; // Only update if dragging started on train
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
       
@@ -180,7 +208,7 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try {
           playReset();
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Drag the train to the station!', { rate: 0.78 });
+          speakTTS('Drag the train to the station!', 0.78);
         } catch {}
       }
     });
@@ -210,11 +238,18 @@ const TrainTrackLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
 
     try {
-      Speech.speak('Drag the train along the track to the station!', { rate: 0.78 });
+      speakTTS('Drag the train along the track to the station!', 0.78);
     } catch {}
+
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
   }, [round]);
 
   const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
     onBack?.();
   }, [onBack]);
 

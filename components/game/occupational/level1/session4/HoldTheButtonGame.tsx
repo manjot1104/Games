@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -75,7 +75,7 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial speech on mount
   useEffect(() => {
     try {
-      Speech.speak('Press and hold until the ring fills completely. Release when you see the green flash!', { rate: 0.78 });
+      speakTTS('Press and hold until the ring fills completely. Release when you see the green flash!', 0.78 );
     } catch {}
   }, []);
   const [done, setDone] = useState(false);
@@ -140,7 +140,7 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           withTiming(0.3, { duration: 300, easing: Easing.inOut(Easing.ease) }),
         );
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Speech.speak('Release now!', { rate: 0.85 });
+        speakTTS('Release now!', 0.85 );
       }
     };
 
@@ -211,7 +211,7 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       try {
         await playBreak();
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Speech.speak('Hold longer!', { rate: 0.78 });
+        speakTTS('Hold longer!', 0.78 );
       } catch {}
 
       setTimeout(() => {
@@ -227,7 +227,7 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       ringProgress.value = withTiming(0, { duration: 300 });
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        Speech.speak('Hold until the ring is full!', { rate: 0.78 });
+        speakTTS('Hold until the ring is full!', 0.78 );
       } catch {}
     }
   }, [isPressed, holdProgress, ringProgress, ringScale, ringRotation, flashOpacity, buttonScale, sparkleX, sparkleY, playSuccess, playBreak]);
@@ -259,7 +259,7 @@ const HoldTheButtonGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log hold the button game:', e);
       }
 
-      Speech.speak('Great holding!', { rate: 0.78 });
+      speakTTS('Great holding!', 0.78 );
     },
     [router],
   );

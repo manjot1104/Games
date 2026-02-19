@@ -1,11 +1,11 @@
 import { CATEGORIES, CATEGORY_STYLES, COMMON_WORDS, tileImages, type Category, type Tile } from '@/constants/aac';
 import { addCustomTile, API_BASE_URL, getCustomTiles, getFavorites, toggleFavorite, type CustomTile } from '@/utils/api';
+import { speak as speakTTS, stopTTS } from '@/utils/tts';
 import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
-import * as Speech from 'expo-speech';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
 
@@ -534,6 +534,8 @@ async function pickVoice(lang: LangKey): Promise<Speech.Voice | null> {
 const TWO = (l: LangKey) => l.slice(0, 2).toLowerCase();
 const DEFAULT_SPEECH_RATE = 0.8;
 
+// Use shared TTS utility for audio management
+
 // Normalize text for better TTS pronunciation, especially for iOS
 function normalizeForSpeech(text: string, lang: LangKey): string {
   // Handle special case: single capital "I" should be spoken as pronoun, not "capital i"
@@ -552,21 +554,24 @@ function normalizeForSpeech(text: string, lang: LangKey): string {
 }
 
 async function speakSmart(text: string, lang: LangKey, rateOverride?: number) {
-  const v = await pickVoice(lang);
-
   // Normalize text for better pronunciation
   const normalizedText = normalizeForSpeech(text, lang);
 
-  // Only use a voice id if it matches the chosen language (en/hi/pa/ta/te).
-  const okLang = v?.language?.toLowerCase().startsWith(TWO(lang)) ?? false;
+  // Use shared TTS utility (speech-to-speech on web, expo-speech on native)
+  // For language-specific voices, we'll use expo-speech fallback
+  const rate = typeof rateOverride === 'number' ? rateOverride : DEFAULT_SPEECH_RATE;
 
-  Speech.stop();
-  Speech.speak(normalizedText, {
-    language: lang,                         // ? always force target language
-    ...(okLang ? { voice: v!.identifier } : {}), // ? avoid mismatched voice (the Tamil hijack)
-    pitch: 1.02,
-    rate: typeof rateOverride === 'number' ? rateOverride : DEFAULT_SPEECH_RATE,
-  });
+  // Try shared TTS utility first (uses speech-to-speech on web)
+  try {
+    await speakTTS(normalizedText, rate, lang);
+    return;
+  } catch (error) {
+    console.warn('[AAC] Shared TTS failed, using expo-speech with language voice:', error);
+  }
+
+  // Fallback: try speakTTS again (it will use expo-speech with language support)
+  // Note: Voice selection is handled by expo-speech automatically based on language
+  await speakTTS(normalizedText, rate, lang);
 }
 
 
@@ -933,7 +938,7 @@ function TileCard({
           onPress={onHeart}
           hitSlop={8}
           style={[{ position: 'absolute', top: 6, right: 6, zIndex: 6 }, heartWrapStyle]}
-          accessibilityRole="button"
+          {...(Platform.OS === 'web' ? {} : { accessibilityRole: 'button' })}
           accessibilityLabel={isFav ? 'Remove from favorites' : 'Add to favorites'}
         >
           {/* Ripple ring */}
@@ -1136,6 +1141,15 @@ export default function AACGrid() {
   useEffect(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
   }, [activeCat, cols, selectedLang, width]);
+
+  // Cleanup audio on unmount (web only)
+  // TTS is now handled by shared utility (initialized in root layout)
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopTTS();
+    };
+  }, []);
 
   // Load favorites and custom tiles on mount
   useEffect(() => {

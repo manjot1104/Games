@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -116,7 +116,7 @@ const BlockPatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         console.error('Failed to log block pattern copy game:', e);
       }
 
-      Speech.speak('Pattern copied!', { rate: 0.78 });
+      speakTTS('Pattern copied!', 0.78 );
     },
     [router],
   );
@@ -162,7 +162,7 @@ const BlockPatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
             try {
               playWarning();
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-              Speech.speak('Try again!', { rate: 0.78 });
+              speakTTS('Try again!', 0.78 );
             } catch {}
           }, 500);
         }
@@ -176,7 +176,7 @@ const BlockPatternCopyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     setUserPattern([]);
     setRoundActive(true);
     try {
-      Speech.speak('Copy the pattern by tapping square or circle blocks!', { rate: 0.78 });
+      speakTTS('Copy the pattern by tapping square or circle blocks!', 0.78 );
     } catch {}
     
     return () => {

@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -128,7 +128,7 @@ const TapLightsInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         console.error('Failed to log tap lights in order game:', e);
       }
 
-      Speech.speak('Great memory!', { rate: 0.78 });
+      speakTTS('Great memory!', 0.78 );
     },
     [router],
   );
@@ -163,7 +163,7 @@ const TapLightsInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         setIsShowingSequence(false);
         setRoundActive(true);
         try {
-          Speech.speak('Watch the sequence, then tap the shapes in the same order!', { rate: 0.78 });
+          speakTTS('Watch the sequence, then tap the shapes in the same order!', { rate: 0.78 });
         } catch {}
         return;
       }
@@ -250,7 +250,7 @@ const TapLightsInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         try {
           playSuccess();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Speech.speak('Perfect!', { rate: 0.78 });
+          speakTTS('Perfect!', 0.78 );
         } catch {}
       } else {
         try {
@@ -274,7 +274,7 @@ const TapLightsInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
       try {
         playError();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Speech.speak('Watch the sequence again!', { rate: 0.78 });
+        speakTTS('Watch the sequence again!', 0.78 );
       } catch {}
 
       // Show sequence again - replay the same sequence

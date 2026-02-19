@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -90,7 +90,7 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial instruction - only once
   useEffect(() => {
     try {
-      Speech.speak(`Tap when the circle lights up. After ${TAPS_TO_SWITCH} taps, the speed will switch!`, { rate: 0.78 });
+      speakTTS(`Tap when the circle lights up. After ${TAPS_TO_SWITCH} taps, the speed will switch!`, { rate: 0.78 });
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -166,7 +166,7 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         if (newCount >= TAPS_TO_SWITCH) {
           setSpeedMode((current) => (current === 'slow' ? 'fast' : 'slow'));
           setTapsInCurrentMode(0);
-          Speech.speak(speedMode === 'slow' ? 'Now tap fast!' : 'Now tap slowly!', { rate: 0.78 });
+          speakTTS(speedMode === 'slow' ? 'Now tap fast!' : 'Now tap slowly!', 0.78 );
         }
 
         return newCount;
@@ -236,7 +236,7 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       try {
         await playError();
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Speech.speak('Wait for it to light up!', { rate: 0.78 });
+        speakTTS('Wait for it to light up!', 0.78 );
       } catch {}
     }
   }, [done, isLit, speedMode, scaleAnim, glowAnim, shakeAnim, playSuccess, playError]);
@@ -267,7 +267,7 @@ const SlowThenFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log slow then fast game:', e);
       }
 
-      Speech.speak('Excellent switching!', { rate: 0.78 });
+      speakTTS('Excellent switching!', 0.78 );
     },
     [router],
   );

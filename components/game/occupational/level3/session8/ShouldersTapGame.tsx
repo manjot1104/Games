@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -93,7 +93,7 @@ const ShouldersTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      Speech.speak('Shoulder touch ho gaya!', { rate: 0.9 });
+      speakTTS('Shoulder touch ho gaya!', 0.9 );
       
       const targetScale = shoulder === 'left' ? leftShoulderScale : rightShoulderScale;
       const targetOpacity = shoulder === 'left' ? leftShoulderOpacity : rightShoulderOpacity;
@@ -142,7 +142,7 @@ const ShouldersTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     } else {
       // Wrong shoulder
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-      Speech.speak(`${targetShoulder === 'left' ? 'Left' : 'Right'} shoulder touch karna hai!`, { rate: 0.8 });
+      speakTTS(`${targetShoulder === 'left' ? 'Left' : 'Right'} shoulder touch karna hai!`, 0.8 );
       
       const wrongScale = shoulder === 'left' ? leftShoulderScale : rightShoulderScale;
       
@@ -185,7 +185,7 @@ const ShouldersTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const instruction = shoulder === 'left' 
         ? 'Left shoulder highlight hai! Left shoulder touch karo!' 
         : 'Right shoulder highlight hai! Right shoulder touch karo!';
-      Speech.speak(instruction, { rate: 0.8 });
+      speakTTS(instruction, 0.8 );
     }, 500);
   }, [leftShoulderScale, rightShoulderScale, leftShoulderOpacity, rightShoulderOpacity, startHighlight]);
 
@@ -233,7 +233,7 @@ const ShouldersTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

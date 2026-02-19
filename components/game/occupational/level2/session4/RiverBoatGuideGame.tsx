@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -149,7 +149,7 @@ const RiverBoatGuideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log river boat guide game:', e);
       }
 
-      Speech.speak('Boat safely guided!', { rate: 0.78 });
+      speakTTS('Boat safely guided!', 0.78 );
     },
     [router],
   );
@@ -296,14 +296,14 @@ const RiverBoatGuideGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Keep the boat in the river!', { rate: 0.78 });
+          speakTTS('Keep the boat in the river!', 0.78 );
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Keep the boat in the river! Follow the curvy path carefully.', { rate: 0.78 });
+      speakTTS('Keep the boat in the river! Follow the curvy path carefully.', 0.78 );
     } catch {}
     // Generate curvy river path
     const points: Array<{ x: number; y: number }> = [];

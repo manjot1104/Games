@@ -1,783 +1,574 @@
 import { SparkleBurst } from '@/components/game/FX';
+import GameInfoScreen from '@/components/game/GameInfoScreen';
 import ResultCard from '@/components/game/ResultCard';
-import { useHandDetectionWeb } from '@/hooks/useHandDetectionWeb';
-import { logGameAndAward } from '@/utils/api';
-import { generateArcPath, getPathProgress, isPointOnPath, Point } from '@/utils/pathUtils';
-import { Ionicons } from '@expo/vector-icons';
+import { logGameAndAward, recordGame } from '@/utils/api';
+import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
+import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
+import { useRouter } from 'expo-router';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
     Platform,
-    Pressable,
     SafeAreaView,
+    ScrollView,
     StyleSheet,
     Text,
-    useWindowDimensions,
+    TouchableOpacity,
     View,
 } from 'react-native';
-import Svg, { Circle, Defs, Line, Path, Stop, LinearGradient as SvgLinearGradient } from 'react-native-svg';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+} from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 
-type Props = {
-  onBack: () => void;
-  onComplete?: () => void;
-  requiredRounds?: number;
-};
+const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
+const WARNING_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
+const TOTAL_ROUNDS = 6;
+const OBJECT_SIZE = 50;
+const LINE_TOLERANCE = 25; // Reduced tolerance for stricter path following
 
-const DEFAULT_TTS_RATE = 0.75;
-const TOTAL_ROUNDS = 5;
-const COMPLETION_THRESHOLD = 0.9; // 90% completion required
+const useSoundEffect = (uri: string) => {
+  const soundRef = useRef<ExpoAudio.Sound | null>(null);
 
-// Difficulty progression: path thickness and curve length
-const DIFFICULTY_CONFIG = [
-  { pathThickness: 50, tolerance: 60, curveLength: 0.5 }, // Round 1: Very thick, short curve
-  { pathThickness: 40, tolerance: 50, curveLength: 0.6 }, // Round 2: Thick, medium curve
-  { pathThickness: 30, tolerance: 40, curveLength: 0.7 }, // Round 3: Medium, longer curve
-  { pathThickness: 25, tolerance: 35, curveLength: 0.8 }, // Round 4: Thinner, longer curve
-  { pathThickness: 20, tolerance: 30, curveLength: 0.9 }, // Round 5: Thin, longest curve
-];
+  const ensureSound = useCallback(async () => {
+    if (soundRef.current) return;
+    try {
+      const { sound } = await ExpoAudio.Sound.createAsync(
+        { uri },
+        { volume: 0.6, shouldPlay: false },
+      );
+      soundRef.current = sound;
+    } catch {
+      console.warn('Failed to load sound:', uri);
+    }
+  }, [uri]);
 
-// Responsive sizing
-const getResponsiveSize = (baseSize: number, isTablet: boolean, isMobile: boolean) => {
-  if (isTablet) return baseSize * 1.3;
-  if (isMobile) return baseSize * 0.9;
-  return baseSize;
-};
-
-let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
-
-function clearScheduledSpeech() {
-  scheduledSpeechTimers.forEach(t => clearTimeout(t));
-  scheduledSpeechTimers = [];
-  try {
-    Speech.stop();
-  } catch {}
-}
-
-function speak(text: string, rate = DEFAULT_TTS_RATE) {
-  try {
-    clearScheduledSpeech();
-    Speech.speak(text, { rate });
-  } catch (e) {
-    console.warn('speak error', e);
-  }
-}
-
-export const RainbowCurveTraceGame: React.FC<Props> = ({
-  onBack,
-  onComplete,
-  requiredRounds = TOTAL_ROUNDS,
-}) => {
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
-  const isTablet = SCREEN_WIDTH >= 768;
-  const isMobile = SCREEN_WIDTH < 600;
-
-  // Simple state management
-  const [gameFinished, setGameFinished] = useState(false);
-  const [finalStats, setFinalStats] = useState<{
-    totalRounds: number;
-    successfulTraces: number;
-    averageAccuracy: number;
-    totalTime: number;
-    xpAwarded: number;
-  } | null>(null);
-
-  const [currentRound, setCurrentRound] = useState(0);
-  const [isTracing, setIsTracing] = useState(false);
-  const [progress, setProgress] = useState(0); // 0-1 progress along curve
-  const [maxProgress, setMaxProgress] = useState(0); // Forward-only tracking
-  const [isOnPath, setIsOnPath] = useState(true);
-  const [roundComplete, setRoundComplete] = useState(false);
-  const [currentPath, setCurrentPath] = useState<Point[]>([]);
-  const [glowPosition, setGlowPosition] = useState<Point | null>(null);
-  const [showSparkles, setShowSparkles] = useState(false);
-  const [pathHighlight, setPathHighlight] = useState(false);
-  const [canPlay, setCanPlay] = useState(true);
-
-  // Hand detection hook
-  const handDetection = useHandDetectionWeb(canPlay && !gameFinished);
-  const previewRef = useRef<View>(null);
-
-  // Scoring
-  const [successfulTraces, setSuccessfulTraces] = useState(0);
-  const [totalAccuracy, setTotalAccuracy] = useState(0);
-  const [gameStartTime, setGameStartTime] = useState(0);
-  const [timeOnPath, setTimeOnPath] = useState(0);
-
-  // Animations
-  const progressBarWidth = useRef(new Animated.Value(0)).current;
-  const glowScale = useRef(new Animated.Value(1)).current;
-  const sparkleTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      clearScheduledSpeech();
-      if (sparkleTimerRef.current) {
-        clearInterval(sparkleTimerRef.current);
-      }
+      soundRef.current?.unloadAsync().catch(() => {});
     };
   }, []);
 
-  // Generate single smooth rainbow arc
-  const generateRainbowArc = useCallback((roundIndex: number): Point[] => {
-    const config = DIFFICULTY_CONFIG[Math.min(roundIndex, DIFFICULTY_CONFIG.length - 1)];
-    const centerX = SCREEN_WIDTH / 2;
-    const centerY = SCREEN_HEIGHT * 0.5;
-    
-    // Calculate radius based on curve length
-    const baseRadius = Math.min(SCREEN_WIDTH, SCREEN_HEIGHT) * 0.25;
-    const radius = baseRadius * config.curveLength;
-    
-    // Create smooth arc from left to right (like a rainbow)
-    const startAngle = Math.PI * 0.2; // Start angle
-    const endAngle = Math.PI * 0.8;   // End angle
-    
-    return generateArcPath(
-      { x: centerX, y: centerY },
-      radius,
-      startAngle,
-      endAngle,
-      100 // Smooth curve with 100 points
-    );
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
+  const play = useCallback(async () => {
+    try {
+      if (Platform.OS === 'web') return;
+      await ensureSound();
+      if (soundRef.current) await soundRef.current.replayAsync();
+    } catch {}
+  }, [ensureSound]);
 
-  // Convert path to SVG string
-  const pathToSvgString = useCallback((path: Point[]): string => {
-    if (path.length === 0) return '';
-    let d = `M ${path[0].x} ${path[0].y}`;
-    for (let i = 1; i < path.length; i++) {
-      d += ` L ${path[i].x} ${path[i].y}`;
+  return play;
+};
+
+// Distance to rainbow arc (similar to smile curve)
+const distanceToRainbowArc = (
+  px: number,
+  py: number,
+  centerX: number,
+  centerY: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+) => {
+  const angle = Math.atan2(py - centerY, px - centerX);
+  const normalizedAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
+  const normalizedStart = (startAngle + 2 * Math.PI) % (2 * Math.PI);
+  const normalizedEnd = (endAngle + 2 * Math.PI) % (2 * Math.PI);
+
+  let isWithinArc = false;
+  if (normalizedStart < normalizedEnd) {
+    isWithinArc = normalizedAngle >= normalizedStart && normalizedAngle <= normalizedEnd;
+  } else {
+    isWithinArc = normalizedAngle >= normalizedStart || normalizedAngle <= normalizedEnd;
+  }
+
+  const distFromCenter = Math.sqrt(Math.pow(px - centerX, 2) + Math.pow(py - centerY, 2));
+  const distFromArc = Math.abs(distFromCenter - radius);
+
+  if (isWithinArc) {
+    return distFromArc;
+  }
+
+  const startX = centerX + radius * Math.cos(startAngle);
+  const startY = centerY + radius * Math.sin(startAngle);
+  const endX = centerX + radius * Math.cos(endAngle);
+  const endY = centerY + radius * Math.sin(endAngle);
+
+  const distToStart = Math.sqrt(Math.pow(px - startX, 2) + Math.pow(py - startY, 2));
+  const distToEnd = Math.sqrt(Math.pow(px - endX, 2) + Math.pow(py - endY, 2));
+
+  return Math.min(distFromArc, distToStart, distToEnd);
+};
+
+const RainbowCurveTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
+  const router = useRouter();
+  const playSuccess = useSoundEffect(SUCCESS_SOUND);
+  const playWarning = useSoundEffect(WARNING_SOUND);
+
+  const [showInfo, setShowInfo] = useState(true);
+  const [round, setRound] = useState(1);
+  const [score, setScore] = useState(0);
+  const [done, setDone] = useState(false);
+  const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
+  const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [roundActive, setRoundActive] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isOffTrack, setIsOffTrack] = useState(false);
+  const [hasGoneOffTrack, setHasGoneOffTrack] = useState(false);
+  const [offTrackCounter, setOffTrackCounter] = useState(0);
+  const progress = useSharedValue(0);
+  const [rainbowPathStr, setRainbowPathStr] = useState('');
+  const [progressPathStr, setProgressPathStr] = useState('');
+
+  const updatePaths = useCallback(() => {
+    const startX = centerX.value + radius.value * Math.cos(startAngle.value);
+    const startY = centerY.value + radius.value * Math.sin(startAngle.value);
+    const endX = centerX.value + radius.value * Math.cos(endAngle.value);
+    const endY = centerY.value + radius.value * Math.sin(endAngle.value);
+    setRainbowPathStr(`M ${startX} ${startY} A ${radius.value} ${radius.value} 0 0 1 ${endX} ${endY}`);
+
+    if (progress.value > 0) {
+      const currentAngle = startAngle.value + (endAngle.value - startAngle.value) * progress.value;
+      const currentX = centerX.value + radius.value * Math.cos(currentAngle);
+      const currentY = centerY.value + radius.value * Math.sin(currentAngle);
+      setProgressPathStr(`M ${startX} ${startY} A ${radius.value} ${radius.value} 0 0 1 ${currentX} ${currentY}`);
+    } else {
+      setProgressPathStr('');
     }
-    return d;
   }, []);
 
-  // Convert hand landmark (normalized 0-1) to screen coordinates
-  const convertHandToScreenCoords = useCallback((handPos: { x: number; y: number } | null): Point | null => {
-    if (!handPos) return null;
-    // MediaPipe returns normalized coordinates (0-1), convert to screen pixels
-    return {
-      x: handPos.x * SCREEN_WIDTH,
-      y: handPos.y * SCREEN_HEIGHT,
-    };
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
+  // Rainbow arc parameters
+  const centerX = useSharedValue(50);
+  const centerY = useSharedValue(55);
+  const radius = useSharedValue(30);
+  const startAngle = useSharedValue(Math.PI * 0.2);
+  const endAngle = useSharedValue(Math.PI * 0.8);
 
-  // Convert normalized landmark to screen coordinates
-  // MediaPipe landmarks are normalized (0-1) relative to video feed dimensions
-  // We need to account for video display scaling (objectFit: cover)
-  const convertLandmarkToScreen = useCallback((landmark: { x: number; y: number }): Point => {
-    // Get the video element to check its actual dimensions
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      const video = document.querySelector('video[data-hand-preview-video]') as HTMLVideoElement;
-      if (video && video.videoWidth && video.videoHeight && video.offsetWidth && video.offsetHeight) {
-        const videoWidth = video.videoWidth;  // Native video width
-        const videoHeight = video.videoHeight; // Native video height
-        const displayWidth = video.offsetWidth;  // Displayed width
-        const displayHeight = video.offsetHeight; // Displayed height
+  const objectX = useSharedValue(50);
+  const objectY = useSharedValue(55);
+  const objectScale = useSharedValue(1);
+  const sparkleX = useSharedValue(0);
+  const sparkleY = useSharedValue(0);
+
+  const screenWidth = useRef(400);
+  const screenHeight = useRef(600);
+  const lastWarningTime = useRef(0);
+  const hasGoneOffTrackRef = useRef(false);
+  const isOffTrackRef = useRef(false);
+  const currentPointerX = useSharedValue(50);
+  const currentPointerY = useSharedValue(55);
+
+  const endGame = useCallback(
+    async (finalScore: number) => {
+      const total = TOTAL_ROUNDS;
+      const xp = finalScore * 20;
+      const accuracy = (finalScore / total) * 100;
+
+      setFinalStats({ correct: finalScore, total, xp });
+      setDone(true);
+      setRoundActive(false);
+
+      try {
+        await recordGame(xp);
+        const result = await logGameAndAward({
+          type: 'rainbowTrace',
+          correct: finalScore,
+          total,
+          accuracy,
+          xpAwarded: xp,
+          skillTags: ['smooth-wrist-movement', 'curved-tracking', 'rainbow-arc-tracing'],
+        });
+        setLogTimestamp(result?.last?.at ?? null);
+        router.setParams({ refreshStats: Date.now().toString() });
+      } catch (e) {
+        console.error('Failed to log rainbow trace game:', e);
+      }
+
+      speakTTS('Perfect rainbow tracing!', 0.78 );
+    },
+    [router],
+  );
+
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      if (!roundActive || done) return;
+      setIsDragging(true);
+      objectScale.value = withSpring(1.2, { damping: 10, stiffness: 200 });
+    })
+    .onUpdate((e) => {
+      if (!roundActive || done) return;
+      const newX = (e.x / screenWidth.current) * 100;
+      const newY = (e.y / screenHeight.current) * 100;
+
+      // Always update pointer position for continuous checking
+      currentPointerX.value = newX;
+      currentPointerY.value = newY;
+
+      // First check if pointer is on track
+      const dist = distanceToRainbowArc(
+        newX,
+        newY,
+        centerX.value,
+        centerY.value,
+        radius.value,
+        startAngle.value,
+        endAngle.value,
+      );
+
+      if (dist > LINE_TOLERANCE) {
+        // Pointer is off track - ALWAYS show error and mark as off track
+        setIsOffTrack(true);
+        isOffTrackRef.current = true;
+        setHasGoneOffTrack(true);
+        hasGoneOffTrackRef.current = true;
+        setOffTrackCounter((prev) => (prev >= 1000 ? 1 : prev + 1));
         
-        const videoAspect = videoWidth / videoHeight;
-        const displayAspect = displayWidth / displayHeight;
-        
-        let scaledWidth = displayWidth;
-        let scaledHeight = displayHeight;
-        let offsetX = 0;
-        let offsetY = 0;
-        
-        // Calculate how video is scaled (objectFit: cover)
-        if (videoAspect > displayAspect) {
-          // Video is wider - scale to fit height, crop sides
-          scaledHeight = displayHeight;
-          scaledWidth = displayHeight * videoAspect;
-          offsetX = (displayWidth - scaledWidth) / 2;
-        } else {
-          // Video is taller - scale to fit width, crop top/bottom
-          scaledWidth = displayWidth;
-          scaledHeight = displayWidth / videoAspect;
-          offsetY = (displayHeight - scaledHeight) / 2;
+        // Play warning sound/vibration periodically
+        const now = Date.now();
+        if (now - lastWarningTime.current > 500) {
+          lastWarningTime.current = now;
+          try {
+            playWarning();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          } catch {}
         }
         
-        // Get video container position
-        const container = video.parentElement;
-        const containerRect = container?.getBoundingClientRect();
-        const containerX = containerRect?.left || 0;
-        const containerY = containerRect?.top || 0;
+        // Don't move object when off track - return early
+        return;
+      } else {
+        // Pointer is on track - allow object movement
+        if (isOffTrack) {
+          setIsOffTrack(false);
+          setOffTrackCounter(0);
+        }
+        isOffTrackRef.current = false;
         
-        // Convert normalized video coordinates (0-1) to screen coordinates
-        // MediaPipe coordinates are relative to videoWidth x videoHeight
-        const x = landmark.x * scaledWidth + offsetX + containerX;
-        const y = landmark.y * scaledHeight + offsetY + containerY;
-        
-        return { x, y };
+        // Update object position only when on track
+        objectX.value = Math.max(5, Math.min(95, newX));
+        objectY.value = Math.max(10, Math.min(90, newY));
+
+        // Calculate progress only when on track
+        const angle = Math.atan2(objectY.value - centerY.value, objectX.value - centerX.value);
+        let normalizedAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
+        let normalizedStart = (startAngle.value + 2 * Math.PI) % (2 * Math.PI);
+        let normalizedEnd = (endAngle.value + 2 * Math.PI) % (2 * Math.PI);
+
+        let angleProgress = 0;
+        if (normalizedStart < normalizedEnd) {
+          angleProgress = (normalizedAngle - normalizedStart) / (normalizedEnd - normalizedStart);
+        } else {
+          const wrappedProgress = ((normalizedAngle - normalizedStart + 2 * Math.PI) % (2 * Math.PI)) /
+            ((normalizedEnd - normalizedStart + 2 * Math.PI) % (2 * Math.PI));
+          angleProgress = wrappedProgress;
+        }
+
+        progress.value = Math.min(1, Math.max(0, angleProgress));
+        updatePaths();
       }
-    }
-    
-    // Fallback: direct conversion (assumes video fills screen exactly)
-    return {
-      x: landmark.x * SCREEN_WIDTH,
-      y: landmark.y * SCREEN_HEIGHT,
-    };
-  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
+    })
+    .onEnd(() => {
+      if (!roundActive || done) return;
+      setIsDragging(false);
+      objectScale.value = withSpring(1, { damping: 10, stiffness: 200 });
 
-  // Hand skeleton connections (MediaPipe hand landmarks structure)
-  const handConnections = [
-    // Wrist to finger bases
-    [0, 1], [0, 5], [0, 9], [0, 13], [0, 17],
-    // Thumb
-    [1, 2], [2, 3], [3, 4],
-    // Index finger
-    [5, 6], [6, 7], [7, 8],
-    // Middle finger
-    [9, 10], [10, 11], [11, 12],
-    // Ring finger
-    [13, 14], [14, 15], [15, 16],
-    // Pinky
-    [17, 18], [18, 19], [19, 20],
-  ];
+      const endX = centerX.value + radius.value * Math.cos(endAngle.value);
+      const endY = centerY.value + radius.value * Math.sin(endAngle.value);
+      const distToEnd = Math.sqrt(
+        Math.pow(objectX.value - endX, 2) + Math.pow(objectY.value - endY, 2),
+      );
 
-  const handleTraceStart = useCallback((point: Point) => {
-    setIsTracing(true);
-    setGlowPosition(point);
-    setMaxProgress(0);
-    setProgress(0);
-    setTimeOnPath(0);
-    
-    // Animate glow appearance
-    Animated.spring(glowScale, {
-      toValue: 1.2,
-      tension: 50,
-      friction: 7,
-      useNativeDriver: true,
-    }).start();
-  }, [glowScale]);
+      // Only allow completion if user reached the end AND never went off track AND progress is complete
+      if (distToEnd <= LINE_TOLERANCE && progress.value >= 0.99 && !hasGoneOffTrack && !hasGoneOffTrackRef.current) {
+        sparkleX.value = endX;
+        sparkleY.value = endY;
 
-  const startNextRound = useCallback(() => {
-    setCurrentRound(prev => prev + 1);
-    setProgress(0);
-    setMaxProgress(0);
-    setRoundComplete(false);
-    setGlowPosition(null);
-    setTimeOnPath(0);
-    progressBarWidth.setValue(0);
-    
-    const nextRound = currentRound + 1;
-    const newPath = generateRainbowArc(nextRound);
-    setCurrentPath(newPath);
-    
-    speak(`Round ${nextRound + 1}! Point your finger at the rainbow!`);
-  }, [currentRound, generateRainbowArc]);
+        setScore((s) => {
+          const newScore = s + 1;
+          if (newScore >= TOTAL_ROUNDS) {
+            setTimeout(() => {
+              endGame(newScore);
+            }, 1000);
+          } else {
+            setTimeout(() => {
+              setRound((r) => r + 1);
+              progress.value = 0;
+              updatePaths();
+              setIsOffTrack(false);
+              setHasGoneOffTrack(false);
+              hasGoneOffTrackRef.current = false;
+              isOffTrackRef.current = false;
+              setOffTrackCounter(0);
+              const startX = centerX.value + radius.value * Math.cos(startAngle.value);
+              const startY = centerY.value + radius.value * Math.sin(startAngle.value);
+              objectX.value = withSpring(startX, { damping: 10, stiffness: 100 });
+              objectY.value = withSpring(startY, { damping: 10, stiffness: 100 });
+              setRoundActive(true);
+            }, 1500);
+          }
+          return newScore;
+        });
 
-  const finishGame = useCallback(async () => {
-    const totalTime = Date.now() - gameStartTime;
-    const avgAccuracy = totalAccuracy / requiredRounds;
-    const xp = successfulTraces * 50;
+        try {
+          playSuccess();
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
+      } else {
+        const startX = centerX.value + radius.value * Math.cos(startAngle.value);
+        const startY = centerY.value + radius.value * Math.sin(startAngle.value);
+        objectX.value = withSpring(startX, { damping: 10, stiffness: 100 });
+        objectY.value = withSpring(startY, { damping: 10, stiffness: 100 });
+        progress.value = 0;
+        updatePaths();
+        setIsOffTrack(false);
+        setHasGoneOffTrack(false);
+        hasGoneOffTrackRef.current = false;
+        isOffTrackRef.current = false;
+        setOffTrackCounter(0);
 
-    setFinalStats({
-      totalRounds: requiredRounds,
-      successfulTraces,
-      averageAccuracy: avgAccuracy,
-      totalTime,
-      xpAwarded: xp,
+        try {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          if (hasGoneOffTrack) {
+            speakTTS('Stay on the path! Try again.', 0.78 );
+          } else {
+            speakTTS('Trace the rainbow arc!', 0.78 );
+          }
+        } catch {}
+      }
     });
 
-    clearScheduledSpeech();
-
+  useEffect(() => {
+    if (showInfo) return;
     try {
-      await logGameAndAward({
-        type: 'rainbow-curve-trace',
-        correct: successfulTraces,
-        total: requiredRounds,
-        accuracy: avgAccuracy,
-        xpAwarded: xp,
-        mode: 'therapy',
-        skillTags: ['wrist-rotation', 'fine-motor-control', 'curve-tracing', 'occupational-therapy'],
-        incorrectAttempts: requiredRounds - successfulTraces,
-        meta: {
-          totalTime,
-          averageAccuracy: avgAccuracy,
-        },
-      });
-      setGameFinished(true);
-      onComplete?.();
-    } catch (e) {
-      console.warn('Failed to save game log:', e instanceof Error ? e.message : 'Unknown error');
-      setGameFinished(true);
-    }
-  }, [successfulTraces, requiredRounds, totalAccuracy, gameStartTime, onComplete]);
-
-  const handleRoundComplete = useCallback(() => {
-    setRoundComplete(true);
-    setIsTracing(false);
-    setShowSparkles(false);
-    
-    if (sparkleTimerRef.current) {
-      clearInterval(sparkleTimerRef.current);
-      sparkleTimerRef.current = null;
-    }
-
-    setSuccessfulTraces(prev => prev + 1);
-    
-    // Calculate accuracy
-    const roundTime = Date.now() - gameStartTime;
-    const accuracy = timeOnPath > 0 ? Math.min(100, (timeOnPath / (roundTime / 50)) * 100) : 0;
-    setTotalAccuracy(prev => prev + accuracy);
-
-    // Celebration: sparkles + "Good tracing!"
-    setShowSparkles(true);
-    speak('Good tracing!');
-    
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      speakTTS('Trace the rainbow arc!', 0.78 );
     } catch {}
+    centerX.value = 50;
+    centerY.value = 55;
+    radius.value = 25 + Math.random() * 15;
+    startAngle.value = Math.PI * 0.2;
+    endAngle.value = Math.PI * 0.8;
 
-    setTimeout(() => {
-      setShowSparkles(false);
-    }, 2000);
+    const startX = centerX.value + radius.value * Math.cos(startAngle.value);
+    const startY = centerY.value + radius.value * Math.sin(startAngle.value);
+    objectX.value = startX;
+    objectY.value = startY;
+    progress.value = 0;
+    setIsOffTrack(false);
+    setHasGoneOffTrack(false);
+    hasGoneOffTrackRef.current = false;
+    isOffTrackRef.current = false;
+    setOffTrackCounter(0);
+    updatePaths();
+    
+    return () => {
+      stopAllSpeech();
+      cleanupSounds();
+    };
+  }, [round, updatePaths, showInfo]);
 
-    // Move to next round
-    setTimeout(() => {
-      if (currentRound < requiredRounds - 1) {
-        startNextRound();
+  useEffect(() => {
+    const interval = setInterval(updatePaths, 100);
+    return () => clearInterval(interval);
+  }, [updatePaths]);
+
+  // Continuous check for off-track status
+  useEffect(() => {
+    if (!roundActive || done || !isDragging || showInfo) return;
+    
+    const checkInterval = setInterval(() => {
+      const dist = distanceToRainbowArc(
+        currentPointerX.value,
+        currentPointerY.value,
+        centerX.value,
+        centerY.value,
+        radius.value,
+        startAngle.value,
+        endAngle.value,
+      );
+
+      if (dist > LINE_TOLERANCE) {
+        setIsOffTrack(true);
+        isOffTrackRef.current = true;
+        setHasGoneOffTrack(true);
+        hasGoneOffTrackRef.current = true;
+        setOffTrackCounter((prev) => (prev >= 1000 ? 1 : prev + 1));
       } else {
-        finishGame();
-      }
-    }, 2500);
-  }, [currentRound, requiredRounds, gameStartTime, timeOnPath, startNextRound, finishGame]);
-
-  const handleTraceMove = useCallback((point: Point) => {
-    if (!currentPath.length || roundComplete) return;
-
-    // Glow follows finger - always update position during drag
-    setGlowPosition(point);
-
-    const config = DIFFICULTY_CONFIG[Math.min(currentRound, DIFFICULTY_CONFIG.length - 1)];
-    const onPath = isPointOnPath(point, currentPath, config.tolerance);
-    setIsOnPath(onPath);
-
-    if (onPath) {
-      // Calculate progress using distance-based method
-      const newProgress = getPathProgress(point, currentPath, config.tolerance);
-      
-      // Forward-only progress (can't go backward)
-      setMaxProgress(prev => {
-        if (newProgress > prev) {
-          setProgress(newProgress);
-          setTimeOnPath(time => time + 1);
-
-          // Update progress bar
-          Animated.timing(progressBarWidth, {
-            toValue: newProgress * 100,
-            duration: 50,
-            easing: Easing.linear,
-            useNativeDriver: false,
-          }).start();
-
-          // Continuous sparkles while tracing correctly
-          if (!sparkleTimerRef.current) {
-            setShowSparkles(true);
-            sparkleTimerRef.current = setInterval(() => {
-              setShowSparkles(true);
-              setTimeout(() => setShowSparkles(false), 300);
-            }, 500);
-          }
-
-          // Check completion
-          if (newProgress >= COMPLETION_THRESHOLD && !roundComplete) {
-            handleRoundComplete();
-          }
-          return newProgress;
+        if (isOffTrack) {
+          setIsOffTrack(false);
+          setOffTrackCounter(0);
         }
-        return prev;
-      });
-    } else {
-      // Off-path: gentle vibration + path highlights
-      setShowSparkles(false);
-      if (sparkleTimerRef.current) {
-        clearInterval(sparkleTimerRef.current);
-        sparkleTimerRef.current = null;
+        isOffTrackRef.current = false;
       }
+    }, 50);
 
-      // Path highlights to guide back
-      setPathHighlight(true);
-      setTimeout(() => setPathHighlight(false), 400);
+    return () => clearInterval(checkInterval);
+  }, [roundActive, done, isDragging, showInfo]);
 
-      // Gentle vibration
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch {}
-    }
-  }, [currentPath, currentRound, roundComplete, progressBarWidth, handleRoundComplete]);
+  const handleBack = useCallback(() => {
+    stopAllSpeech();
+    cleanupSounds();
+    onBack?.();
+  }, [onBack]);
 
-  const handleTraceEnd = useCallback(() => {
-    setIsTracing(false);
-    setShowSparkles(false);
-    
-    if (sparkleTimerRef.current) {
-      clearInterval(sparkleTimerRef.current);
-      sparkleTimerRef.current = null;
-    }
+  const objectStyle = useAnimatedStyle(() => ({
+    left: `${objectX.value}%`,
+    top: `${objectY.value}%`,
+    transform: [
+      { translateX: -OBJECT_SIZE / 2 },
+      { translateY: -OBJECT_SIZE / 2 },
+      { scale: objectScale.value },
+    ],
+  }));
 
-    // Animate glow disappearance
-    Animated.spring(glowScale, {
-      toValue: 1,
-      tension: 50,
-      friction: 7,
-      useNativeDriver: true,
-    }).start();
-  }, [glowScale]);
+  const sparkleStyle = useAnimatedStyle(() => ({
+    left: `${sparkleX.value}%`,
+    top: `${sparkleY.value}%`,
+  }));
 
-  const startRound = useCallback(() => {
-    const path = generateRainbowArc(currentRound);
-    setCurrentPath(path);
-    setGameStartTime(Date.now());
-    setRoundComplete(false);
-    setProgress(0);
-    setMaxProgress(0);
-    setTimeOnPath(0);
-    progressBarWidth.setValue(0);
-    
-    speak('Point your finger at the rainbow!');
-  }, [currentRound, generateRainbowArc]);
-
-  // Debug: Log landmarks when they change
-  useEffect(() => {
-    if (handDetection.landmarks?.allLandmarks) {
-      console.log('🎯 Landmarks detected:', {
-        count: handDetection.landmarks.allLandmarks.length,
-        isDetecting: handDetection.isDetecting,
-        hasIndexFinger: !!handDetection.landmarks.indexFingerTip,
-        firstLandmark: handDetection.landmarks.allLandmarks[0],
-      });
-    } else {
-      console.log('⚠️ No landmarks available:', {
-        hasLandmarks: !!handDetection.landmarks,
-        isDetecting: handDetection.isDetecting,
-      });
-    }
-  }, [handDetection.landmarks, handDetection.isDetecting]);
-
-  // Watch hand position and update tracing
-  useEffect(() => {
-    if (roundComplete || !currentPath.length) {
-      return;
-    }
-
-    if (!handDetection.handPosition) {
-      // Hand lost - stop tracing
-      if (isTracing) {
-        setIsTracing(false);
-        handleTraceEnd();
-      }
-      return;
-    }
-
-    const screenPoint = convertHandToScreenCoords(handDetection.handPosition);
-    if (!screenPoint) return;
-
-    // Start tracing if hand detected
-    if (!isTracing) {
-      handleTraceStart(screenPoint);
-    } else {
-      handleTraceMove(screenPoint);
-    }
-  }, [handDetection.handPosition, handDetection.isDetecting, roundComplete, currentPath.length, isTracing, convertHandToScreenCoords, handleTraceStart, handleTraceMove, handleTraceEnd]);
-
-  useEffect(() => {
-    startRound();
-  }, []);
-
-  if (gameFinished && finalStats) {
+  if (showInfo) {
     return (
-      <ResultCard
-        correct={finalStats.successfulTraces}
-        total={finalStats.totalRounds}
-        accuracy={finalStats.averageAccuracy}
-        xpAwarded={finalStats.xpAwarded}
-        logTimestamp={null}
-        onHome={onBack}
-        onPlayAgain={() => {
-          setGameFinished(false);
-          setFinalStats(null);
-          setCurrentRound(0);
-          setSuccessfulTraces(0);
-          setTotalAccuracy(0);
-          setProgress(0);
-          setMaxProgress(0);
-          setRoundComplete(false);
-          progressBarWidth.setValue(0);
-          startRound();
+      <GameInfoScreen
+        title="Rainbow Trace"
+        emoji="🌈"
+        description="Follow arc to complete rainbow"
+        skills={['Smooth wrist movement', 'Curved tracking']}
+        suitableFor="Children learning smooth wrist movement and curved tracking skills"
+        onStart={() => {
+          setShowInfo(false);
         }}
+        onBack={handleBack}
       />
     );
   }
 
-  const config = DIFFICULTY_CONFIG[Math.min(currentRound, DIFFICULTY_CONFIG.length - 1)];
-  const pathString = pathToSvgString(currentPath);
-  const glowSize = getResponsiveSize(45, isTablet, isMobile);
-  const startPoint = currentPath[0];
-  const endPoint = currentPath[currentPath.length - 1];
+  if (done && finalStats) {
+    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+    return (
+      <SafeAreaView style={styles.container}>
+        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
+          <Text style={styles.backChipText}>← Back</Text>
+        </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 24,
+          }}
+        >
+          <View style={styles.resultCard}>
+            <Text style={{ fontSize: 64, marginBottom: 16 }}>🌈</Text>
+            <Text style={styles.resultTitle}>Rainbow Complete!</Text>
+            <Text style={styles.resultSubtitle}>
+              You traced {finalStats.correct} rainbows out of {finalStats.total}!
+            </Text>
+            <ResultCard
+              correct={finalStats.correct}
+              total={finalStats.total}
+              xpAwarded={finalStats.xp}
+              accuracy={accuracyPct}
+              logTimestamp={logTimestamp}
+              onPlayAgain={() => {
+                setRound(1);
+                setScore(0);
+                setDone(false);
+                setFinalStats(null);
+                setLogTimestamp(null);
+                progress.value = 0;
+                updatePaths();
+                setRoundActive(true);
+              }}
+            />
+            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#E0F2FE', '#BAE6FD', '#7DD3FC', '#38BDF8']}
-        style={styles.gradient}
+      <TouchableOpacity onPress={handleBack} style={styles.backChip}>
+        <Text style={styles.backChipText}>← Back</Text>
+      </TouchableOpacity>
+
+      <View style={styles.headerBlock}>
+        <Text style={styles.title}>Rainbow Trace</Text>
+        <Text style={styles.subtitle}>
+          Round {round}/{TOTAL_ROUNDS} • 🌈 Score: {score}
+        </Text>
+        <Text style={styles.helper}>
+          Trace the rainbow arc from left to right!
+        </Text>
+      </View>
+
+      <View
+        style={styles.playArea}
+        onLayout={(e) => {
+          screenWidth.current = e.nativeEvent.layout.width;
+          screenHeight.current = e.nativeEvent.layout.height;
+        }}
       >
-        {/* Header */}
-        <View style={[styles.header, isMobile && styles.headerMobile]}>
-          <Pressable
-            onPress={() => {
-              clearScheduledSpeech();
-              onBack();
-            }}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={22} color="#0F172A" />
-            <Text style={styles.backText}>Back</Text>
-          </Pressable>
-          <View style={styles.headerText}>
-            <Text style={[styles.title, isMobile && styles.titleMobile]}>Rainbow Curve Trace</Text>
-            <Text style={[styles.subtitle, isMobile && styles.subtitleMobile]}>
-              Round {currentRound + 1} / {requiredRounds}
-            </Text>
-          </View>
-        </View>
-
-        {/* Progress Bar */}
-        <View style={[styles.progressContainer, isMobile && styles.progressContainerMobile]}>
-          <View style={styles.progressBarBackground}>
-            <Animated.View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: progressBarWidth.interpolate({
-                    inputRange: [0, 100],
-                    outputRange: ['0%', '100%'],
-                  }),
-                },
-              ]}
-            />
-          </View>
-          <Text style={[styles.progressText, isMobile && styles.progressTextMobile]}>
-            {Math.round(progress * 100)}% Complete
-          </Text>
-        </View>
-
-        {/* Camera Preview Container - Always render so hook can find it */}
-        <View
-          ref={previewRef}
-          style={[
-            StyleSheet.absoluteFill,
-            styles.cameraContainer,
-          ]}
-          nativeID={handDetection.previewContainerId || 'hand-preview-container'}
-          {...(Platform.OS === 'web' && { 
-            'data-native-id': handDetection.previewContainerId || 'hand-preview-container',
-            'data-hand-preview-container': 'true',
-            // Also set the hardcoded ID the hook looks for
-            'data-native-id-backup': 'hand-preview-container'
-          })}
-          collapsable={false}
-        >
-          {Platform.OS === 'web' && (
-            <>
-              {(!handDetection.hasCamera || !handDetection.isDetecting) && (
-                <View style={styles.cameraLoading}>
-                  <Text style={styles.cameraLoadingText}>
-                    {!handDetection.hasCamera ? 'Requesting camera access...' : 'Show your hand to the camera'}
-                  </Text>
-                </View>
-              )}
-            </>
-          )}
-        </View>
-
-        {/* Error Message */}
-        {handDetection.error && (
-          <View style={[styles.errorBanner, isMobile && styles.errorBannerMobile]}>
-            <Ionicons name="alert-circle" size={24} color="#EF4444" />
-            <Text style={styles.errorText}>{handDetection.error}</Text>
-          </View>
-        )}
-
-        {/* Game Area */}
-        <View 
-          style={styles.gameArea} 
-          collapsable={false}
-        >
-          <Svg style={StyleSheet.absoluteFill} width={SCREEN_WIDTH} height={SCREEN_HEIGHT}>
-            <Defs>
-              {/* Rainbow gradient */}
-              <SvgLinearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <Stop offset="0%" stopColor="#FF0000" />
-                <Stop offset="16.66%" stopColor="#FF7F00" />
-                <Stop offset="33.33%" stopColor="#FFFF00" />
-                <Stop offset="50%" stopColor="#00FF00" />
-                <Stop offset="66.66%" stopColor="#0000FF" />
-                <Stop offset="83.33%" stopColor="#4B0082" />
-                <Stop offset="100%" stopColor="#9400D3" />
-              </SvgLinearGradient>
-            </Defs>
-
-            {/* Path highlight when off-path */}
-            {pathHighlight && (
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={styles.gestureArea}>
+            <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={styles.svg}>
               <Path
-                d={pathString}
-                stroke="#F59E0B"
-                strokeWidth={config.pathThickness + 15}
-                strokeOpacity={0.4}
+                d={rainbowPathStr}
+                stroke="rgba(148, 163, 184, 0.5)"
+                strokeWidth="3"
                 fill="none"
                 strokeLinecap="round"
               />
-            )}
-
-            {/* Main rainbow path - big smooth curve */}
-            <Path
-              d={pathString}
-              stroke="url(#rainbowGradient)"
-              strokeWidth={config.pathThickness}
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {/* Start marker (green circle) */}
-            {startPoint && !isTracing && (
-              <Circle
-                cx={startPoint.x}
-                cy={startPoint.y}
-                r={getResponsiveSize(18, isTablet, isMobile)}
-                fill="#22C55E"
-                opacity={0.9}
-              />
-            )}
-
-            {/* End marker (yellow circle/star) */}
-            {endPoint && (
-              <Circle
-                cx={endPoint.x}
-                cy={endPoint.y}
-                r={getResponsiveSize(15, isTablet, isMobile)}
-                fill="#FCD34D"
-                stroke="#F59E0B"
-                strokeWidth={2}
-                opacity={progress >= COMPLETION_THRESHOLD ? 1 : 0.7}
-              />
-            )}
-
-            {/* Hand skeleton overlay - draw landmarks and connections */}
-            {handDetection.landmarks?.allLandmarks && handDetection.landmarks.allLandmarks.length > 0 && (
-              <>
-                {/* Draw skeleton connections (white lines) */}
-                {handConnections.map(([fromIdx, toIdx], idx) => {
-                  const fromLandmark = handDetection.landmarks?.allLandmarks?.[fromIdx];
-                  const toLandmark = handDetection.landmarks?.allLandmarks?.[toIdx];
-                  if (!fromLandmark || !toLandmark) return null;
-                  
-                  const fromPoint = convertLandmarkToScreen({ x: fromLandmark.x, y: fromLandmark.y });
-                  const toPoint = convertLandmarkToScreen({ x: toLandmark.x, y: toLandmark.y });
-                  
-                  return (
-                    <Line
-                      key={`connection-${idx}`}
-                      x1={fromPoint.x}
-                      y1={fromPoint.y}
-                      x2={toPoint.x}
-                      y2={toPoint.y}
-                      stroke="#FFFFFF"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      opacity={0.8}
-                    />
-                  );
-                })}
-                
-                {/* Draw all 21 landmarks as red dots */}
-                {handDetection.landmarks.allLandmarks.map((landmark, idx) => {
-                  const point = convertLandmarkToScreen({ x: landmark.x, y: landmark.y });
-                  // Make landmarks more visible
-                  return (
-                    <Circle
-                      key={`landmark-${idx}`}
-                      cx={point.x}
-                      cy={point.y}
-                      r={6}
-                      fill="#FF0000"
-                      opacity={1}
-                      stroke="#FFFFFF"
-                      strokeWidth={1}
-                    />
-                  );
-                })}
-                
-                {/* Blue dot at index finger tip (drawing point) */}
-                {handDetection.landmarks.indexFingerTip && (
-                  <Circle
-                    cx={convertLandmarkToScreen(handDetection.landmarks.indexFingerTip).x}
-                    cy={convertLandmarkToScreen(handDetection.landmarks.indexFingerTip).y}
-                    r={8}
-                    fill="#3B82F6"
-                    opacity={1}
-                    stroke="#FFFFFF"
-                    strokeWidth={2}
-                  />
-                )}
-              </>
-            )}
-
-            {/* Glow effect - follows finger */}
-            {glowPosition && (
-              <>
-                <Circle
-                  cx={glowPosition.x}
-                  cy={glowPosition.y}
-                  r={glowSize}
-                  fill={isOnPath ? '#22C55E' : '#EF4444'}
-                  opacity={0.4}
+              {progressPathStr ? (
+                <Path
+                  d={progressPathStr}
+                  stroke="#FF6B6B"
+                  strokeWidth="3"
+                  fill="none"
+                  strokeLinecap="round"
                 />
-                <Circle
-                  cx={glowPosition.x}
-                  cy={glowPosition.y}
-                  r={glowSize / 2}
-                  fill={isOnPath ? '#22C55E' : '#EF4444'}
-                  opacity={0.9}
-                />
-              </>
+              ) : null}
+            </Svg>
+
+            <Animated.View style={[styles.objectContainer, objectStyle]}>
+              <View
+                style={[
+                  styles.object,
+                  {
+                    backgroundColor: isOffTrack ? '#EF4444' : '#FF6B6B',
+                  },
+                ]}
+              >
+                <Text style={styles.objectEmoji}>🌈</Text>
+              </View>
+            </Animated.View>
+
+            {score > 0 && !isDragging && (
+              <Animated.View style={[styles.sparkleContainer, sparkleStyle]} pointerEvents="none">
+                <SparkleBurst />
+              </Animated.View>
             )}
-          </Svg>
 
-          {/* Instructions */}
-          {!isTracing && !roundComplete && (
-            <View style={styles.instructionContainer}>
-              <Text style={[styles.instructionText, isMobile && styles.instructionTextMobile]}>
-                {handDetection.isDetecting 
-                  ? '👆 Point your finger at the rainbow!' 
-                  : '👋 Show your hand to the camera'}
-              </Text>
-            </View>
-          )}
+            {(isOffTrack || offTrackCounter > 0) && (
+              <View style={styles.warningBox}>
+                <Text style={styles.warningText}>❌ Stay on the path! Game won't complete if you go off track! ⚠️</Text>
+              </View>
+            )}
+          </Animated.View>
+        </GestureDetector>
+      </View>
 
-          {/* Mode indicator (like in the reference image) */}
-          {handDetection.isDetecting && (
-            <View style={styles.modeIndicator}>
-              <Text style={styles.modeText}>Mode: DRAW</Text>
-              <Text style={styles.modeSubtext}>Index: Draw | Point at rainbow to trace</Text>
-            </View>
-          )}
-
-          {/* Sparkle effects */}
-          <SparkleBurst visible={showSparkles} color="#FCD34D" count={12} size={8} />
-        </View>
-
-        {/* Stats */}
-        <View style={[styles.statsContainer, isMobile && styles.statsContainerMobile]}>
-          <Text style={[styles.statsText, isMobile && styles.statsTextMobile]}>
-            Successful: {successfulTraces} / {currentRound + 1}
-          </Text>
-        </View>
-      </LinearGradient>
+      <View style={styles.footerBox}>
+        <Text style={styles.footerMain}>
+          Skills: smooth wrist movement • curved tracking • rainbow arc tracing
+        </Text>
+        <Text style={styles.footerSub}>
+          Trace the rainbow's arc with smooth curved motion!
+        </Text>
+      </View>
     </SafeAreaView>
   );
 };
@@ -785,206 +576,152 @@ export const RainbowCurveTraceGame: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-    backgroundColor: 'rgba(224, 242, 254, 0.95)',
+    paddingTop: 48,
   },
-  headerMobile: {
-    paddingHorizontal: 12,
-    paddingTop: 6,
-    paddingBottom: 10,
+  backChip: {
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    zIndex: 10,
+    backgroundColor: '#0F172A',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-  backButton: {
-    flexDirection: 'row',
+  backChipText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  headerBlock: {
+    marginTop: 72,
+    marginBottom: 16,
     alignItems: 'center',
-    padding: 8,
-    marginRight: 12,
-  },
-  backText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-    marginLeft: 4,
-  },
-  headerText: {
-    flex: 1,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#0F172A',
-  },
-  titleMobile: {
-    fontSize: 20,
+    marginBottom: 6,
   },
   subtitle: {
+    fontSize: 16,
+    color: '#0F172A',
+    marginBottom: 6,
+  },
+  helper: {
     fontSize: 14,
     color: '#475569',
-    marginTop: 2,
-  },
-  subtitleMobile: {
-    fontSize: 12,
-  },
-  progressContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    alignItems: 'center',
-  },
-  progressContainerMobile: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 10,
-  },
-  progressBarBackground: {
-    width: '100%',
-    height: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-    borderRadius: 7,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#22C55E',
-    borderRadius: 7,
-  },
-  progressText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  progressTextMobile: {
-    fontSize: 12,
-  },
-  cameraContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'transparent',
-    overflow: 'hidden',
-    zIndex: 1,
-    pointerEvents: 'none',
-  },
-  cameraLoading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  cameraLoadingText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
     textAlign: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
   },
-  errorBanner: {
-    position: 'absolute',
-    top: 100,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(239, 68, 68, 0.95)',
-    padding: 12,
-    borderRadius: 12,
-    zIndex: 100,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  errorBannerMobile: {
-    top: 80,
-    left: 12,
-    right: 12,
-    padding: 10,
-  },
-  errorText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
-    flex: 1,
-  },
-  gameArea: {
+  playArea: {
     flex: 1,
     position: 'relative',
-    zIndex: 10,
+    marginBottom: 16,
   },
-  instructionContainer: {
+  gestureArea: {
+    flex: 1,
+    position: 'relative',
+  },
+  svg: {
     position: 'absolute',
-    bottom: 120,
-    left: 20,
-    right: 20,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    padding: 16,
-    borderRadius: 16,
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    width: '100%',
+    height: '100%',
   },
-  instructionText: {
+  objectContainer: {
+    position: 'absolute',
+    zIndex: 3,
+  },
+  object: {
+    width: OBJECT_SIZE,
+    height: OBJECT_SIZE,
+    borderRadius: OBJECT_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 8,
+  },
+  objectEmoji: {
+    fontSize: 32,
+  },
+  sparkleContainer: {
+    position: 'absolute',
+    transform: [{ translateX: -20 }, { translateY: -20 }],
+    zIndex: 4,
+  },
+  warningBox: {
+    position: 'absolute',
+    top: '15%',
+    left: '50%',
+    transform: [{ translateX: -120 }],
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+    borderWidth: 3,
+    borderColor: '#DC2626',
+    zIndex: 100,
+  },
+  warningText: {
+    color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
-    color: '#0F172A',
+    fontWeight: '900',
     textAlign: 'center',
   },
-  instructionTextMobile: {
-    fontSize: 16,
+  footerBox: {
+    paddingVertical: 14,
+    marginBottom: 20,
   },
-  statsContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    alignItems: 'center',
-  },
-  statsContainerMobile: {
-    paddingHorizontal: 12,
-    paddingBottom: 16,
-  },
-  statsText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0F172A',
-  },
-  statsTextMobile: {
+  footerMain: {
     fontSize: 14,
-  },
-  modeIndicator: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    zIndex: 20,
-  },
-  modeText: {
-    color: '#FFFFFF',
-    fontSize: 16,
     fontWeight: '700',
+    color: '#0F172A',
+    textAlign: 'center',
     marginBottom: 4,
   },
-  modeSubtext: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    opacity: 0.9,
+  footerSub: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  resultCard: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    padding: 24,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  resultTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  resultSubtitle: {
+    fontSize: 16,
+    color: '#475569',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  savedText: {
+    color: '#22C55E',
+    fontWeight: '600',
+    marginTop: 16,
+    textAlign: 'center',
   },
 });
+
+export default RainbowCurveTraceGame;

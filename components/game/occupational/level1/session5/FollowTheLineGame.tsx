@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -122,7 +122,7 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log follow the line game:', e);
       }
 
-      Speech.speak('Great line following!', { rate: 0.78 });
+      speakTTS('Great line following!', 0.78 );
     },
     [router],
   );
@@ -251,7 +251,7 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Follow the line to the end!', { rate: 0.78 });
+          speakTTS('Follow the line to the end!', 0.78 );
         } catch {}
       }
     });
@@ -259,7 +259,7 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial instruction - only once
   useEffect(() => {
     try {
-      Speech.speak('Drag the object along the thick line from start to end. Stay on the line!', { rate: 0.78 });
+      speakTTS('Drag the object along the thick line from start to end. Stay on the line!', 0.78 );
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount

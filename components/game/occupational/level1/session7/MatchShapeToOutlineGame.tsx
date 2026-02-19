@@ -4,7 +4,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -111,7 +111,7 @@ const MatchShapeToOutlineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
         console.error('Failed to log match shape to outline game:', e);
       }
 
-      Speech.speak('Great job!', { rate: 0.78 });
+      speakTTS('Great job!', 0.78 );
     },
     [router],
   );
@@ -266,7 +266,7 @@ const MatchShapeToOutlineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
         try {
           await playError();
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          Speech.speak('Try the matching shape!', { rate: 0.78 });
+          speakTTS('Try the matching shape!', 0.78 );
         } catch {}
 
         // Retry - don't advance round
@@ -285,7 +285,7 @@ const MatchShapeToOutlineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Match the shape to the outline!', { rate: 0.78 });
+        speakTTS('Match the shape to the outline!', 0.78 );
       } catch {}
     }
     return () => {

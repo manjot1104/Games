@@ -3,7 +3,7 @@ import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
@@ -112,7 +112,7 @@ export const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
       console.error('Failed to save game:', e);
     }
 
-    Speech.speak('Amazing! You copied all the rhythms!');
+    speakTTS('Amazing! You copied all the rhythms!');
   }, [correct, round, router]);
 
   const playPattern = useCallback((patternToPlay: number[]) => {
@@ -122,7 +122,7 @@ export const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
     const playNextBeat = () => {
       if (patternIndexRef.current >= patternToPlay.length) {
         setPhase('recording');
-        Speech.speak('Now copy the rhythm!');
+        speakTTS('Now copy the rhythm!');
         userTapsRef.current = [];
         recordingStartRef.current = Date.now();
         return;
@@ -137,7 +137,7 @@ export const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
       } else {
         const timer = (setTimeout(() => {
           setPhase('recording');
-          Speech.speak('Now copy the rhythm!');
+          speakTTS('Now copy the rhythm!');
           userTapsRef.current = [];
           recordingStartRef.current = Date.now();
         }, BEAT_INTERVAL)) as unknown as NodeJS.Timeout;
@@ -185,10 +185,10 @@ export const CopyMyRhythmGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
       const isCorrect = matches === pattern.length;
       if (isCorrect) {
         setCorrect((c) => c + 1);
-        Speech.speak('Perfect!');
+        speakTTS('Perfect!');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       } else {
-        Speech.speak('Try again!');
+        speakTTS('Try again!');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
       }
 

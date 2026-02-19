@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -129,7 +129,7 @@ const CookieCutterMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         console.error('Failed to log cookie cutter match game:', e);
       }
 
-      Speech.speak('Perfect fit!', { rate: 0.78 });
+      speakTTS('Perfect fit!', 0.78 );
     },
     [router],
   );
@@ -191,14 +191,14 @@ const CookieCutterMatchGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         try {
           playWarning();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak('Align carefully!', { rate: 0.78 });
+          speakTTS('Align carefully!', 0.78 );
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Shape fits only if aligned perfectly!', { rate: 0.78 });
+      speakTTS('Shape fits only if aligned perfectly!', 0.78 );
     } catch {}
     generateRound();
     

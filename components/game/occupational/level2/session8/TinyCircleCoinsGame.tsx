@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -183,7 +183,7 @@ const TinyCircleCoinsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log tiny circle coins game:', e);
       }
 
-      Speech.speak('Coin traced!', { rate: 0.78 });
+      speakTTS('Coin traced!', 0.78 );
     },
     [router],
   );
@@ -296,7 +296,7 @@ const TinyCircleCoinsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Trace the whole coin!', { rate: 0.78 });
+          speakTTS('Trace the whole coin!', 0.78 );
         } catch {}
       }
     });
@@ -308,7 +308,7 @@ const TinyCircleCoinsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectY.value = centerY.value;
     updatePaths();
     try {
-      Speech.speak('Trace the tiny circle coin with precision!', { rate: 0.78 });
+      speakTTS('Trace the tiny circle coin with precision!', 0.78 );
     } catch {}
     
     return () => {

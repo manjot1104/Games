@@ -3,7 +3,7 @@ import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ResultCard from './ResultCard';
@@ -104,7 +104,7 @@ export const StopGoDrumGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
     setCorrectTaps(0);
     setWrongTaps(0);
     setSoundState('silent');
-    Speech.speak('Tap only when you hear the drum! Freeze when it stops!');
+    speakTTS('Tap only when you hear the drum! Freeze when it stops!');
   }, []);
 
   // Sound pattern: play for 2s, silent for 2s, repeat
@@ -167,7 +167,7 @@ export const StopGoDrumGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       if (score + 1 >= round * 5) {
         if (round < TOTAL_ROUNDS) {
           setRound((r) => r + 1);
-          Speech.speak(`Round ${round + 1}!`);
+          speakTTS(`Round ${round + 1}!`);
         } else {
           finishGame();
         }
@@ -177,7 +177,7 @@ export const StopGoDrumGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       setWrongTaps((w) => w + 1);
       triggerFreeze();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      Speech.speak('Freeze! Wait for the sound!');
+      speakTTS('Freeze! Wait for the sound!');
     }
   }, [phase, soundState, score, round, triggerFreeze]);
 
@@ -212,7 +212,7 @@ export const StopGoDrumGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       console.error('Failed to save game:', e);
     }
 
-    Speech.speak('Excellent! You stopped and went perfectly!');
+    speakTTS('Excellent! You stopped and went perfectly!');
   }, [correctTaps, wrongTaps, round, router]);
 
   useEffect(() => {

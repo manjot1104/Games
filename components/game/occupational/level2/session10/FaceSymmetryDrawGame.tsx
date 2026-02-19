@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -112,7 +112,7 @@ const FaceSymmetryDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         console.error('Failed to log face symmetry draw game:', e);
       }
 
-      Speech.speak('Face complete!', { rate: 0.78 });
+      speakTTS('Face complete!', 0.78 );
     },
     [router],
   );
@@ -166,7 +166,7 @@ const FaceSymmetryDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
         try {
           playWarning();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          Speech.speak(`Tap to place ${targetFeature}!`, { rate: 0.78 });
+          speakTTS(`Tap to place ${targetFeature}!`, 0.78 );
         } catch {}
       }
     });
@@ -178,7 +178,7 @@ const FaceSymmetryDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
     setTargetFeature('eye');
     setRoundActive(true);
     try {
-      Speech.speak('Tap to place left eye, right will mirror', { rate: 0.78 });
+      speakTTS('Tap to place left eye, right will mirror', { rate: 0.78 });
     } catch {}
     
     return () => {
@@ -190,7 +190,7 @@ const FaceSymmetryDrawGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
   useEffect(() => {
     if (targetFeature === 'mouth') {
       try {
-        Speech.speak('Tap to place mouth, centered', { rate: 0.78 });
+        speakTTS('Tap to place mouth, centered', { rate: 0.78 });
       } catch {}
     }
     

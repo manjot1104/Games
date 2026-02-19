@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -230,7 +230,7 @@ const BodyPuzzleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setDraggingPart(null);
         
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-        Speech.speak(`${part} sahi jagah lag gaya!`, { rate: 0.9 });
+        speakTTS(`${part} sahi jagah lag gaya!`, 0.9 );
         
         // Snap to target
         Animated.parallel([
@@ -299,7 +299,7 @@ const BodyPuzzleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setDraggingPart(null);
         
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-        Speech.speak(`${part} ko sahi jagah lagao!`, { rate: 0.8 });
+        speakTTS(`${part} ko sahi jagah lagao!`, 0.8 );
         
         Animated.parallel([
           Animated.spring(partPositions.current[part].x, {
@@ -339,7 +339,7 @@ const BodyPuzzleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       partPositions.current[bp].scale.setValue(1);
     });
     
-    Speech.speak('Body parts ko sahi jagah lagao! Drag karke sahi place pe rakho!', { rate: 0.8 });
+    speakTTS('Body parts ko sahi jagah lagao! Drag karke sahi place pe rakho!', 0.8 );
   }, [partPositions]);
 
   const startRound = useCallback(() => {
@@ -358,7 +358,7 @@ const BodyPuzzleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }

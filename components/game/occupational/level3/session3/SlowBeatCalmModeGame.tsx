@@ -5,7 +5,7 @@ import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -161,7 +161,7 @@ const SlowBeatCalmModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -188,10 +188,10 @@ const SlowBeatCalmModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
           setShowInfo(false);
           if (Platform.OS === 'web') {
             setTimeout(() => {
-              Speech.speak('Slow, calm beats. Take your time and tap gently.', { rate: 0.7 });
+              speakTTS('Slow, calm beats. Take your time and tap gently.', { rate: 0.7 });
             }, 300);
           } else {
-            Speech.speak('Slow, calm beats. Take your time and tap gently.', { rate: 0.7 });
+            speakTTS('Slow, calm beats. Take your time and tap gently.', { rate: 0.7 });
           }
         }}
         onBack={() => {
@@ -240,7 +240,7 @@ const SlowBeatCalmModeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => 
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

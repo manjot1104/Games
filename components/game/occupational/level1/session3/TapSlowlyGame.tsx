@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -85,7 +85,7 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Initial instruction - only once
   useEffect(() => {
     try {
-      Speech.speak('Wait for the circle to light up, then tap! Tap only when it\'s glowing.', { rate: 0.78 });
+      speakTTS('Wait for the circle to light up, then tap! Tap only when it\'s glowing.', { rate: 0.78 });
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
@@ -223,7 +223,7 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       try {
         await playError();
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Speech.speak('Wait for it to light up!', { rate: 0.78 });
+        speakTTS('Wait for it to light up!', 0.78 );
       } catch {}
     }
   }, [done, isLit, scaleAnim, glowAnim, shakeAnim, playSuccess, playError]);
@@ -254,7 +254,7 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log tap slowly game:', e);
       }
 
-      Speech.speak('Great slow control!', { rate: 0.78 });
+      speakTTS('Great slow control!', 0.78 );
     },
     [router],
   );

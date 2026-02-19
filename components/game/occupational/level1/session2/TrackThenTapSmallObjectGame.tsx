@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -190,7 +190,7 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
     try {
       playMiss();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Speech.speak('Follow it and tap when it stops!', { rate: 0.78 });
+      speakTTS('Follow it and tap when it stops!', 0.78 );
     } catch {}
 
     // Next round or finish
@@ -272,7 +272,7 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
         console.error('Failed to log track then tap game:', e);
       }
 
-      Speech.speak('Great tracking and tapping!', { rate: 0.78 });
+      speakTTS('Great tracking and tapping!', 0.78 );
     },
     [router],
   );
@@ -280,7 +280,7 @@ const TrackThenTapSmallObjectGame: React.FC<{ onBack?: () => void }> = ({ onBack
   // Initialize first round
   useEffect(() => {
     try {
-      Speech.speak('Follow the object with your eyes. When it stops, tap it quickly!', { rate: 0.78 });
+      speakTTS('Follow the object with your eyes. When it stops, tap it quickly!', { rate: 0.78 });
     } catch {}
     startRound();
   }, []);

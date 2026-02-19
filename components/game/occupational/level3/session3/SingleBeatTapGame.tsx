@@ -5,7 +5,7 @@ import { cleanupSounds, playSound, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -166,7 +166,7 @@ const SingleBeatTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -194,10 +194,10 @@ const SingleBeatTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           if (Platform.OS === 'web') {
             // Activate TTS on web
             setTimeout(() => {
-              Speech.speak('Listen to the drum beat and tap once!', { rate: 0.8 });
+              speakTTS('Listen to the drum beat and tap once!', 0.8 );
             }, 300);
           } else {
-            Speech.speak('Listen to the drum beat and tap once!', { rate: 0.8 });
+            speakTTS('Listen to the drum beat and tap once!', 0.8 );
           }
         }}
         onBack={() => {
@@ -246,7 +246,7 @@ const SingleBeatTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <TouchableOpacity
         onPress={() => {
           try {
-            Speech.stop();
+            stopTTS();
           } catch (e) {
             // Ignore errors
           }

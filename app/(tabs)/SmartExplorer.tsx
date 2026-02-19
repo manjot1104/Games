@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -151,8 +151,7 @@ export default function SmartExplorerScreen() {
   const speak = useCallback((line?: string) => {
     if (!line) return;
     try {
-      Speech.stop();
-      Speech.speak(line, { rate: 0.98 });
+      speakTTS(line, 0.98);
     } catch (err) {
       console.warn('TTS error', err);
     }

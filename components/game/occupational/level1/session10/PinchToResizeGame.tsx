@@ -6,7 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -193,7 +193,7 @@ const PinchToResizeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     try {
       await playSuccess();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Speech.speak('Perfect size!', { rate: 0.78 });
+      speakTTS('Perfect size!', 0.78 );
     } catch {}
 
     if (roundRef.current >= TOTAL_ROUNDS) {
@@ -348,7 +348,7 @@ const PinchToResizeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Pinch to resize the shape!', { rate: 0.78 });
+        speakTTS('Pinch to resize the shape!', 0.78 );
       } catch {}
     }
     return () => {

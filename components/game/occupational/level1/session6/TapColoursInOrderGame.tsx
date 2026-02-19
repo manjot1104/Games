@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -129,7 +129,7 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         console.error('Failed to log tap colours in order game:', e);
       }
 
-      Speech.speak('Great color sequencing!', { rate: 0.78 });
+      speakTTS('Great color sequencing!', 0.78 );
     },
     [router],
   );
@@ -162,7 +162,7 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         setShowSequence(false);
         setRoundActive(true);
         try {
-          Speech.speak('Watch the color sequence, then tap them in the same order!', { rate: 0.78 });
+          speakTTS('Watch the color sequence, then tap them in the same order!', { rate: 0.78 });
         } catch {}
         return;
       }
@@ -233,7 +233,7 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         try {
           playSuccess();
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Speech.speak('Perfect colors!', { rate: 0.78 });
+          speakTTS('Perfect colors!', 0.78 );
         } catch {}
       } else {
         setCurrentSequenceIndex(newIndex);
@@ -259,7 +259,7 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       try {
         playError();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Speech.speak('Watch the sequence again!', { rate: 0.78 });
+        speakTTS('Watch the sequence again!', 0.78 );
       } catch {}
 
       // Show sequence again

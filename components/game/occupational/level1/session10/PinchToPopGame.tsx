@@ -6,7 +6,7 @@ import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -165,7 +165,7 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     try {
       await playError();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Speech.speak('Try two fingers!', { rate: 0.78 });
+      speakTTS('Try two fingers!', 0.78 );
     } catch {}
 
     setTimeout(() => {
@@ -201,7 +201,7 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     try {
       await playSuccess();
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Speech.speak('Pop!', { rate: 0.78 });
+      speakTTS('Pop!', 0.78 );
     } catch {}
 
     if (roundRef.current >= TOTAL_ROUNDS) {
@@ -371,7 +371,7 @@ const PinchToPopGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     if (!done) {
       try {
-        Speech.speak('Pinch to pop the balloon!', { rate: 0.78 });
+        speakTTS('Pinch to pop the balloon!', 0.78 );
       } catch {}
     }
     return () => {

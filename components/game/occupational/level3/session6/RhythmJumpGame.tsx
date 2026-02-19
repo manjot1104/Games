@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -91,7 +91,7 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setPhase('tap');
         setCanTap(true);
 
-        Speech.speak('Ab tum tap-tap rhythm mein tap karo!', { rate: 0.8 });
+        speakTTS('Now tap in the same tap-tap rhythm!', 0.8, 'en-US' );
 
         // Close tap window
         tapWindowRef.current = setTimeout(() => {
@@ -101,7 +101,7 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           } else {
             // Not enough taps
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-            Speech.speak('Do baar tap karna tha!', { rate: 0.8 });
+            speakTTS('You needed to tap twice!', 0.8, 'en-US' );
             setTimeout(() => {
               if (round < TOTAL_ROUNDS) {
                 setRound((r) => r + 1);
@@ -154,7 +154,7 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } else {
         // Wrong rhythm
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        Speech.speak('Rhythm match nahi hua! Dobara try karo!', { rate: 0.8 });
+        speakTTS('Rhythm did not match! Try again!', 0.8, 'en-US' );
         setTimeout(() => {
           if (round < TOTAL_ROUNDS) {
             setRound((r) => r + 1);
@@ -175,7 +175,7 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setScore((s) => s + 1);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Perfect rhythm!', { rate: 0.9 });
+    speakTTS('Perfect rhythm!', 0.9, 'en-US' );
     
     // Jump animation
     Animated.sequence([
@@ -283,7 +283,7 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -303,7 +303,7 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <GameInfoScreen
         title="Rhythm Jump"
         emoji="🎵"
-        description="Tap-tap rhythm se jump! Beat ko suno aur same rhythm mein tap karo!"
+        description="Jump with tap-tap rhythm! Listen to the beat and tap in the same rhythm!"
         skills={['Beat coordination', 'Rhythm', 'Timing']}
         suitableFor="Children learning beat coordination and rhythm timing"
         onStart={() => {
@@ -367,7 +367,7 @@ const RhythmJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Round {round}/{TOTAL_ROUNDS} • 🎵 Score: {score}
         </Text>
         <Text style={styles.instruction}>
-          {phase === 'listen' ? 'Beat suno...' : 'Ab same rhythm mein tap-tap karo!'}
+          {phase === 'listen' ? 'Listen to the beat...' : 'Now tap-tap in the same rhythm!'}
         </Text>
         {phase === 'listen' && beatCount > 0 && (
           <Text style={styles.beatIndicator}>

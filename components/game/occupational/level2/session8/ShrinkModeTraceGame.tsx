@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -191,7 +191,7 @@ const ShrinkModeTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log shrink mode trace game:', e);
       }
 
-      Speech.speak('Shrink trace complete!', { rate: 0.78 });
+      speakTTS('Shrink trace complete!', 0.78 );
     },
     [router],
   );
@@ -307,7 +307,7 @@ const ShrinkModeTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Trace the whole circle!', { rate: 0.78 });
+          speakTTS('Trace the whole circle!', 0.78 );
         } catch {}
       }
     });
@@ -321,7 +321,7 @@ const ShrinkModeTraceGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectY.value = centerY.value;
     updatePaths();
     try {
-      Speech.speak('Trace the circle as it shrinks smaller each round!', { rate: 0.78 });
+      speakTTS('Trace the circle as it shrinks smaller each round!', 0.78 );
     } catch {}
     
     return () => {

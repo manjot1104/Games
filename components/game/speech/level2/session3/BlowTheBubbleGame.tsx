@@ -11,7 +11,7 @@ import { logGameAndAward } from '@/utils/api';
 import { BlowDetector } from '@/utils/blowDetection';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -43,22 +43,20 @@ const TOTAL_ROUNDS = 5;
 const ROUND_TIME_MS = 30000; // 30 seconds per round
 const MAX_BUBBLE_SIZE = 200; // pixels
 const MIN_BUBBLE_SIZE = 40; // pixels
-const DEFAULT_TTS_RATE = 0.75;
-
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
 
 function clearScheduledSpeech() {
   scheduledSpeechTimers.forEach(t => clearTimeout(t));
   scheduledSpeechTimers = [];
   try {
-    Speech.stop();
+    stopTTS();
   } catch {}
 }
 
 function speak(text: string, rate = DEFAULT_TTS_RATE) {
   try {
     clearScheduledSpeech();
-    Speech.speak(text, { rate });
+    speakTTS(text, rate);
   } catch (e) {
     console.warn('speak error', e);
   }

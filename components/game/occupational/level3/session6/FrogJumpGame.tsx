@@ -4,7 +4,7 @@ import { logGameAndAward } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -54,7 +54,7 @@ const FrogJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setTapCount(0);
         firstTapTime.current = null;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-        Speech.speak('Do baar tap karo!', { rate: 0.8 });
+        speakTTS('Tap twice!', 0.8, 'en-US' );
       }, MAX_TAP_DELAY) as unknown as NodeJS.Timeout;
 
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -76,7 +76,7 @@ const FrogJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setTapCount(0);
         firstTapTime.current = null;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-        Speech.speak('Tez se do baar tap karo!', { rate: 0.8 });
+        speakTTS('Tap twice quickly!', 0.8, 'en-US' );
       }
     }
   }, [done, showFrog, hasJumped]);
@@ -88,7 +88,7 @@ const FrogJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setTapCount(0);
     
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    Speech.speak('Frog jump kiya!', { rate: 0.9 });
+    speakTTS('Frog jump kiya!', 0.9 );
     
     // Jump animation
     Animated.sequence([
@@ -148,10 +148,10 @@ const FrogJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
     if (Platform.OS === 'web') {
       setTimeout(() => {
-        Speech.speak('Do baar tap karo frog ko jump karane ke liye!', { rate: 0.8 });
+        speakTTS('Tap twice to make the frog jump!', 0.8, 'en-US' );
       }, 300);
     } else {
-      Speech.speak('Do baar tap karo frog ko jump karane ke liye!', { rate: 0.8 });
+      speakTTS('Do baar tap karo frog ko jump karane ke liye!', 0.8 );
     }
   }, [frogScale, frogY]);
 
@@ -195,7 +195,7 @@ const FrogJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => {
     return () => {
       try {
-        Speech.stop();
+        stopTTS();
       } catch (e) {
         // Ignore errors
       }
@@ -275,7 +275,7 @@ const FrogJumpGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           Round {round}/{TOTAL_ROUNDS} • 🐸 Score: {score}
         </Text>
         <Text style={styles.instruction}>
-          Do baar tap karo frog ko jump karane ke liye!
+          Tap twice to make the frog jump!
         </Text>
         {tapCount > 0 && (
           <Text style={styles.tapIndicator}>

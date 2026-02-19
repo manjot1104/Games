@@ -389,7 +389,7 @@ export default function Paywall({ onSuccess }: { onSuccess?: () => void }) {
           <View style={[styles.card, styles.planCard]}>
             <Text style={styles.planTitle}>Monthly Subscription</Text>
             <View style={styles.priceContainer}>
-              <Text style={styles.price}>₹299</Text>
+              <Text style={styles.price}>₹59</Text>
               <Text style={styles.pricePeriod}>/month</Text>
             </View>
             <Text style={styles.planDescription}>

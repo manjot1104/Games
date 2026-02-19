@@ -5,7 +5,7 @@ import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import * as Speech from 'expo-speech';
+import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     Platform,
@@ -28,7 +28,7 @@ const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.
 const WARNING_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const TOTAL_ROUNDS = 6;
 const OBJECT_SIZE = 50;
-const LINE_TOLERANCE = 35;
+const LINE_TOLERANCE = 25; // Reduced tolerance for stricter path following
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
@@ -116,6 +116,8 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [roundActive, setRoundActive] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [isOffTrack, setIsOffTrack] = useState(false);
+  const [hasGoneOffTrack, setHasGoneOffTrack] = useState(false); // Track if user ever went off track in current round
+  const [offTrackCounter, setOffTrackCounter] = useState(0); // Force re-render for warning display
   const progress = useSharedValue(0);
   const [smilePathStr, setSmilePathStr] = useState('');
   const [progressPathStr, setProgressPathStr] = useState('');
@@ -153,6 +155,10 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const screenWidth = useRef(400);
   const screenHeight = useRef(600);
   const lastWarningTime = useRef(0);
+  const hasGoneOffTrackRef = useRef(false); // Use ref for immediate access
+  const isOffTrackRef = useRef(false); // Use ref for immediate warning display
+  const currentPointerX = useSharedValue(50); // Track current pointer position
+  const currentPointerY = useSharedValue(60);
 
   const endGame = useCallback(
     async (finalScore: number) => {
@@ -180,7 +186,7 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         console.error('Failed to log smile maker game:', e);
       }
 
-      Speech.speak('Great smile tracing!', { rate: 0.78 });
+      speakTTS('Great smile tracing!', 0.78 );
     },
     [router],
   );
@@ -196,12 +202,14 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const newX = (e.x / screenWidth.current) * 100;
       const newY = (e.y / screenHeight.current) * 100;
 
-      objectX.value = Math.max(5, Math.min(95, newX));
-      objectY.value = Math.max(10, Math.min(90, newY));
+      // Always update pointer position for continuous checking
+      currentPointerX.value = newX;
+      currentPointerY.value = newY;
 
+      // First check if pointer is on track
       const dist = distanceToSmile(
-        objectX.value,
-        objectY.value,
+        newX,
+        newY,
         centerX.value,
         centerY.value,
         radius.value,
@@ -210,19 +218,40 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       );
 
       if (dist > LINE_TOLERANCE) {
-        if (!isOffTrack) {
-          setIsOffTrack(true);
-          const now = Date.now();
-          if (now - lastWarningTime.current > 500) {
-            lastWarningTime.current = now;
-            try {
-              playWarning();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            } catch {}
-          }
+        // Pointer is off track - ALWAYS show error and mark as off track
+        // Always update state to ensure warning is visible - use counter to force re-render
+        setIsOffTrack(true);
+        isOffTrackRef.current = true;
+        setHasGoneOffTrack(true); // Update state for UI
+        hasGoneOffTrackRef.current = true; // Update ref for immediate check - this prevents completion
+        setOffTrackCounter((prev) => prev + 1); // Force re-render every frame when off track
+        
+        // Play warning sound/vibration periodically (not every frame to avoid spam)
+        const now = Date.now();
+        if (now - lastWarningTime.current > 500) {
+          lastWarningTime.current = now;
+          try {
+            playWarning();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          } catch {}
         }
+        
+        // CRITICAL: Don't move object, don't update progress when off track - return early
+        // Object stays at last valid position
+        return;
       } else {
-        setIsOffTrack(false);
+        // Pointer is on track - allow object movement
+        if (isOffTrack) {
+          setIsOffTrack(false);
+          setOffTrackCounter(0); // Reset counter when back on track
+        }
+        isOffTrackRef.current = false;
+        
+        // Update object position only when on track
+        objectX.value = Math.max(5, Math.min(95, newX));
+        objectY.value = Math.max(10, Math.min(90, newY));
+
+        // Calculate progress only when on track
         const angle = Math.atan2(objectY.value - centerY.value, objectX.value - centerX.value);
         let normalizedAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
         let normalizedStart = (startAngle.value + 2 * Math.PI) % (2 * Math.PI);
@@ -252,7 +281,9 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         Math.pow(objectX.value - endX, 2) + Math.pow(objectY.value - endY, 2),
       );
 
-      if (distToEnd <= LINE_TOLERANCE && progress.value >= 0.75) {
+      // Only allow completion if user reached the end AND never went off track AND progress is complete
+      // Check both state and ref to ensure we catch it
+      if (distToEnd <= LINE_TOLERANCE && progress.value >= 0.99 && !hasGoneOffTrack && !hasGoneOffTrackRef.current) {
         sparkleX.value = endX;
         sparkleY.value = endY;
 
@@ -268,6 +299,10 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               progress.value = 0;
               updatePaths();
               setIsOffTrack(false);
+              setHasGoneOffTrack(false); // Reset for new round
+              hasGoneOffTrackRef.current = false; // Reset ref for new round
+              isOffTrackRef.current = false; // Reset off-track ref
+              setOffTrackCounter(0); // Reset counter
               const startX = centerX.value + radius.value * Math.cos(startAngle.value);
               const startY = centerY.value + radius.value * Math.sin(startAngle.value);
               objectX.value = withSpring(startX, { damping: 10, stiffness: 100 });
@@ -290,17 +325,25 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         progress.value = 0;
         updatePaths();
         setIsOffTrack(false);
+        setHasGoneOffTrack(false); // Reset for retry
+        hasGoneOffTrackRef.current = false; // Reset ref for retry
+        isOffTrackRef.current = false; // Reset off-track ref
+        setOffTrackCounter(0); // Reset counter
 
         try {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          Speech.speak('Trace the smile!', { rate: 0.78 });
+          if (hasGoneOffTrack) {
+            speakTTS('Stay on the path! Try again.', 0.78 );
+          } else {
+            speakTTS('Trace the smile!', 0.78 );
+          }
         } catch {}
       }
     });
 
   useEffect(() => {
     try {
-      Speech.speak('Trace the smile curve!', { rate: 0.78 });
+      speakTTS('Trace the smile curve!', 0.78 );
     } catch {}
     centerX.value = 50;
     centerY.value = 55;
@@ -313,6 +356,11 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     objectX.value = startX;
     objectY.value = startY;
     progress.value = 0;
+    setIsOffTrack(false);
+    setHasGoneOffTrack(false); // Reset off-track flag for new round
+    hasGoneOffTrackRef.current = false; // Reset ref for new round
+    isOffTrackRef.current = false; // Reset off-track ref
+    setOffTrackCounter(0); // Reset counter
     updatePaths();
     
     return () => {
@@ -325,6 +373,40 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     const interval = setInterval(updatePaths, 100);
     return () => clearInterval(interval);
   }, [updatePaths]);
+
+  // Continuous check for off-track status - runs every frame when dragging
+  useEffect(() => {
+    if (!roundActive || done || !isDragging) return;
+    
+    const checkInterval = setInterval(() => {
+      const dist = distanceToSmile(
+        currentPointerX.value,
+        currentPointerY.value,
+        centerX.value,
+        centerY.value,
+        radius.value,
+        startAngle.value,
+        endAngle.value,
+      );
+
+      if (dist > LINE_TOLERANCE) {
+        // Force state update to show warning - use multiple state updates to ensure re-render
+        setIsOffTrack(true);
+        isOffTrackRef.current = true;
+        setHasGoneOffTrack(true);
+        hasGoneOffTrackRef.current = true;
+        setOffTrackCounter((prev) => (prev >= 1000 ? 1 : prev + 1)); // Reset at 1000 to prevent overflow
+      } else {
+        if (isOffTrack) {
+          setIsOffTrack(false);
+          setOffTrackCounter(0);
+        }
+        isOffTrackRef.current = false;
+      }
+    }, 50); // Check every 50ms for reliable updates
+
+    return () => clearInterval(checkInterval);
+  }, [roundActive, done, isDragging]);
 
   const handleBack = useCallback(() => {
     stopAllSpeech();
@@ -456,9 +538,9 @@ const SmileMakerGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               </Animated.View>
             )}
 
-            {isOffTrack && (
+            {(isOffTrack || offTrackCounter > 0) && (
               <View style={styles.warningBox}>
-                <Text style={styles.warningText}>Stay on the smile! ⚠️</Text>
+                <Text style={styles.warningText}>❌ Stay on the path! Game won't complete if you go off track! ⚠️</Text>
               </View>
             )}
           </Animated.View>
@@ -561,23 +643,27 @@ const styles = StyleSheet.create({
   },
   warningBox: {
     position: 'absolute',
-    top: '20%',
+    top: '15%',
     left: '50%',
-    transform: [{ translateX: -80 }],
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 20,
+    transform: [{ translateX: -120 }],
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 24,
     shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+    borderWidth: 3,
+    borderColor: '#DC2626',
+    zIndex: 100,
   },
   warningText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '900',
+    textAlign: 'center',
   },
   footerBox: {
     paddingVertical: 14,
