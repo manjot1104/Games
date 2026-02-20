@@ -1,4 +1,5 @@
 import Paywall from '@/components/Paywall';
+import { DailyActivitiesVideos } from '@/components/daily-activities/DailyActivitiesVideos';
 import {
     advanceTherapyProgress,
     fetchTherapyProgress,
@@ -31,7 +32,7 @@ const THERAPIES = [
   { id: 'occupational', label: 'Occupational Therapy', desc: 'Develop daily living and motor skills', color: '#10B981', icon: 'hand-left' },
   { id: 'behavioral', label: 'Behavioral Therapy', desc: 'Learn positive behaviors and social skills', color: '#F59E0B', icon: 'sparkles' },
   { id: 'special-education', label: 'Special Education', desc: 'Educational activities tailored for special needs', color: '#8B5CF6', icon: 'school' },
-  { id: 'daily-activities', label: 'Daily Activities', desc: 'Practice everyday life skills', color: '#EC4899', icon: 'home' },
+  { id: 'daily-activities', label: 'Social Stories', desc: 'Learn through animated social stories', color: '#EC4899', icon: 'book' },
   { id: 'therapy-avatar', label: 'Therapy Avatar', desc: 'Interactive avatar-based learning', color: '#0EA5E9', icon: 'happy' },
 ];
 
@@ -130,7 +131,7 @@ export default function TherapyProgressScreen() {
       try {
         const url = THERAPY_AVATAR_URL;
         console.log('[TherapyProgress] Opening Therapy Avatar website:', url);
-        
+
         if (Platform.OS === 'web') {
           // On web, open in new tab
           if (typeof window !== 'undefined' && window.open) {
@@ -153,8 +154,29 @@ export default function TherapyProgressScreen() {
       }
       return;
     }
-    
-    // For other therapies, proceed with normal flow
+
+    // For daily-activities, navigate directly to videos (skip levels/sessions)
+    if (therapyId === 'daily-activities') {
+      router.push({
+        pathname: '/(tabs)/SessionGames',
+        params: {
+          therapy: 'daily-activities',
+        },
+      });
+      return;
+    }
+
+    // For special-education, navigate directly to special education navigator (skip levels/sessions)
+    if (therapyId === 'special-education') {
+      router.push({
+        pathname: '/(tabs)/SessionGames',
+        params: {
+          therapy: 'special-education',
+        },
+      });
+      return;
+    }
+
     setSelectedTherapy(therapyId);
     setSelectedLevel(null);
     setMode('levels');
@@ -221,22 +243,34 @@ export default function TherapyProgressScreen() {
             )}
 
             {mode === 'levels' && selectedTherapy && (
-              <LevelsGrid
-                therapyMeta={THERAPIES.find((t) => t.id === selectedTherapy)!}
-                therapy={progressMap.get(selectedTherapy)}
-                onSelectLevel={handleSelectLevel}
-                onBack={() => setMode('therapies')}
-              />
+              <>
+                {selectedTherapy === 'daily-activities' ? (
+                  <DailyActivitiesRedirect />
+                ) : (
+                  <LevelsGrid
+                    therapyMeta={THERAPIES.find((t) => t.id === selectedTherapy)!}
+                    therapy={progressMap.get(selectedTherapy)}
+                    onSelectLevel={handleSelectLevel}
+                    onBack={() => setMode('therapies')}
+                  />
+                )}
+              </>
             )}
 
             {mode === 'sessions' && selectedTherapy && selectedLevel && currentLevelObj && (
-              <SessionsGrid
-                therapyMeta={THERAPIES.find((t) => t.id === selectedTherapy)!}
-                therapy={progressMap.get(selectedTherapy)!}
-                level={currentLevelObj}
-                saving={saving}
-                onComplete={handleCompleteSession}
-              />
+              <>
+                {selectedTherapy === 'daily-activities' ? (
+                  <DailyActivitiesRedirect />
+                ) : (
+                  <SessionsGrid
+                    therapyMeta={THERAPIES.find((t) => t.id === selectedTherapy)!}
+                    therapy={progressMap.get(selectedTherapy)!}
+                    level={currentLevelObj}
+                    saving={saving}
+                    onComplete={handleCompleteSession}
+                  />
+                )}
+              </>
             )}
           </>
         )}
@@ -579,5 +613,32 @@ const styles = StyleSheet.create({
     borderColor: '#CFFAFE',
   },
 });
+
+// Component to redirect daily-activities directly to videos (bypassing levels/sessions)
+function DailyActivitiesRedirect() {
+  const router = useRouter();
+  
+  React.useEffect(() => {
+    // Navigate to a special route for social stories videos
+    // We'll handle this in SessionGames.tsx
+    router.replace({
+      pathname: '/(tabs)/SessionGames',
+      params: {
+        therapy: 'daily-activities',
+      },
+    });
+  }, [router]);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+      <ActivityIndicator size="large" color="#EC4899" />
+      <Text style={{ marginTop: 16, color: '#475569' }}>Loading Social Stories...</Text>
+    </View>
+  );
+}
+
+
+
+
 
 

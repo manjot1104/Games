@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import Animated, {
     useAnimatedProps,
+    useAnimatedStyle,
     useSharedValue,
     withTiming,
 } from 'react-native-reanimated';

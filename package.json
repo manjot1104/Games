@@ -23,6 +23,7 @@
     "@tensorflow/tfjs": "^4.15.0",
     "@the-vedantic-coder/piper-tts-web": "^1.0.10",
     "auth": "^1.2.3",
+    "axios": "^1.13.5",
     "expo": "54.0.13",
     "expo-av": "~16.0.8",
     "expo-blur": "~15.0.7",

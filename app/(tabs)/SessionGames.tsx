@@ -1,3 +1,9 @@
+// Social Stories
+import { DailyActivitiesVideos } from '@/components/daily-activities/DailyActivitiesVideos';
+
+// Special Education
+import { SpecialEducationNavigator } from '@/components/special-education/SpecialEducationNavigator';
+
 // Speech Therapy Level 1 Session 1
 import { CatchTheBouncingStar } from '@/components/game/speech/level1/session1/CatchTheBouncingStar';
 import { FollowTheBall } from '@/components/game/speech/level1/session1/FollowTheBall';
@@ -205,10 +211,10 @@ import TargetPassGame from '@/components/game/occupational/level4/session6/Targe
 import ThrowCatchGame from '@/components/game/occupational/level4/session6/ThrowCatchGame';
 
 // Occupational Therapy Level 4 Session 7: Follow Cross-Body Arrows
+import ArrowSequenceGame from '@/components/game/occupational/level4/session7/ArrowSequenceGame';
 import ArrowSwipeGame from '@/components/game/occupational/level4/session7/ArrowSwipeGame';
 import ArrowTouchGame from '@/components/game/occupational/level4/session7/ArrowTouchGame';
 import MovingArrowsGame from '@/components/game/occupational/level4/session7/MovingArrowsGame';
-import ArrowSequenceGame from '@/components/game/occupational/level4/session7/ArrowSequenceGame';
 import SpeedArrowsGame from '@/components/game/occupational/level4/session7/SpeedArrowsGame';
 
 // Occupational Therapy Level 4 Session 8: Tap Alternating Sides
@@ -233,54 +239,54 @@ import SpeedRhythmGame from '@/components/game/occupational/level4/session10/Spe
 import TapShoulderPatternGame from '@/components/game/occupational/level4/session10/TapShoulderPatternGame';
 
 // Occupational Therapy Level 5 Session 1: Follow Moving Object
-import CatchMovingBallGame from '@/components/game/occupational/level5/session1/CatchTheBallGame';
-import FollowTheButterflyGame from '@/components/game/occupational/level5/session1/FollowTheButterflyGame';
 import AvoidTheBombGame from '@/components/game/occupational/level5/session1/AvoidTheBombGame';
+import CatchMovingBallGame from '@/components/game/occupational/level5/session1/CatchTheBallGame';
 import ChaseTheStarGame from '@/components/game/occupational/level5/session1/ChaseTheStarGame';
+import FollowTheButterflyGame from '@/components/game/occupational/level5/session1/FollowTheButterflyGame';
 import ZigZagFollowGame from '@/components/game/occupational/level5/session1/ZigZagFollowGame';
 
 // Occupational Therapy Level 5 Session 2: Targeted Tapping
-import PopTheBubbleGame from '@/components/game/occupational/level5/session2/PopTheBubbleGame';
 import ColorDotHitGame from '@/components/game/occupational/level5/session2/ColorDotHitGame';
-import SmallTargetGame from '@/components/game/occupational/level5/session2/SmallTargetGame';
 import MovingTargetGame from '@/components/game/occupational/level5/session2/MovingTargetGame';
+import PopTheBubbleGame from '@/components/game/occupational/level5/session2/PopTheBubbleGame';
+import SmallTargetGame from '@/components/game/occupational/level5/session2/SmallTargetGame';
 import TimedTargetGame from '@/components/game/occupational/level5/session2/TimedTargetGame';
 
 // Occupational Therapy Level 5 Session 3: Drag to Track
 
 // Occupational Therapy Level 5 Session 4: Visual Focus
 import FindTheStarGame from '@/components/game/occupational/level5/session4/FindTheStarGame';
-import MemoryFlashGame from '@/components/game/occupational/level5/session4/MemoryFlashGame';
 import MatchShadowGame from '@/components/game/occupational/level5/session4/MatchShadowGame';
-import WhatMovedGame from '@/components/game/occupational/level5/session4/WhatMovedGame';
+import MemoryFlashGame from '@/components/game/occupational/level5/session4/MemoryFlashGame';
 import SpotTheColorGame from '@/components/game/occupational/level5/session4/SpotTheColorGame';
+import WhatMovedGame from '@/components/game/occupational/level5/session4/WhatMovedGame';
 
 // Occupational Therapy Level 5 Session 5: Moving Eye Control
 import SideEyeTrackGame from '@/components/game/occupational/level5/session5/SideEyeTrackGame';
 
 // Occupational Therapy Level 5 Session 6: Speed Matching
+import CountdownHitGame from '@/components/game/occupational/level5/session6/CountdownHitGame';
 import FastCatchGame from '@/components/game/occupational/level5/session6/FastCatchGame';
+import MusicSpeedGame from '@/components/game/occupational/level5/session6/MusicSpeedGame';
 import SlowCatchGame from '@/components/game/occupational/level5/session6/SlowCatchGame';
 import SpeedSwitchGame from '@/components/game/occupational/level5/session6/SpeedSwitchGame';
-import MusicSpeedGame from '@/components/game/occupational/level5/session6/MusicSpeedGame';
-import CountdownHitGame from '@/components/game/occupational/level5/session6/CountdownHitGame';
 
 // Occupational Therapy Level 5 Session 7: Depth & Distance
 import NearVsFarGame from '@/components/game/occupational/level5/session7/NearVsFarGame';
 
 // Occupational Therapy Level 5 Session 8: Multi-Object Tracking
-import FollowRedGame from '@/components/game/occupational/level5/session8/FollowRedGame';
-import TwoMovingBallsGame from '@/components/game/occupational/level5/session8/TwoMovingBallsGame';
 import DistractionModeGame from '@/components/game/occupational/level5/session8/DistractionModeGame';
+import FollowRedGame from '@/components/game/occupational/level5/session8/FollowRedGame';
 import PatternChaseGame from '@/components/game/occupational/level5/session8/PatternChaseGame';
 import SpeedObjectsGame from '@/components/game/occupational/level5/session8/SpeedObjectsGame';
+import TwoMovingBallsGame from '@/components/game/occupational/level5/session8/TwoMovingBallsGame';
 
 // Occupational Therapy Level 5 Session 9: Visual Reaction
 import FlashTapGame from '@/components/game/occupational/level5/session9/FlashTapGame';
 import GoStopGame from '@/components/game/occupational/level5/session9/GoStopGame';
-import SurprisePopGame from '@/components/game/occupational/level5/session9/SurprisePopGame';
-import SoundLightGame from '@/components/game/occupational/level5/session9/SoundLightGame';
 import QuickChoiceGame from '@/components/game/occupational/level5/session9/QuickChoiceGame';
+import SoundLightGame from '@/components/game/occupational/level5/session9/SoundLightGame';
+import SurprisePopGame from '@/components/game/occupational/level5/session9/SurprisePopGame';
 
 // Speech Therapy Level 2 Session 3 (Airflow Games)
 import { BalloonInflateGame } from '@/components/game/speech/level2/session3/BalloonInflateGame';
@@ -288,6 +294,55 @@ import { BlowOutTheCandleGame } from '@/components/game/speech/level2/session3/B
 import { BlowTheBubbleGame } from '@/components/game/speech/level2/session3/BlowTheBubbleGame';
 import { MoveTheFeatherGame } from '@/components/game/speech/level2/session3/MoveTheFeatherGame';
 import { WindmillSpinGame } from '@/components/game/speech/level2/session3/WindmillSpinGame';
+
+// Speech Therapy Level 2 Session 4 (Tongue Elevation Games)
+import { IceCreamLickGame } from '@/components/game/speech/level2/session4/IceCreamLickGame';
+import { RoofTapGame } from '@/components/game/speech/level2/session4/RoofTapGame';
+import { SmileAndLiftGame } from '@/components/game/speech/level2/session4/SmileAndLiftGame';
+import { TongueElevatorGame } from '@/components/game/speech/level2/session4/TongueElevatorGame';
+import { TouchTheStarGame } from '@/components/game/speech/level2/session4/TouchTheStarGame';
+
+// Speech Therapy Level 2 Session 5 (Tongue Lateralization Games)
+import { CatchTheDotGame } from '@/components/game/speech/level2/session5/CatchTheDotGame';
+import { CookieSweepGame } from '@/components/game/speech/level2/session5/CookieSweepGame';
+import { MirrorMatchGame } from '@/components/game/speech/level2/session5/MirrorMatchGame';
+import { PaintTheWallGame } from '@/components/game/speech/level2/session5/PaintTheWallGame';
+import { SideLightsGame as SideLightsSpeechGame } from '@/components/game/speech/level2/session5/SideLightsGame';
+
+// Speech Therapy Level 2 Session 6 (Bilabial Strength Games)
+import { BalloonPumpGame } from '@/components/game/speech/level2/session6/BalloonPumpGame';
+import { BoxPushGame } from '@/components/game/speech/level2/session6/BoxPushGame';
+import { BubblePressGame } from '@/components/game/speech/level2/session6/BubblePressGame';
+import { DrumLipsGame } from '@/components/game/speech/level2/session6/DrumLipsGame';
+import { MamaCallGame } from '@/components/game/speech/level2/session6/MamaCallGame';
+
+// Speech Therapy Level 2 Session 7 (Lip Rounding Games)
+import { FishMouthGame } from '@/components/game/speech/level2/session7/FishMouthGame';
+import { MirrorRoundGame } from '@/components/game/speech/level2/session7/MirrorRoundGame';
+import { OShapeMatchGame } from '@/components/game/speech/level2/session7/OShapeMatchGame';
+import { OUSwitchGame } from '@/components/game/speech/level2/session7/OUSwitchGame';
+import { TunnelBlowGame } from '@/components/game/speech/level2/session7/TunnelBlowGame';
+
+// Speech Therapy Level 2 Session 8 (Breath Control Games)
+import { BallFloatGame } from '@/components/game/speech/level2/session8/BallFloatGame';
+import { BreathMeterGame } from '@/components/game/speech/level2/session8/BreathMeterGame';
+import { CloudPushGame } from '@/components/game/speech/level2/session8/CloudPushGame';
+import { StopGoBreathingGame } from '@/components/game/speech/level2/session8/StopGoBreathingGame';
+import { TrainSteamGame } from '@/components/game/speech/level2/session8/TrainSteamGame';
+
+// Speech Therapy Level 2 Session 9 (Simple Oral Sequences Games)
+import { CopyTheBeatGame } from '@/components/game/speech/level2/session9/CopyTheBeatGame';
+import { PatternMatchGame } from '@/components/game/speech/level2/session9/PatternMatchGame';
+import { RobotSequenceGame } from '@/components/game/speech/level2/session9/RobotSequenceGame';
+import { SequenceBuilderGame } from '@/components/game/speech/level2/session9/SequenceBuilderGame';
+import { TrafficMouthGame } from '@/components/game/speech/level2/session9/TrafficMouthGame';
+
+// Speech Therapy Level 2 Session 10 (Foundational Imitation Games)
+import { FaceToFaceAvatarGame } from '@/components/game/speech/level2/session10/FaceToFaceAvatarGame';
+import { HighlightZonesGame } from '@/components/game/speech/level2/session10/HighlightZonesGame';
+import { OneStepImitationGame } from '@/components/game/speech/level2/session10/OneStepImitationGame';
+import { SuccessReplayGame } from '@/components/game/speech/level2/session10/SuccessReplayGame';
+import { TwoStepImitationGame } from '@/components/game/speech/level2/session10/TwoStepImitationGame';
 
 // Occupational Therapy Level 1 Session 1
 import { BigTapTarget } from '@/components/game/occupational/level1/session1/BigTapTarget';
@@ -486,6 +541,42 @@ type GameKey =
   | 'jaw-push-challenge'
   | 'jaw-rhythm-tap'
   | 'jaw-strength-builder'
+  | 'ice-cream-lick'
+  | 'touch-the-star'
+  | 'tongue-elevator'
+  | 'roof-tap'
+  | 'smile-and-lift'
+  | 'paint-the-wall'
+  | 'cookie-sweep'
+  | 'catch-the-dot'
+  | 'side-lights'
+  | 'side-lights-l4s8'
+  | 'mirror-match'
+  | 'balloon-pump'
+  | 'bubble-press'
+  | 'mama-call'
+  | 'drum-lips'
+  | 'box-push'
+  | 'fish-mouth'
+  | 'tunnel-blow'
+  | 'o-shape-match'
+  | 'o-u-switch'
+  | 'mirror-round'
+  | 'ball-float'
+  | 'cloud-push'
+  | 'train-steam'
+  | 'breath-meter'
+  | 'stop-go-breathing'
+  | 'traffic-mouth'
+  | 'robot-sequence'
+  | 'pattern-match'
+  | 'copy-the-beat'
+  | 'sequence-builder'
+  | 'face-to-face-avatar'
+  | 'highlight-zones'
+  | 'one-step-imitation'
+  | 'two-step-imitation'
+  | 'success-replay'
   | 'train-track-line'
   | 'light-the-laser'
   | 'road-roller'
@@ -732,6 +823,16 @@ export default function SessionGamesScreen() {
   const levelNumber = params.level ? parseInt(params.level, 10) : 1;
   const sessionNumber = params.session ? parseInt(params.session, 10) : 1;
 
+  // Handle social stories (daily-activities) differently - show videos instead of games
+  if (therapyId === 'daily-activities') {
+    return <DailyActivitiesVideos />;
+  }
+
+  // Handle special-education differently - show special education navigator
+  if (therapyId === 'special-education') {
+    return <SpecialEducationNavigator />;
+  }
+
   // Function to get the next game in sequence
   const getNextGame = React.useCallback((currentGameId: GameKey): { gameId: GameKey | null; nextSession?: number; nextLevel?: number } | null => {
     // Get all available games for current session (already filtered by availability flags)
@@ -768,42 +869,60 @@ export default function SessionGamesScreen() {
 
   // Handle continue to next game
   const handleContinue = React.useCallback(() => {
-    if (currentGame === 'menu') return;
-    
-    const next = getNextGame(currentGame);
-    if (!next) {
-      // No more games, go back to menu
-      setCurrentGame('menu');
-      return;
-    }
+    try {
+      console.log('[SessionGames] handleContinue called, currentGame:', currentGame);
+      
+      if (currentGame === 'menu') {
+        console.log('[SessionGames] Current game is menu, returning early');
+        return;
+      }
+      
+      const next = getNextGame(currentGame);
+      console.log('[SessionGames] Next game result:', next);
+      
+      if (!next) {
+        // No more games, go back to menu
+        console.log('[SessionGames] No next game, going back to menu');
+        setCurrentGame('menu');
+        return;
+      }
 
-    if (next.nextLevel) {
-      // Navigate to next level, session 1
-      router.push({
-        pathname: '/(tabs)/SessionGames',
-        params: {
-          therapy: therapyId,
-          level: next.nextLevel.toString(),
-          session: '1',
-        },
-      });
-      setCurrentGame('menu');
-    } else if (next.nextSession) {
-      // Navigate to next session
-      router.push({
-        pathname: '/(tabs)/SessionGames',
-        params: {
-          therapy: therapyId,
-          level: levelNumber.toString(),
-          session: next.nextSession.toString(),
-        },
-      });
-      setCurrentGame('menu');
-    } else if (next.gameId) {
-      // Go to next game in same session
-      setCurrentGame(next.gameId);
-    } else {
-      // Fallback: go back to menu
+      if (next.nextLevel) {
+        // Navigate to next level, session 1
+        console.log('[SessionGames] Navigating to next level:', next.nextLevel);
+        setCurrentGame('menu'); // Set menu first to avoid flicker
+        router.push({
+          pathname: '/(tabs)/SessionGames',
+          params: {
+            therapy: therapyId,
+            level: next.nextLevel.toString(),
+            session: '1',
+          },
+        });
+      } else if (next.nextSession) {
+        // Navigate to next session
+        console.log('[SessionGames] Navigating to next session:', next.nextSession);
+        setCurrentGame('menu'); // Set menu first to avoid flicker
+        router.push({
+          pathname: '/(tabs)/SessionGames',
+          params: {
+            therapy: therapyId,
+            level: levelNumber.toString(),
+            session: next.nextSession.toString(),
+          },
+        });
+      } else if (next.gameId) {
+        // Go to next game in same session
+        console.log('[SessionGames] Going to next game:', next.gameId);
+        setCurrentGame(next.gameId);
+      } else {
+        // Fallback: go back to menu
+        console.log('[SessionGames] Fallback: going back to menu');
+        setCurrentGame('menu');
+      }
+    } catch (error) {
+      console.error('[SessionGames] Error in handleContinue:', error);
+      // Fallback: at least go back to menu on error
       setCurrentGame('menu');
     }
   }, [currentGame, getNextGame, router, therapyId, levelNumber]);
@@ -1667,6 +1786,90 @@ export default function SessionGamesScreen() {
   const isBalloonInflateAvailable =
     therapyId === 'speech' && levelNumber === 2 && sessionNumber === 3;
 
+  // Speech Therapy Level 2 Session 4: Tongue Elevation Games
+  const isIceCreamLickAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+  const isTouchTheStarAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+  const isTongueElevatorAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+  const isRoofTapAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+  const isSmileAndLiftAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 4;
+
+  // Level 2 Session 5 games - Speech Therapy (Tongue Lateralization)
+  const isPaintTheWallAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+  const isCookieSweepAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+  const isCatchTheDotAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+  const isSideLightsSpeechAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+  const isMirrorMatchAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 5;
+
+  // Level 2 Session 6 games - Speech Therapy (Bilabial Strength)
+  const isBalloonPumpAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+  const isBubblePressAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+  const isMamaCallAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+  const isDrumLipsAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+  const isBoxPushAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 6;
+
+  // Level 2 Session 7 games - Speech Therapy (Lip Rounding)
+  const isFishMouthAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+  const isTunnelBlowAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+  const isOShapeMatchAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+  const isOUSwitchAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+  const isMirrorRoundAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 7;
+
+  // Level 2 Session 8 games - Speech Therapy (Breath Control)
+  const isBallFloatAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+  const isCloudPushAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+  const isTrainSteamAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+  const isBreathMeterAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+  const isStopGoBreathingAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 8;
+
+  // Level 2 Session 9 games - Speech Therapy (Simple Oral Sequences)
+  const isTrafficMouthAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+  const isRobotSequenceAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+  const isPatternMatchAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+  const isCopyTheBeatAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+  const isSequenceBuilderAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 9;
+
+  // Level 2 Session 10 games - Speech Therapy (Foundational Imitation)
+  const isFaceToFaceAvatarAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+  const isHighlightZonesAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+  const isOneStepImitationAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+  const isTwoStepImitationAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+  const isSuccessReplayAvailable =
+    therapyId === 'speech' && levelNumber === 2 && sessionNumber === 10;
+
   const GAMES: GameInfo[] = [
     {
       id: 'follow-ball',
@@ -2263,6 +2466,334 @@ export default function SessionGamesScreen() {
       description: 'Blow to inflate the balloon! Each blow adds more air!',
       color: '#FFB6C1',
       available: isBalloonInflateAvailable,
+    },
+    // Level 2 Session 4: Tongue Elevation Games
+    {
+      id: 'ice-cream-lick',
+      title: 'Ice-Cream Lick (Up)',
+      emoji: '🍦',
+      description: 'Lick the scoop at the top! Practice lifting your tongue upward.',
+      color: '#FFB6C1',
+      available: isIceCreamLickAvailable,
+    },
+    {
+      id: 'touch-the-star',
+      title: 'Touch the Star',
+      emoji: '⭐',
+      description: 'Tongue tip touches upper star. Lift your tongue high!',
+      color: '#FFD700',
+      available: isTouchTheStarAvailable,
+    },
+    {
+      id: 'tongue-elevator',
+      title: 'Tongue Elevator',
+      emoji: '🏢',
+      description: 'Elevator moves up when tongue lifts. Control the elevator with your tongue!',
+      color: '#E74C3C',
+      available: isTongueElevatorAvailable,
+    },
+    {
+      id: 'roof-tap',
+      title: 'Roof Tap',
+      emoji: '🏠',
+      description: 'Tongue taps roof of mouth. Practice rapid tongue elevation!',
+      color: '#4A90E2',
+      available: isRoofTapAvailable,
+    },
+    {
+      id: 'smile-and-lift',
+      title: 'Smile + Lift',
+      emoji: '😊',
+      description: 'Smile, then lift tongue (combo task). Master the sequence!',
+      color: '#FF6B9D',
+      available: isSmileAndLiftAvailable,
+    },
+    // Level 2 Session 5: Tongue Lateralization Games
+    {
+      id: 'paint-the-wall',
+      title: 'Paint the Wall',
+      emoji: '🎨',
+      description: 'Move your tongue left to right to paint the wall!',
+      color: '#FF6B9D',
+      available: isPaintTheWallAvailable,
+    },
+    {
+      id: 'cookie-sweep',
+      title: 'Cookie Sweep',
+      emoji: '🍪',
+      description: 'Move your tongue side to side to sweep cookie crumbs!',
+      color: '#DEB887',
+      available: isCookieSweepAvailable,
+    },
+    {
+      id: 'catch-the-dot',
+      title: 'Catch the Dot',
+      emoji: '🔴',
+      description: 'Move your tongue to catch the dot as it moves left and right!',
+      color: '#FF4444',
+      available: isCatchTheDotAvailable,
+    },
+    {
+      id: 'side-lights',
+      title: 'Side Lights',
+      emoji: '💡',
+      description: 'Touch the glowing side with your tongue!',
+      color: '#FFD700',
+      available: isSideLightsSpeechAvailable,
+    },
+    {
+      id: 'mirror-match',
+      title: 'Mirror Match',
+      emoji: '🪞',
+      description: 'Copy the avatar\'s tongue direction!',
+      color: '#667eea',
+      available: isMirrorMatchAvailable,
+    },
+    // Level 2 Session 6: Bilabial Strength Games
+    {
+      id: 'balloon-pump',
+      title: 'Balloon Pump',
+      emoji: '🎈',
+      description: 'Make "puh" sound to inflate the balloon!',
+      color: '#FF6B9D',
+      available: isBalloonPumpAvailable,
+    },
+    {
+      id: 'bubble-press',
+      title: 'Bubble Press',
+      emoji: '💧',
+      description: 'Press your lips together to form bubbles!',
+      color: '#4DD0E1',
+      available: isBubblePressAvailable,
+    },
+    {
+      id: 'mama-call',
+      title: 'Mama Call',
+      emoji: '👩',
+      description: 'Say "ma ma" rhythmically!',
+      color: '#FDD835',
+      available: isMamaCallAvailable,
+    },
+    {
+      id: 'drum-lips',
+      title: 'Drum Lips',
+      emoji: '🥁',
+      description: 'Tap your lips together to play drum beats!',
+      color: '#795548',
+      available: isDrumLipsAvailable,
+    },
+    {
+      id: 'box-push',
+      title: 'Box Push',
+      emoji: '📦',
+      description: 'Create strong lip seal to push the box!',
+      color: '#757575',
+      available: isBoxPushAvailable,
+    },
+    // Level 2 Session 7: Lip Rounding Games
+    {
+      id: 'fish-mouth',
+      title: 'Fish Mouth',
+      emoji: '🐟',
+      description: 'Make "O" shape to feed the fish!',
+      color: '#4DD0E1',
+      available: isFishMouthAvailable,
+    },
+    {
+      id: 'tunnel-blow',
+      title: 'Tunnel Blow',
+      emoji: '🌪️',
+      description: 'Round your lips and blow to control airflow!',
+      color: '#4A90E2',
+      available: isTunnelBlowAvailable,
+    },
+    {
+      id: 'o-shape-match',
+      title: 'O-Shape Match',
+      emoji: '⭕',
+      description: 'Match the target O-shape with your lips!',
+      color: '#FDD835',
+      available: isOShapeMatchAvailable,
+    },
+    {
+      id: 'o-u-switch',
+      title: 'O-U Switch',
+      emoji: '🔄',
+      description: 'Switch between O and U lip shapes on cue!',
+      color: '#A5D6A7',
+      available: isOUSwitchAvailable,
+    },
+    {
+      id: 'mirror-round',
+      title: 'Mirror Round',
+      emoji: '🪞',
+      description: 'Copy the avatar\'s rounded lip shape!',
+      color: '#f093fb',
+      available: isMirrorRoundAvailable,
+    },
+    // Level 2 Session 8: Breath Control Games
+    {
+      id: 'ball-float',
+      title: 'Ball Float',
+      emoji: '⚽',
+      description: 'Keep the ball afloat with your breath!',
+      color: '#FF6B9D',
+      available: isBallFloatAvailable,
+    },
+    {
+      id: 'cloud-push',
+      title: 'Cloud Push',
+      emoji: '☁️',
+      description: 'Push the cloud with gentle breath!',
+      color: '#87CEEB',
+      available: isCloudPushAvailable,
+    },
+    {
+      id: 'train-steam',
+      title: 'Train Steam',
+      emoji: '🚂',
+      description: 'Create steam trail with continuous breath!',
+      color: '#FFD700',
+      available: isTrainSteamAvailable,
+    },
+    {
+      id: 'breath-meter',
+      title: 'Breath Meter',
+      emoji: '📊',
+      description: 'Keep the meter filled with your breath!',
+      color: '#4CAF50',
+      available: isBreathMeterAvailable,
+    },
+    {
+      id: 'stop-go-breathing',
+      title: 'Stop-Go Breathing',
+      emoji: '🔄',
+      description: 'Follow the cues: blow and stop!',
+      color: '#FF6347',
+      available: isStopGoBreathingAvailable,
+    },
+    // Level 2 Session 9: Simple Oral Sequences Games
+    {
+      id: 'traffic-mouth',
+      title: 'Traffic Mouth',
+      emoji: '🚦',
+      description: 'Follow the traffic light: green = open, red = close!',
+      color: '#4CAF50',
+      available: isTrafficMouthAvailable,
+    },
+    {
+      id: 'robot-sequence',
+      title: 'Robot Sequence',
+      emoji: '🤖',
+      description: 'Copy the robot\'s jaw pattern and timing!',
+      color: '#2196F3',
+      available: isRobotSequenceAvailable,
+    },
+    {
+      id: 'pattern-match',
+      title: 'Pattern Match',
+      emoji: '🧩',
+      description: 'Arrange tiles to match the pattern!',
+      color: '#FF9800',
+      available: isPatternMatchAvailable,
+    },
+    {
+      id: 'copy-the-beat',
+      title: 'Copy the Beat',
+      emoji: '🥁',
+      description: 'Follow the rhythm with your jaw!',
+      color: '#9C27B0',
+      available: isCopyTheBeatAvailable,
+    },
+    {
+      id: 'sequence-builder',
+      title: 'Sequence Builder',
+      emoji: '🔧',
+      description: 'Complete the missing step in the sequence!',
+      color: '#F44336',
+      available: isSequenceBuilderAvailable,
+    },
+    // Level 2 Session 10: Foundational Imitation Games
+    {
+      id: 'face-to-face-avatar',
+      title: 'Face-to-Face Avatar',
+      emoji: '👤',
+      description: 'Watch the avatar and copy its slow movements!',
+      color: '#2196F3',
+      available: isFaceToFaceAvatarAvailable,
+    },
+    {
+      id: 'highlight-zones',
+      title: 'Highlight Zones',
+      emoji: '✨',
+      description: 'Watch the glowing zones and use those parts of your face!',
+      color: '#9C27B0',
+      available: isHighlightZonesAvailable,
+    },
+    {
+      id: 'one-step-imitation',
+      title: 'One-Step Imitation',
+      emoji: '🎯',
+      description: 'Watch the movement, then copy it!',
+      color: '#FF9800',
+      available: isOneStepImitationAvailable,
+    },
+    {
+      id: 'two-step-imitation',
+      title: 'Two-Step Imitation',
+      emoji: '🔄',
+      description: 'Watch both steps, then copy them in order!',
+      color: '#4CAF50',
+      available: isTwoStepImitationAvailable,
+    },
+    {
+      id: 'success-replay',
+      title: 'Success Replay',
+      emoji: '🎬',
+      description: 'Copy the movement and watch your success animation!',
+      color: '#E91E63',
+      available: isSuccessReplayAvailable,
+    },
+    // Level 2 Session 3: Trace Zig-Zag games (OT)
+    {
+      id: 'mountain-climb',
+      title: 'Mountain Climb',
+      emoji: '⛰️',
+      description: 'Follow the zig-zag path up the mountain. Change direction smoothly!',
+      color: '#F59E0B',
+      available: isMountainClimbAvailable,
+    },
+    {
+      id: 'lightning-bolt',
+      title: 'Lightning Bolt',
+      emoji: '⚡',
+      description: 'Trace the lightning bolt with sharp angles. Follow the zig-zag!',
+      color: '#FBBF24',
+      available: isLightningBoltAvailable,
+    },
+    {
+      id: 'saw-path',
+      title: 'Saw Path',
+      emoji: '🪚',
+      description: 'Follow the up-down saw path. Controlled motion left to right!',
+      color: '#10B981',
+      available: isSawPathAvailable,
+    },
+    {
+      id: 'robot-wire-fix',
+      title: 'Robot Wire Fix',
+      emoji: '🤖',
+      description: 'Follow the zig-zag wire to fix the robot! Trace carefully.',
+      color: '#8B5CF6',
+      available: isRobotWireFixAvailable,
+    },
+    {
+      id: 'zig-zag-race',
+      title: 'Zig-Zag Race',
+      emoji: '🏁',
+      description: 'Race along the zig-zag path! Timed but slow-paced.',
+      color: '#EF4444',
+      available: isZigZagRaceAvailable,
     },
     // Level 2 Session 4: Follow Path (Drag) games
     {
@@ -3617,7 +4148,7 @@ export default function SessionGamesScreen() {
     },
     // Level 4 Session 8: Tap Alternating Sides
     {
-      id: 'side-lights',
+      id: 'side-lights-l4s8',
       title: 'Side Lights',
       emoji: '💡',
       description: 'Left-right lights tap! Bilateral activation!',
@@ -4074,6 +4605,7 @@ export default function SessionGamesScreen() {
     return (
       <FollowTheBall
         onBack={() => setCurrentGame('menu')}
+        onComplete={handleContinue}
         therapyId={therapyId}
         levelNumber={levelNumber}
         sessionNumber={sessionNumber}
@@ -4099,23 +4631,23 @@ export default function SessionGamesScreen() {
   }
 
   if (currentGame === 'tap-magic') {
-    return <TapForMagicGame onBack={() => setCurrentGame('menu')} />;
+    return <TapForMagicGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-animate') {
-    return <TapToAnimateGame onBack={() => setCurrentGame('menu')} />;
+    return <TapToAnimateGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-reveal') {
-    return <TapToRevealGame onBack={() => setCurrentGame('menu')} />;
+    return <TapToRevealGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-sound') {
-    return <TapToMakeSoundGame onBack={() => setCurrentGame('menu')} />;
+    return <TapToMakeSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-choice') {
-    return <TapForChoiceGame onBack={() => setCurrentGame('menu')} />;
+    return <TapForChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'big-tap') {
@@ -4359,25 +4891,192 @@ export default function SessionGamesScreen() {
 
   // Level 2 Session 3: Speech Therapy Airflow Games
   if (currentGame === 'blow-the-bubble') {
-    return <BlowTheBubbleGame onBack={() => setCurrentGame('menu')} />;
+    return <BlowTheBubbleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'move-the-feather') {
-    return <MoveTheFeatherGame onBack={() => setCurrentGame('menu')} />;
+    return <MoveTheFeatherGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'windmill-spin') {
-    return <WindmillSpinGame onBack={() => setCurrentGame('menu')} />;
+    return <WindmillSpinGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'blow-out-candle') {
-    return <BlowOutTheCandleGame onBack={() => setCurrentGame('menu')} />;
+    return <BlowOutTheCandleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'balloon-inflate') {
     return <BalloonInflateGame onBack={() => setCurrentGame('menu')} />;
   }
 
+  // Level 2 Session 4: Tongue Elevation Games
+  if (currentGame === 'ice-cream-lick') {
+    return <IceCreamLickGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'touch-the-star') {
+    return <TouchTheStarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tongue-elevator') {
+    return <TongueElevatorGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'roof-tap') {
+    return <RoofTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'smile-and-lift') {
+    return <SmileAndLiftGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 5: Tongue Lateralization Games
+  if (currentGame === 'paint-the-wall') {
+    return <PaintTheWallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cookie-sweep') {
+    return <CookieSweepGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'catch-the-dot') {
+    return <CatchTheDotGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'side-lights') {
+    return <SideLightsSpeechGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-match') {
+    return <MirrorMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 6: Bilabial Strength Games
+  if (currentGame === 'balloon-pump') {
+    return <BalloonPumpGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'bubble-press') {
+    return <BubblePressGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mama-call') {
+    return <MamaCallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'drum-lips') {
+    return <DrumLipsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'box-push') {
+    return <BoxPushGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 7: Lip Rounding Games
+  if (currentGame === 'fish-mouth') {
+    return <FishMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'tunnel-blow') {
+    return <TunnelBlowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'o-shape-match') {
+    return <OShapeMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'o-u-switch') {
+    return <OUSwitchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'mirror-round') {
+    return <MirrorRoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 8: Breath Control Games
+  if (currentGame === 'ball-float') {
+    return <BallFloatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'cloud-push') {
+    return <CloudPushGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'train-steam') {
+    return <TrainSteamGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'breath-meter') {
+    return <BreathMeterGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'stop-go-breathing') {
+    return <StopGoBreathingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 9: Simple Oral Sequences Games
+  if (currentGame === 'traffic-mouth') {
+    return <TrafficMouthGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'robot-sequence') {
+    return <RobotSequenceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'pattern-match') {
+    return <PatternMatchGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'copy-the-beat') {
+    return <CopyTheBeatGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'sequence-builder') {
+    return <SequenceBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Speech Therapy Level 2 Session 10: Foundational Imitation Games
+  if (currentGame === 'face-to-face-avatar') {
+    return <FaceToFaceAvatarGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'highlight-zones') {
+    return <HighlightZonesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'one-step-imitation') {
+    return <OneStepImitationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'two-step-imitation') {
+    return <TwoStepImitationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  if (currentGame === 'success-replay') {
+    return <SuccessReplayGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
+  }
+
+  // Level 2 Session 3: Trace Zig-Zag games (OT)
+  if (currentGame === 'mountain-climb') {
+    return <MountainClimbGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'lightning-bolt') {
+    return <LightningBoltGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'saw-path') {
+    return <SawPathGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'robot-wire-fix') {
+    return <RobotWireFixGame onBack={() => setCurrentGame('menu')} />;
+  }
+
+  if (currentGame === 'zig-zag-race') {
+    return <ZigZagRaceGame onBack={() => setCurrentGame('menu')} />;
+  }
 
   // Level 2 Session 4: Follow Path (Drag) games
   if (currentGame === 'maze-walk') {
@@ -4528,186 +5227,186 @@ export default function SessionGamesScreen() {
 
   // Speech Therapy Level 1 Session 3 games
   if (currentGame === 'sound-to-tap') {
-    return <SoundToTapGame onBack={() => setCurrentGame('menu')} />;
+    return <SoundToTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'which-sound') {
-    return <WhichSoundGame onBack={() => setCurrentGame('menu')} />;
+    return <WhichSoundGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'find-sound-source') {
-    return <FindSoundSourceGame onBack={() => setCurrentGame('menu')} />;
+    return <FindSoundSourceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'stop-when-sound-stops') {
-    return <StopWhenSoundStopsGame onBack={() => setCurrentGame('menu')} />;
+    return <StopWhenSoundStopsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'loud-vs-soft') {
-    return <LoudVsSoftGame onBack={() => setCurrentGame('menu')} />;
+    return <LoudVsSoftGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Speech Therapy Level 1 Session 4 games
   if (currentGame === 'follow-my-eyes') {
-    return <FollowMyEyesGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowMyEyesGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'eyes-then-object') {
-    return <EyesThenObjectGame onBack={() => setCurrentGame('menu')} />;
+    return <EyesThenObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'which-side') {
-    return <WhichSideGame onBack={() => setCurrentGame('menu')} />;
+    return <WhichSideGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-gaze-animation') {
-    return <FollowGazeToAnimationGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowGazeToAnimationGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'eyes-only') {
-    return <EyesOnlyGame onBack={() => setCurrentGame('menu')} />;
+    return <EyesOnlyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Speech Therapy Level 1 Session 5 games (Pointing Games)
   if (currentGame === 'follow-my-point') {
-    return <FollowMyPointGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowMyPointGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'point-to-object-appears') {
-    return <PointToObjectAppearsGame onBack={() => setCurrentGame('menu')} />;
+    return <PointToObjectAppearsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-pointed-object') {
-    return <TapThePointedObjectGame onBack={() => setCurrentGame('menu')} />;
+    return <TapThePointedObjectGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moving-arm-pointing') {
-    return <MovingArmPointingGame onBack={() => setCurrentGame('menu')} />;
+    return <MovingArmPointingGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'multi-point-follow') {
-    return <MultiPointFollowGame onBack={() => setCurrentGame('menu')} />;
+    return <MultiPointFollowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Speech Therapy Level 1 Session 6 games (Choice & Instruction Games)
   if (currentGame === 'tap-what-you-like') {
-    return <TapWhatYouLikeGame onBack={() => setCurrentGame('menu')} />;
+    return <TapWhatYouLikeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'which-one-moved') {
-    return <WhichOneMovedGame onBack={() => setCurrentGame('menu')} />;
+    return <WhichOneMovedGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'sound-to-choice') {
-    return <SoundToChoiceGame onBack={() => setCurrentGame('menu')} />;
+    return <SoundToChoiceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'show-me-the-toy') {
-    return <ShowMeTheToyGame onBack={() => setCurrentGame('menu')} />;
+    return <ShowMeTheToyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'food-vs-toy') {
-    return <FoodVsToyGame onBack={() => setCurrentGame('menu')} />;
+    return <FoodVsToyGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'pass-the-ball') {
-    return <PassTheBallGame onBack={() => setCurrentGame('menu')} />;
+    return <PassTheBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-only-on-your-turn') {
-    return <TapOnlyOnYourTurnGame onBack={() => setCurrentGame('menu')} />;
+    return <TapOnlyOnYourTurnGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'your-turn-to-complete') {
-    return <YourTurnToCompleteGame onBack={() => setCurrentGame('menu')} />;
+    return <YourTurnToCompleteGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'wait-for-the-signal') {
-    return <WaitForTheSignalGame onBack={() => setCurrentGame('menu')} />;
+    return <WaitForTheSignalGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'turn-timer') {
-    return <TurnTimerGame onBack={() => setCurrentGame('menu')} />;
+    return <TurnTimerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'watch-and-wait') {
-    return <WatchAndWaitGame onBack={() => setCurrentGame('menu')} />;
+    return <WatchAndWaitGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'growing-flower') {
-    return <GrowingFlowerGame onBack={() => setCurrentGame('menu')} />;
+    return <GrowingFlowerGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'timer-bar-tap') {
-    return <TimerBarTapGame onBack={() => setCurrentGame('menu')} />;
+    return <TimerBarTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-slow-movement') {
-    return <FollowSlowMovementGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowSlowMovementGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'shapes-appear-one-by-one') {
-    return <ShapesAppearOneByOneGame onBack={() => setCurrentGame('menu')} />;
+    return <ShapesAppearOneByOneGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'touch-the-ball') {
-    return <TouchTheBallGame onBack={() => setCurrentGame('menu')} />;
+    return <TouchTheBallGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-circle') {
-    return <TapTheCircleGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheCircleGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'find-the-sound-source') {
-    return <FindTheSoundSourceGame onBack={() => setCurrentGame('menu')} />;
+    return <FindTheSoundSourceGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-what-i-show-you') {
-    return <TapWhatIShowYouGame onBack={() => setCurrentGame('menu')} />;
+    return <TapWhatIShowYouGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'follow-the-arrow') {
-    return <FollowTheArrowGame onBack={() => setCurrentGame('menu')} />;
+    return <FollowTheArrowGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'tap-the-target-ignore-distraction') {
-    return <TapTheTargetIgnoreDistractionGame onBack={() => setCurrentGame('menu')} />;
+    return <TapTheTargetIgnoreDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'sound-distraction-challenge') {
-    return <SoundDistractionChallengeGame onBack={() => setCurrentGame('menu')} />;
+    return <SoundDistractionChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'slow-task-with-pop-up-distraction') {
-    return <SlowTaskWithPopUpDistractionGame onBack={() => setCurrentGame('menu')} />;
+    return <SlowTaskWithPopUpDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'sequence-with-distraction') {
-    return <SequenceWithDistractionGame onBack={() => setCurrentGame('menu')} />;
+    return <SequenceWithDistractionGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'moving-target-with-extra-objects') {
-    return <MovingTargetWithExtraObjectsGame onBack={() => setCurrentGame('menu')} />;
+    return <MovingTargetWithExtraObjectsGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-awareness-crocodile') {
-    return <JawAwarenessCrocodileGame onBack={() => setCurrentGame('menu')} />;
+    return <JawAwarenessCrocodileGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-swing-adventure') {
-    return <JawSwingAdventureGame onBack={() => setCurrentGame('menu')} />;
+    return <JawSwingAdventureGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-push-challenge') {
-    return <JawPushChallengeGame onBack={() => setCurrentGame('menu')} />;
+    return <JawPushChallengeGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-rhythm-tap') {
-    return <JawRhythmTapGame onBack={() => setCurrentGame('menu')} />;
+    return <JawRhythmTapGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   if (currentGame === 'jaw-strength-builder') {
-    return <JawStrengthBuilderGame onBack={() => setCurrentGame('menu')} />;
+    return <JawStrengthBuilderGame onBack={() => setCurrentGame('menu')} onComplete={handleContinue} />;
   }
 
   // Level 2 Session 1 games (Occupational Therapy - Trace Straight Line)
@@ -5131,7 +5830,7 @@ export default function SessionGamesScreen() {
   }
 
   // Level 4 Session 8 games - Tap Alternating Sides
-  if (currentGame === 'side-lights') {
+  if (currentGame === 'side-lights-l4s8') {
     return <SideLightsGame onBack={() => setCurrentGame('menu')} />;
   }
 
@@ -5498,6 +6197,48 @@ export default function SessionGamesScreen() {
                   if (game.id === 'ant-trail-follow') setCurrentGame('ant-trail-follow');
                   if (game.id === 'ball-roll-path') setCurrentGame('ball-roll-path');
                   if (game.id === 'dont-touch-grass') setCurrentGame('dont-touch-grass');
+                  // Level 2 Session 4 games - Speech Therapy (Tongue Elevation)
+                  if (game.id === 'ice-cream-lick') setCurrentGame('ice-cream-lick');
+                  if (game.id === 'touch-the-star') setCurrentGame('touch-the-star');
+                  if (game.id === 'tongue-elevator') setCurrentGame('tongue-elevator');
+                  if (game.id === 'roof-tap') setCurrentGame('roof-tap');
+                  if (game.id === 'smile-and-lift') setCurrentGame('smile-and-lift');
+                  // Level 2 Session 5 games - Speech Therapy (Tongue Lateralization)
+                  if (game.id === 'paint-the-wall') setCurrentGame('paint-the-wall');
+                  if (game.id === 'cookie-sweep') setCurrentGame('cookie-sweep');
+                  if (game.id === 'catch-the-dot') setCurrentGame('catch-the-dot');
+                  if (game.id === 'side-lights') setCurrentGame('side-lights');
+                  if (game.id === 'mirror-match') setCurrentGame('mirror-match');
+                  // Level 2 Session 6 games - Speech Therapy (Bilabial Strength)
+                  if (game.id === 'balloon-pump') setCurrentGame('balloon-pump');
+                  if (game.id === 'bubble-press') setCurrentGame('bubble-press');
+                  if (game.id === 'mama-call') setCurrentGame('mama-call');
+                  if (game.id === 'drum-lips') setCurrentGame('drum-lips');
+                  if (game.id === 'box-push') setCurrentGame('box-push');
+                  // Level 2 Session 7 games - Speech Therapy (Lip Rounding)
+                  if (game.id === 'fish-mouth') setCurrentGame('fish-mouth');
+                  if (game.id === 'tunnel-blow') setCurrentGame('tunnel-blow');
+                  if (game.id === 'o-shape-match') setCurrentGame('o-shape-match');
+                  if (game.id === 'o-u-switch') setCurrentGame('o-u-switch');
+                  if (game.id === 'mirror-round') setCurrentGame('mirror-round');
+                  // Level 2 Session 8 games - Speech Therapy (Breath Control)
+                  if (game.id === 'ball-float') setCurrentGame('ball-float');
+                  if (game.id === 'cloud-push') setCurrentGame('cloud-push');
+                  if (game.id === 'train-steam') setCurrentGame('train-steam');
+                  if (game.id === 'breath-meter') setCurrentGame('breath-meter');
+                  if (game.id === 'stop-go-breathing') setCurrentGame('stop-go-breathing');
+                  // Level 2 Session 9 games - Speech Therapy (Simple Oral Sequences)
+                  if (game.id === 'traffic-mouth') setCurrentGame('traffic-mouth');
+                  if (game.id === 'robot-sequence') setCurrentGame('robot-sequence');
+                  if (game.id === 'pattern-match') setCurrentGame('pattern-match');
+                  if (game.id === 'copy-the-beat') setCurrentGame('copy-the-beat');
+                  if (game.id === 'sequence-builder') setCurrentGame('sequence-builder');
+                  // Level 2 Session 10 games - Speech Therapy (Foundational Imitation)
+                  if (game.id === 'face-to-face-avatar') setCurrentGame('face-to-face-avatar');
+                  if (game.id === 'highlight-zones') setCurrentGame('highlight-zones');
+                  if (game.id === 'one-step-imitation') setCurrentGame('one-step-imitation');
+                  if (game.id === 'two-step-imitation') setCurrentGame('two-step-imitation');
+                  if (game.id === 'success-replay') setCurrentGame('success-replay');
                   // Level 2 Session 5 games
                   if (game.id === 'dot-to-dot-animal') setCurrentGame('dot-to-dot-animal');
                   if (game.id === 'star-builder') setCurrentGame('star-builder');

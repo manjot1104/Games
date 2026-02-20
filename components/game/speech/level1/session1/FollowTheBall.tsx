@@ -174,9 +174,9 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
   };
 
   // Start a new round
-  const startRound = (roundNumber?: number) => {
+  const startRound = (roundNumber?: number, forceStart = false) => {
     const activeRound = roundNumber ?? round;
-    if (isPaused || showStartOverlay) return; // Don't start if overlay is showing
+    if (isPaused || (!forceStart && showStartOverlay)) return; // Don't start if overlay is showing (unless forced)
     setPhase('moving');
     setFeedbackToast(null);
     setShowFeedback(false);
@@ -294,9 +294,9 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
           if (soundOn) {
             speak('Welcome! Watch the ball with your eyes. When it glows, tap it!', DEFAULT_TTS_RATE);
           }
-          // Start the first round after TTS starts playing
+          // Start the first round after TTS starts playing - force start since we just dismissed overlay
           setTimeout(() => {
-            startRound(1);
+            startRound(1, true);
           }, 1000);
         }, 100);
       });
@@ -544,8 +544,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
         return;
       }
     }
-    // If no consent needed or already declined, start game
-    startRound(1);
+    // Don't start round here - wait for user to tap start overlay
+    // startRound(1) will be called after handleStartTap
   }, []);
 
   // Cleanup effect
@@ -585,8 +585,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('eyeTrackingDeclined');
     }
-    // Start game after accepting consent
-    startRound(1);
+    // Show start overlay after accepting consent (consistent with main flow)
+    setShowStartOverlay(true);
   };
 
   const handleDeclineCamera = () => {
@@ -595,8 +595,8 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('eyeTrackingDeclined', 'true');
     }
-    // Start game after declining consent
-    startRound(1);
+    // Show start overlay after declining consent (consistent with main flow)
+    setShowStartOverlay(true);
   };
 
   // Stop all timers/speech/animations before leaving
@@ -648,9 +648,15 @@ export const FollowTheBall: React.FC<FollowTheBallProps> = ({
         accuracy={accuracyPct}
         xpAwarded={finalStats.successfulRounds * 10 + Math.floor(finalStats.finalAttentionScore / 10)}
         onContinue={() => {
+          console.log('[FollowTheBall] Continue button clicked');
           clearScheduledSpeech();
           stopAllSpeech();
-          onComplete?.();
+          if (onComplete) {
+            console.log('[FollowTheBall] Calling onComplete callback');
+            onComplete();
+          } else {
+            console.warn('[FollowTheBall] onComplete is undefined!');
+          }
         }}
         onHome={onBack}
       />

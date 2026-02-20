@@ -206,7 +206,7 @@ export const JawAwarenessCrocodileGame: React.FC<Props> = ({
   const gameStartedRef = useRef(false);
   const modelStateRef = useRef<ModelState>('closed');
   const stableJawStateRef = useRef<{ state: boolean; since: number } | null>(null);
-  const MIN_STABLE_DURATION_MS = 200; // Jaw must be in same state for 200ms to count
+  const MIN_STABLE_DURATION_MS = 400; // Jaw must be in same state for 400ms to count (increased to prevent false positives)
   
   // Animations
   const emojiScale = useRef(new Animated.Value(1)).current;

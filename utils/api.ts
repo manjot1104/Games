@@ -353,7 +353,8 @@ export async function updateMyProfile(data: { firstName: string; lastName?: stri
 // ----- Therapy Progress APIs -----
 export type TherapyProgress = {
   therapy: string;
-  levels: Array<{
+  // Standard structure
+  levels?: Array<{
     levelNumber: number;
     sessions: Array<{
       sessionNumber: number;
@@ -362,8 +363,27 @@ export type TherapyProgress = {
       lastPlayedAt?: string;
     }>;
   }>;
-  currentLevel: number;
-  currentSession: number;
+  currentLevel?: number;
+  currentSession?: number;
+  // Special Education structure
+  sections?: Array<{
+    sectionNumber: number;
+    levels: Array<{
+      levelNumber: number;
+      games: Array<{
+        gameNumber: number;
+        completed: boolean;
+        accuracy: number;
+        lastPlayedAt?: string;
+      }>;
+      completed: boolean;
+    }>;
+    completed: boolean;
+    unlocked: boolean;
+  }>;
+  currentSection?: number;
+  currentLevelSE?: number;
+  currentGame?: number;
   updatedAt?: string;
 };
 
@@ -387,10 +407,15 @@ export async function initTherapyProgress(): Promise<{ ok: boolean; therapies: T
 
 export async function advanceTherapyProgress(payload: {
   therapy: string;
-  levelNumber: number;
-  sessionNumber: number;
+  levelNumber?: number;
+  sessionNumber?: number;
   gameId?: string;
   markCompleted?: boolean;
+  // Special Education fields
+  sectionNumber?: number;
+  levelNumberSE?: number;
+  gameNumber?: number;
+  accuracy?: number;
 }): Promise<{ ok: boolean; therapy: TherapyProgress }> {
   const res = await fetch(`${API_BASE_URL}/api/therapy/progress/advance`, {
     method: 'POST',

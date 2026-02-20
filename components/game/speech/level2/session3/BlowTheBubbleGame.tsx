@@ -9,22 +9,32 @@ import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { useJawDetection } from '@/hooks/useJawDetection';
 import { logGameAndAward } from '@/utils/api';
 import { BlowDetector } from '@/utils/blowDetection';
+import { DEFAULT_TTS_RATE, speak as speakTTS, stopTTS } from '@/utils/tts';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { speak as speakTTS, DEFAULT_TTS_RATE, stopTTS } from '@/utils/tts';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Easing,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    View,
-    useWindowDimensions,
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
 } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+
+// Conditional import for VisionCamera
+let Camera: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    const visionCamera = require('react-native-vision-camera');
+    Camera = visionCamera.Camera;
+  } catch (e) {
+    console.warn('react-native-vision-camera not available:', e);
+  }
+}
 
 type Props = {
   onBack: () => void;
@@ -43,6 +53,8 @@ const TOTAL_ROUNDS = 5;
 const ROUND_TIME_MS = 30000; // 30 seconds per round
 const MAX_BUBBLE_SIZE = 200; // pixels
 const MIN_BUBBLE_SIZE = 40; // pixels
+const BAR_FILL_THRESHOLD = 0.75; // Bar must be 75% filled before bubble grows
+
 let scheduledSpeechTimers: Array<ReturnType<typeof setTimeout>> = [];
 
 function clearScheduledSpeech() {
@@ -78,7 +90,10 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
 
   // Web-only properties (type assertion needed)
   const protrusion = (jawDetection as any).protrusion as number | undefined;
+  const cheekExpansion = (jawDetection as any).cheekExpansion as number | undefined;
   const previewContainerId = (jawDetection as any).previewContainerId as string | undefined;
+  const landmarks = (jawDetection as any).landmarks as any | undefined;
+  const previewRef = useRef<View>(null);
 
   // Game state
   const [gameState, setGameState] = useState<'calibration' | 'countdown' | 'playing' | 'roundComplete' | 'gameComplete'>('calibration');
@@ -101,23 +116,52 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
   const [timeElapsed, setTimeElapsed] = useState(0);
 
   // Refs
-  const blowDetector = useRef(new BlowDetector(800, 0.4));
+  const blowDetector = useRef(new BlowDetector(800, 0.25)); // Lowered protrusion threshold from 0.4 to 0.25
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bubbleSizeAnim = useRef(new Animated.Value(MIN_BUBBLE_SIZE)).current;
   const bubbleOpacity = useRef(new Animated.Value(1)).current;
   const popParticles = useRef<Array<{ id: number; x: number; y: number; vx: number; vy: number; opacity: Animated.Value }>>([]).current;
 
+  // Debug: Log landmarks when they change (throttled to avoid spam)
+  const lastLogTime = useRef(0);
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const now = Date.now();
+      if (now - lastLogTime.current > 1000) { // Log every 1 second
+        lastLogTime.current = now;
+        console.log('🔍 Landmarks Debug:', {
+          hasLandmarks: !!landmarks,
+          landmarksType: typeof landmarks,
+          landmarksValue: landmarks,
+          isDetecting,
+          allMouthLandmarks: landmarks?.allMouthLandmarks?.length || 0,
+          upperLip: landmarks?.upperLip?.length || 0,
+          lowerLip: landmarks?.lowerLip?.length || 0,
+          mouthLeft: !!landmarks?.mouthLeft,
+          mouthRight: !!landmarks?.mouthRight,
+          samplePoint: landmarks?.allMouthLandmarks?.[0] || landmarks?.upperLip?.[0] || landmarks?.lowerLip?.[0],
+        });
+      }
+    }
+  }, [landmarks, isDetecting]);
+
   // Update blow detection
   useEffect(() => {
     if (gameState !== 'playing' || !isDetecting) return;
 
     const protrusionValue = (protrusion as number) || 0;
-    const blowState = blowDetector.current.update(isOpen || false, protrusionValue, ratio || 0);
+    const cheekExpansionValue = (cheekExpansion as number) || 0;
+    const blowState = blowDetector.current.update(isOpen || false, protrusionValue, ratio || 0, cheekExpansionValue);
 
-    if (blowState.isSustained && !bubblePopped) {
+    // Only grow bubble when bar is filled (intensity >= threshold) AND sustained
+    const isBarFilled = blowState.intensity >= BAR_FILL_THRESHOLD;
+    
+    if (blowState.isSustained && isBarFilled && !bubblePopped) {
       // Grow bubble based on blow intensity
-      const growthRate = blowState.intensity * 2; // pixels per frame
+      // Higher intensity = faster growth (scaled by how much over threshold)
+      const intensityMultiplier = Math.max(1, blowState.intensity / BAR_FILL_THRESHOLD);
+      const growthRate = blowState.intensity * 2 * intensityMultiplier; // pixels per frame
       setBubbleSize(prev => {
         const newSize = Math.min(MAX_BUBBLE_SIZE, prev + growthRate);
         if (newSize >= MAX_BUBBLE_SIZE && !bubblePopped) {
@@ -302,7 +346,10 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
       setShowRoundSuccess(false);
       if (currentRound < requiredRounds) {
         setCurrentRound(prev => prev + 1);
-        startCalibration();
+        // Add a small delay before starting calibration to prevent immediate auto-start
+        setTimeout(() => {
+          startCalibration();
+        }, 500);
       } else {
         finishGame();
       }
@@ -353,11 +400,29 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
   }, [roundResults, totalStars, onComplete, requiredRounds]);
 
   // Check for face detection to start countdown
+  // Use a ref to track if we've already triggered countdown for this calibration phase
+  const calibrationStartedRef = useRef(false);
+  
   useEffect(() => {
-    if (gameState === 'calibration' && isDetecting && hasCamera) {
-      setTimeout(() => {
-        startCountdown();
-      }, 1000);
+    if (gameState === 'calibration') {
+      // Reset the flag when entering calibration
+      calibrationStartedRef.current = false;
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    if (gameState === 'calibration' && isDetecting && hasCamera && !calibrationStartedRef.current) {
+      calibrationStartedRef.current = true;
+      // Add a longer delay (2 seconds) to give user time to see the calibration screen
+      const timeoutId = setTimeout(() => {
+        // Use a ref check to ensure we're still in calibration state
+        // This prevents starting countdown if state changed during the delay
+        if (calibrationStartedRef.current) {
+          startCountdown();
+        }
+      }, 2000);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [gameState, isDetecting, hasCamera, startCountdown]);
 
@@ -375,10 +440,168 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
     startCalibration();
   }, [startCalibration]);
 
+  // Ensure container has data-native-id attribute for hook to find it (web only)
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !previewContainerId) return;
+    
+    const setAttribute = () => {
+      try {
+        // Try to find container by nativeID first
+        let element = document.querySelector(`[nativeID="${previewContainerId}"]`) as HTMLElement;
+        
+        // If not found, try data-native-id
+        if (!element) {
+          element = document.querySelector(`[data-native-id="${previewContainerId}"]`) as HTMLElement;
+        }
+        
+        // If still not found, try via ref
+        if (!element && previewRef.current) {
+          try {
+            const refElement = (previewRef.current as any)?.current || 
+                              (previewRef.current as any)?.base || 
+                              previewRef.current;
+            if (refElement && refElement.nodeType === 1) {
+              element = refElement;
+            }
+          } catch (e) {
+            // Ignore
+          }
+        }
+        
+        // Set data-native-id attribute if element found and doesn't have it
+        if (element && !element.getAttribute('data-native-id')) {
+          element.setAttribute('data-native-id', previewContainerId);
+        }
+      } catch (e) {
+        // Silently fail - hook will try other methods
+      }
+    };
+    
+    // Try immediately and with delays to catch element when mounted
+    setAttribute();
+    const timeouts = [100, 500, 1000, 2000].map(delay => 
+      setTimeout(setAttribute, delay)
+    );
+    
+    return () => timeouts.forEach(clearTimeout);
+  }, [previewContainerId]);
+
+  // Ensure video is in the correct full-screen container and remove duplicates (web only)
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const moveVideoToContainer = () => {
+      // Find our full-screen container
+      let container = document.querySelector(`[data-native-id="${previewContainerId}"]`) as HTMLElement;
+      
+      // Also try by nativeID attribute
+      if (!container) {
+        container = document.querySelector(`[nativeID="${previewContainerId}"]`) as HTMLElement;
+      }
+      
+      // Also try to find it via the ref
+      if (!container && previewRef.current) {
+        try {
+          const refElement = (previewRef.current as any)?.current || 
+                            (previewRef.current as any)?.base || 
+                            previewRef.current;
+          if (refElement && refElement.nodeType === 1) {
+            container = refElement;
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+
+      if (!container) return;
+
+      // Validate container is full-screen (must be >70% of screen size)
+      const rect = container.getBoundingClientRect();
+      const isFullScreen = rect.width > window.innerWidth * 0.7 && 
+                           rect.height > window.innerHeight * 0.7;
+      
+      if (!isFullScreen) {
+        // Not the right container, keep looking
+        return;
+      }
+
+      // Find all video elements with the preview attribute
+      const allVideos = document.querySelectorAll('video[data-jaw-preview-video]');
+      
+      let videoInContainer: HTMLVideoElement | null = null;
+      const videosToRemove: HTMLVideoElement[] = [];
+      
+      allVideos.forEach((video) => {
+        const videoElement = video as HTMLVideoElement;
+        if (container.contains(videoElement)) {
+          videoInContainer = videoElement;
+        } else {
+          // Video is in wrong container - mark for removal
+          videosToRemove.push(videoElement);
+        }
+      });
+
+      // If no video in our container, move the first one we find
+      if (!videoInContainer && allVideos.length > 0) {
+        const videoToMove = allVideos[0] as HTMLVideoElement;
+        // Remove from current parent (check if it's actually a child first)
+        if (videoToMove.parentElement && videoToMove.parentElement.contains(videoToMove)) {
+          videoToMove.parentElement.removeChild(videoToMove);
+        }
+        // Add to our container
+        container.appendChild(videoToMove);
+        videoInContainer = videoToMove;
+      }
+
+      // Remove duplicate videos (check if they're actually children first)
+      videosToRemove.forEach(video => {
+        if (video.parentElement && video.parentElement.contains(video)) {
+          video.parentElement.removeChild(video);
+        }
+      });
+
+      // Ensure video in our container is properly styled
+      if (videoInContainer) {
+        videoInContainer.style.display = 'block';
+        videoInContainer.style.position = 'absolute';
+        videoInContainer.style.opacity = '1';
+        videoInContainer.style.width = '100%';
+        videoInContainer.style.height = '100%';
+        videoInContainer.style.objectFit = 'cover';
+        videoInContainer.style.top = '0';
+        videoInContainer.style.left = '0';
+        videoInContainer.style.right = '0';
+        videoInContainer.style.bottom = '0';
+        videoInContainer.style.zIndex = '1';
+        videoInContainer.style.borderRadius = '0';
+      }
+
+      // Ensure container is full screen and visible
+      (container as any).style.position = 'absolute';
+      (container as any).style.top = '0';
+      (container as any).style.left = '0';
+      (container as any).style.right = '0';
+      (container as any).style.bottom = '0';
+      (container as any).style.width = '100%';
+      (container as any).style.height = '100%';
+      (container as any).style.zIndex = '1';
+      (container as any).style.display = 'block';
+      (container as any).style.visibility = 'visible';
+      (container as any).style.opacity = '1';
+    };
+
+    // Run immediately and periodically (increased frequency to 200ms)
+    moveVideoToContainer();
+    const interval = setInterval(moveVideoToContainer, 200);
+
+    return () => clearInterval(interval);
+  }, [previewContainerId, hasCamera, previewRef]);
+
   const blowState = blowDetector.current.update(
     isOpen || false,
     (protrusion as number) || 0,
-    ratio || 0
+    ratio || 0,
+    (cheekExpansion as number) || 0
   );
 
   // Show congratulations screen with stats
@@ -401,21 +624,208 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#87CEEB', '#E0F6FF', '#B0E0E6']}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <View style={styles.playArea}>
+        {/* Full Screen Camera Preview */}
+        {hasCamera && (
+          <View style={styles.fullScreenCamera}>
+            {Platform.OS === 'web' ? (
+              <View
+                ref={previewRef}
+                style={[
+                  StyleSheet.absoluteFill, 
+                  { 
+                    backgroundColor: '#000000',
+                  }
+                ]}
+                nativeID={previewContainerId}
+                collapsable={false}
+              >
+                {!isDetecting && (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#FFFFFF', fontSize: 16 }}>Loading camera...</Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              jawDetection.device && Camera && (
+                <Camera
+                  style={StyleSheet.absoluteFill}
+                  device={jawDetection.device}
+                  isActive={gameState === 'playing' || gameState === 'calibration'}
+                  frameProcessor={jawDetection.frameProcessor}
+                  frameProcessorFps={30}
+                />
+              )
+            )}
+          </View>
+        )}
 
-      {/* Camera Preview */}
-      {Platform.OS === 'web' && previewContainerId && (
+        {/* Always visible test dot - placed at top level to ensure it renders */}
         <View
-          nativeID={previewContainerId}
-          style={StyleSheet.absoluteFillObject}
+          style={[
+            styles.landmarkTestDot,
+            {
+              position: 'absolute',
+              left: screenWidth / 2 - 15,
+              top: screenHeight / 2 - 15,
+              zIndex: 9999,
+            },
+          ]}
         />
-      )}
 
-      {/* Game Overlay */}
-      <View style={styles.overlay}>
+        {/* Overlay UI Elements */}
+        <View style={styles.overlayContainer}>
+        {/* Mouth Landmarks Overlay - Always show test dot, show landmarks when available */}
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          
+          {/* Test indicator to verify overlay is rendering */}
+          {Platform.OS === 'web' && (
+            <View style={styles.landmarkTestIndicator}>
+              <Text style={styles.landmarkTestText}>
+                Landmarks: {landmarks?.allMouthLandmarks?.length || 0} points{'\n'}
+                IsDetecting: {isDetecting ? 'Yes' : 'No'}{'\n'}
+                HasLandmarks: {landmarks ? 'Yes' : 'No'}{'\n'}
+                Landmarks Type: {typeof landmarks}{'\n'}
+                UpperLip: {landmarks?.upperLip?.length || 0}{'\n'}
+                LowerLip: {landmarks?.lowerLip?.length || 0}
+              </Text>
+            </View>
+          )}
+          
+          {/* Only render landmarks if they exist */}
+          {landmarks && (
+            <>
+              {/* Draw all mouth landmarks as green dots */}
+              {landmarks.allMouthLandmarks && Array.isArray(landmarks.allMouthLandmarks) && landmarks.allMouthLandmarks.length > 0 ? (
+              landmarks.allMouthLandmarks.map((point: { x: number; y: number } | null | undefined, index: number) => {
+                if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') return null;
+                // Convert normalized coordinates (0-1) to screen coordinates
+                const screenX = point.x * screenWidth;
+                const screenY = point.y * screenHeight;
+                // Validate coordinates are within screen bounds (with some margin)
+                if (screenX < -50 || screenX > screenWidth + 50 || screenY < -50 || screenY > screenHeight + 50) return null;
+                return (
+                  <View
+                    key={`landmark-${index}`}
+                    style={[
+                      styles.landmarkDot,
+                      {
+                        left: screenX - 4,
+                        top: screenY - 4,
+                      },
+                    ]}
+                  />
+                );
+              })
+            ) : (
+              // Fallback: Try to draw from upperLip and lowerLip if allMouthLandmarks is not available
+              <>
+                {landmarks.upperLip && Array.isArray(landmarks.upperLip) && landmarks.upperLip.map((point: { x: number; y: number } | null | undefined, index: number) => {
+                  if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') return null;
+                  const screenX = point.x * screenWidth;
+                  const screenY = point.y * screenHeight;
+                  return (
+                    <View
+                      key={`upper-fallback-${index}`}
+                      style={[
+                        styles.landmarkDot,
+                        styles.landmarkUpper,
+                        {
+                          left: screenX - 5,
+                          top: screenY - 5,
+                        },
+                      ]}
+                    />
+                  );
+                })}
+                {landmarks.lowerLip && Array.isArray(landmarks.lowerLip) && landmarks.lowerLip.map((point: { x: number; y: number } | null | undefined, index: number) => {
+                  if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') return null;
+                  const screenX = point.x * screenWidth;
+                  const screenY = point.y * screenHeight;
+                  return (
+                    <View
+                      key={`lower-fallback-${index}`}
+                      style={[
+                        styles.landmarkDot,
+                        styles.landmarkLower,
+                        {
+                          left: screenX - 5,
+                          top: screenY - 5,
+                        },
+                      ]}
+                    />
+                  );
+                })}
+              </>
+            )}
+            {/* Highlight key corner points with magenta color */}
+            {landmarks.mouthLeft && landmarks.mouthLeft.x !== undefined && landmarks.mouthLeft.y !== undefined && (
+              <View
+                style={[
+                  styles.landmarkDot,
+                  styles.landmarkKey,
+                  {
+                    left: landmarks.mouthLeft.x * screenWidth - 6,
+                    top: landmarks.mouthLeft.y * screenHeight - 6,
+                  },
+                ]}
+              />
+            )}
+            {landmarks.mouthRight && landmarks.mouthRight.x !== undefined && landmarks.mouthRight.y !== undefined && (
+              <View
+                style={[
+                  styles.landmarkDot,
+                  styles.landmarkKey,
+                  {
+                    left: landmarks.mouthRight.x * screenWidth - 6,
+                    top: landmarks.mouthRight.y * screenHeight - 6,
+                  },
+                ]}
+              />
+            )}
+            {/* Highlight upper lip points in cyan */}
+            {landmarks.upperLip && Array.isArray(landmarks.upperLip) && landmarks.upperLip.length > 0 && landmarks.upperLip.map((point: { x: number; y: number } | null | undefined, index: number) => {
+              if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') return null;
+              const screenX = point.x * screenWidth;
+              const screenY = point.y * screenHeight;
+              if (screenX < 0 || screenX > screenWidth || screenY < 0 || screenY > screenHeight) return null;
+              return (
+                <View
+                  key={`upper-${index}`}
+                  style={[
+                    styles.landmarkDot,
+                    styles.landmarkUpper,
+                    {
+                      left: screenX - 5,
+                      top: screenY - 5,
+                    },
+                  ]}
+                />
+              );
+            })}
+            {/* Highlight lower lip points in yellow */}
+            {landmarks.lowerLip && Array.isArray(landmarks.lowerLip) && landmarks.lowerLip.length > 0 && landmarks.lowerLip.map((point: { x: number; y: number } | null | undefined, index: number) => {
+              if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') return null;
+              const screenX = point.x * screenWidth;
+              const screenY = point.y * screenHeight;
+              if (screenX < 0 || screenX > screenWidth || screenY < 0 || screenY > screenHeight) return null;
+              return (
+                <View
+                  key={`lower-${index}`}
+                  style={[
+                    styles.landmarkDot,
+                    styles.landmarkLower,
+                    {
+                      left: screenX - 5,
+                      top: screenY - 5,
+                    },
+                  ]}
+                />
+              );
+            })}
+            </>
+          )}
+        </View>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={onBack} style={styles.backButton}>
@@ -439,7 +849,49 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
         {/* Blow Meter */}
         {gameState === 'playing' && (
           <View style={styles.meterContainer}>
-            <BlowMeter intensity={blowState.intensity} isBlowing={blowState.isBlowing} />
+            <BlowMeter 
+              intensity={blowState.intensity} 
+              isBlowing={blowState.isBlowing}
+              threshold={BAR_FILL_THRESHOLD}
+            />
+            {/* Feedback text based on bar fill status */}
+            {blowState.intensity >= BAR_FILL_THRESHOLD && blowState.isSustained ? (
+              <Text style={styles.feedbackText}>
+                🎈 Bubble Growing! Keep blowing!
+              </Text>
+            ) : blowState.intensity >= BAR_FILL_THRESHOLD ? (
+              <Text style={styles.feedbackText}>
+                ⏳ Bar filled! Keep blowing to grow bubble...
+              </Text>
+            ) : (
+              <Text style={styles.feedbackText}>
+                💨 Blow harder to fill the bar! ({(blowState.intensity * 100).toFixed(0)}% / {(BAR_FILL_THRESHOLD * 100).toFixed(0)}%)
+              </Text>
+            )}
+            {/* Debug Info - Show coordinates and values */}
+            <View style={styles.debugContainer}>
+              <Text style={styles.debugText}>
+                Ratio: {ratio ? ratio.toFixed(4) : 'N/A'}
+              </Text>
+              <Text style={styles.debugText}>
+                Protrusion: {protrusion ? protrusion.toFixed(3) : 'N/A'}
+              </Text>
+              <Text style={styles.debugText}>
+                IsOpen: {isOpen ? 'Yes' : 'No'}
+              </Text>
+              <Text style={styles.debugText}>
+                Intensity: {(blowState.intensity * 100).toFixed(1)}%
+              </Text>
+              <Text style={styles.debugText}>
+                IsBlowing: {blowState.isBlowing ? 'Yes' : 'No'}
+              </Text>
+              <Text style={styles.debugText}>
+                Cheek Expansion: {(((cheekExpansion as number) || 0) * 100).toFixed(1)}%
+              </Text>
+              <Text style={[styles.debugText, { color: blowState.intensity >= BAR_FILL_THRESHOLD ? '#4ADE80' : '#EF4444' }]}>
+                Bar Filled: {blowState.intensity >= BAR_FILL_THRESHOLD ? 'Yes ✓' : 'No ✗'}
+              </Text>
+            </View>
           </View>
         )}
 
@@ -539,6 +991,7 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
             <Text style={styles.errorText}>{jawError}</Text>
           </View>
         )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -547,10 +1000,22 @@ export function BlowTheBubbleGame({ onBack, onComplete, requiredRounds = TOTAL_R
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000000',
   },
-  overlay: {
+  playArea: {
     flex: 1,
     position: 'relative',
+  },
+  fullScreenCamera: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+    backgroundColor: '#000000',
+  },
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    pointerEvents: 'box-none', // Allow touches to pass through to camera
+    overflow: 'visible', // Ensure children can render outside bounds
   },
   header: {
     flexDirection: 'row',
@@ -575,9 +1040,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 4,
   },
+  feedbackText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFF',
+    textAlign: 'center',
+    marginTop: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
   meterContainer: {
     alignItems: 'center',
     paddingVertical: 16,
+  },
+  debugContainer: {
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  debugText: {
+    fontSize: 14,
+    color: '#FFF',
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    marginVertical: 2,
   },
   calibrationContainer: {
     flex: 1,
@@ -653,6 +1141,102 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#FFF',
     textAlign: 'center',
+  },
+  cameraLoading: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  cameraLoadingText: {
+    fontSize: 18,
+    color: '#FFF',
+    fontWeight: '600',
+  },
+  landmarkDot: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#00FF00',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    zIndex: 20,
+    shadowColor: '#00FF00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  landmarkKey: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#FF00FF',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    zIndex: 21,
+    shadowColor: '#FF00FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  landmarkUpper: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#00FFFF',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    zIndex: 20,
+    shadowColor: '#00FFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  landmarkLower: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#FFFF00',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    zIndex: 20,
+    shadowColor: '#FFFF00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  landmarkTestIndicator: {
+    position: 'absolute',
+    top: 100,
+    right: 20,
+    backgroundColor: 'rgba(255, 0, 0, 0.8)',
+    padding: 8,
+    borderRadius: 8,
+    zIndex: 100,
+  },
+  landmarkTestText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  landmarkTestDot: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FF0000',
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    zIndex: 9999,
+    shadowColor: '#FF0000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 15,
+    elevation: 20,
   },
 });
 

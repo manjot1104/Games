@@ -127,26 +127,63 @@ async function initializeHandLandmarker(): Promise<boolean> {
       'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm'
     );
 
-    // Create Hand Landmarker
-    handLandmarker = await HandLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
-        delegate: 'GPU',
-      },
-      runningMode: 'VIDEO',
-      numHands: 2, // Track up to 2 hands (more flexible)
-      minHandDetectionConfidence: 0.1, // Very low threshold for easier detection
-      minHandPresenceConfidence: 0.1, // Very low threshold for easier detection
-      minTrackingConfidence: 0.1, // Very low threshold for easier detection
-    });
+    // Try GPU first, fallback to CPU if GPU fails
+    let delegate = 'GPU';
+    try {
+      // Create Hand Landmarker with GPU
+      handLandmarker = await HandLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+          delegate: 'GPU',
+        },
+        runningMode: 'VIDEO',
+        numHands: 2, // Track up to 2 hands (more flexible)
+        minHandDetectionConfidence: 0.1, // Very low threshold for easier detection
+        minHandPresenceConfidence: 0.1, // Very low threshold for easier detection
+        minTrackingConfidence: 0.1, // Very low threshold for easier detection
+      });
 
-    isInitialized = true;
-    console.log('✅ Hand Landmarker initialized successfully');
-    return true;
+      isInitialized = true;
+      console.log('✅ Hand Landmarker initialized successfully with GPU');
+      return true;
+    } catch (gpuError) {
+      console.warn('⚠️ GPU initialization failed, trying CPU fallback:', gpuError);
+      delegate = 'CPU';
+      
+      try {
+        // Fallback to CPU
+        handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`,
+            delegate: 'CPU',
+          },
+          runningMode: 'VIDEO',
+          numHands: 2,
+          minHandDetectionConfidence: 0.1,
+          minHandPresenceConfidence: 0.1,
+          minTrackingConfidence: 0.1,
+        });
+
+        isInitialized = true;
+        console.log('✅ Hand Landmarker initialized successfully with CPU fallback');
+        return true;
+      } catch (cpuError) {
+        console.error('❌ Both GPU and CPU initialization failed:', cpuError);
+        throw cpuError; // Re-throw to be caught by outer catch
+      }
+    }
   } catch (error) {
     console.error('❌ Failed to initialize hand landmarker:', error);
     if (error instanceof Error) {
       console.error('Error details:', error.message, error.stack);
+      // Provide more specific error messages
+      if (error.message.includes('network') || error.message.includes('fetch')) {
+        console.error('💡 Network error: Check internet connection and CDN accessibility');
+      } else if (error.message.includes('GPU') || error.message.includes('WebGL')) {
+        console.error('💡 GPU error: GPU acceleration not available, CPU fallback should have been used');
+      } else if (error.message.includes('WASM')) {
+        console.error('💡 WASM error: MediaPipe WASM files may not be loading correctly');
+      }
     }
     return false;
   }

@@ -21,7 +21,7 @@ export class BlowDetector {
 
   constructor(
     sustainedThreshold: number = 800, // 0.8 seconds
-    protrusionThreshold: number = 0.4
+    protrusionThreshold: number = 0.25 // Decreased from 0.4 to 0.25 for easier detection
   ) {
     this.sustainedThreshold = sustainedThreshold;
     this.protrusionThreshold = protrusionThreshold;
@@ -32,15 +32,28 @@ export class BlowDetector {
    * @param isOpen - Mouth is open
    * @param protrusion - Jaw protrusion (0-1)
    * @param ratio - Mouth opening ratio (0-1)
+   * @param cheekExpansion - Cheek expansion (0-1), optional
    * @returns BlowState with current detection status
    */
-  update(isOpen: boolean, protrusion: number, ratio: number): BlowState {
+  update(isOpen: boolean, protrusion: number, ratio: number, cheekExpansion?: number): BlowState {
     const now = Date.now();
     
-    // Calculate blow intensity (combination of ratio and protrusion)
-    // Normalize ratio to 0-1 range (assuming max ratio ~0.05)
-    const normalizedRatio = Math.min(1, ratio / 0.05);
-    const intensity = Math.min(1, (normalizedRatio * 0.4 + protrusion * 0.6));
+    // Calculate blow intensity (combination of ratio, protrusion, and cheek expansion)
+    // Normalize ratio to 0-1 range (decreased threshold from 0.05 to 0.015 for easier detection)
+    // Using 0.015 means even smaller mouth openings will register
+    const normalizedRatio = Math.min(1, ratio / 0.015);
+    
+    // Incorporate cheek expansion if available (cheeks puff out when blowing)
+    const cheekFactor = cheekExpansion !== undefined ? cheekExpansion : 0;
+    
+    // Adjusted intensity calculation to be more sensitive to smaller openings
+    // Use a more generous formula that gives credit for partial openings
+    // If normalizedRatio is low but protrusion is present, still give some intensity
+    // Cheek expansion is a strong indicator of blowing, so give it significant weight
+    const baseIntensity = (normalizedRatio * 0.3 + protrusion * 0.4 + cheekFactor * 0.3);
+    // Boost intensity if either component is present (makes it easier to fill the bar)
+    const boostedIntensity = baseIntensity * 1.3; // 30% boost to make bar fill easier
+    const intensity = Math.min(1, boostedIntensity);
     
     // Smooth intensity using moving average
     this.intensityHistory.push(intensity);
@@ -51,7 +64,12 @@ export class BlowDetector {
     this.lastIntensity = smoothedIntensity;
 
     // Check if conditions for blowing are met
-    const meetsThreshold = isOpen && protrusion >= this.protrusionThreshold;
+    // Include cheek expansion as an alternative indicator (cheeks puff out when blowing)
+    // Lowered cheek threshold from 0.3 to 0.15 to make it easier to detect
+    const hasCheekExpansion = cheekExpansion !== undefined && cheekExpansion > 0.15;
+    // Also allow lower protrusion if cheeks are expanding (more natural blowing)
+    const hasAnyBlowIndicator = protrusion >= this.protrusionThreshold || hasCheekExpansion || (protrusion >= 0.15 && cheekExpansion && cheekExpansion > 0.1);
+    const meetsThreshold = isOpen && hasAnyBlowIndicator;
 
     if (meetsThreshold && !this.isBlowing) {
       // Start of blow

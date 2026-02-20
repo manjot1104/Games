@@ -83,6 +83,8 @@ const FORCE_DISABLE_FREE_ACCESS = process.env.DISABLE_FREE_ACCESS_FOR_TESTING ==
 const FREE_ACCESS_IDS = [
   'auth0_test_user', // Default test user from server.js
   'dev_local_tester', // Fallback from utils/api.ts for localhost
+  'manjot1104@gmail.com', // Added for free subscription access
+  'nonavi080@gmail.com', // Added for free subscription access
   // Add employee/boss Auth0 IDs here:
   // 'auth0|your_boss_id_here',
   // 'auth0|employee1_id_here',
@@ -101,6 +103,7 @@ const FREE_ACCESS_IDS = [
 // FREE_ACCESS_EMAILS=manjot1104@gmail.com,boss@company.com,employee1@company.com
 const FREE_ACCESS_EMAILS = [
   'manjot1104@gmail.com', // Added for free subscription access
+  'nonavi080@gmail.com', // Added for free subscription access
   ...(process.env.FREE_ACCESS_EMAILS ? process.env.FREE_ACCESS_EMAILS.split(',').map(email => email.trim().toLowerCase()).filter(Boolean) : []),
 ].filter(Boolean); // Remove null/undefined/empty
 

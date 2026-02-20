@@ -26,6 +26,17 @@ import {
 } from 'react-native';
 import Svg, { Defs, Ellipse, LinearGradient as SvgLinearGradient, RadialGradient, Path, Stop } from 'react-native-svg';
 
+// Conditional import for VisionCamera
+let Camera: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    const visionCamera = require('react-native-vision-camera');
+    Camera = visionCamera.Camera;
+  } catch (e) {
+    console.warn('react-native-vision-camera not available:', e);
+  }
+}
+
 type Props = {
   onBack: () => void;
   onComplete?: () => void;
@@ -81,6 +92,7 @@ export function BalloonInflateGame({ onBack, onComplete, requiredRounds = TOTAL_
   // Web-only properties (type assertion needed)
   const protrusion = (jawDetection as any).protrusion as number | undefined;
   const previewContainerId = (jawDetection as any).previewContainerId as string | undefined;
+  const previewRef = useRef<View>(null);
 
   // Game state
   const [gameState, setGameState] = useState<'calibration' | 'countdown' | 'playing' | 'roundComplete' | 'gameComplete'>('calibration');
@@ -250,7 +262,10 @@ export function BalloonInflateGame({ onBack, onComplete, requiredRounds = TOTAL_
       setShowRoundSuccess(false);
       if (currentRound < requiredRounds) {
         setCurrentRound(prev => prev + 1);
-        startCalibration();
+        // Add a small delay before starting calibration to prevent immediate auto-start
+        setTimeout(() => {
+          startCalibration();
+        }, 500);
       } else {
         finishGame();
       }
@@ -301,11 +316,29 @@ export function BalloonInflateGame({ onBack, onComplete, requiredRounds = TOTAL_
   }, [roundResults, totalStars, onComplete, requiredRounds]);
 
   // Check for face detection to start countdown
+  // Use a ref to track if we've already triggered countdown for this calibration phase
+  const calibrationStartedRef = useRef(false);
+  
   useEffect(() => {
-    if (gameState === 'calibration' && isDetecting && hasCamera) {
-      setTimeout(() => {
-        startCountdown();
-      }, 1000);
+    if (gameState === 'calibration') {
+      // Reset the flag when entering calibration
+      calibrationStartedRef.current = false;
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    if (gameState === 'calibration' && isDetecting && hasCamera && !calibrationStartedRef.current) {
+      calibrationStartedRef.current = true;
+      // Add a longer delay (2 seconds) to give user time to see the calibration screen
+      const timeoutId = setTimeout(() => {
+        // Use a ref check to ensure we're still in calibration state
+        // This prevents starting countdown if state changed during the delay
+        if (calibrationStartedRef.current) {
+          startCountdown();
+        }
+      }, 2000);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [gameState, isDetecting, hasCamera, startCountdown]);
 
@@ -322,6 +355,163 @@ export function BalloonInflateGame({ onBack, onComplete, requiredRounds = TOTAL_
   useEffect(() => {
     startCalibration();
   }, [startCalibration]);
+
+  // Ensure container has data-native-id attribute for hook to find it (web only)
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !previewContainerId) return;
+    
+    const setAttribute = () => {
+      try {
+        // Try to find container by nativeID first
+        let element = document.querySelector(`[nativeID="${previewContainerId}"]`) as HTMLElement;
+        
+        // If not found, try data-native-id
+        if (!element) {
+          element = document.querySelector(`[data-native-id="${previewContainerId}"]`) as HTMLElement;
+        }
+        
+        // If still not found, try via ref
+        if (!element && previewRef.current) {
+          try {
+            const refElement = (previewRef.current as any)?.current || 
+                              (previewRef.current as any)?.base || 
+                              previewRef.current;
+            if (refElement && refElement.nodeType === 1) {
+              element = refElement;
+            }
+          } catch (e) {
+            // Ignore
+          }
+        }
+        
+        // Set data-native-id attribute if element found and doesn't have it
+        if (element && !element.getAttribute('data-native-id')) {
+          element.setAttribute('data-native-id', previewContainerId);
+        }
+      } catch (e) {
+        // Silently fail - hook will try other methods
+      }
+    };
+    
+    // Try immediately and with delays to catch element when mounted
+    setAttribute();
+    const timeouts = [100, 500, 1000, 2000].map(delay => 
+      setTimeout(setAttribute, delay)
+    );
+    
+    return () => timeouts.forEach(clearTimeout);
+  }, [previewContainerId]);
+
+  // Ensure video is in the correct full-screen container and remove duplicates (web only)
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const moveVideoToContainer = () => {
+      // Find our full-screen container
+      let container = document.querySelector(`[data-native-id="${previewContainerId}"]`) as HTMLElement;
+      
+      // Also try by nativeID attribute
+      if (!container) {
+        container = document.querySelector(`[nativeID="${previewContainerId}"]`) as HTMLElement;
+      }
+      
+      // Also try to find it via the ref
+      if (!container && previewRef.current) {
+        try {
+          const refElement = (previewRef.current as any)?.current || 
+                            (previewRef.current as any)?.base || 
+                            previewRef.current;
+          if (refElement && refElement.nodeType === 1) {
+            container = refElement;
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+
+      if (!container) return;
+
+      // Validate container is full-screen (must be >70% of screen size)
+      const rect = container.getBoundingClientRect();
+      const isFullScreen = rect.width > window.innerWidth * 0.7 && 
+                           rect.height > window.innerHeight * 0.7;
+      
+      if (!isFullScreen) {
+        // Not the right container, keep looking
+        return;
+      }
+
+      // Find all video elements with the preview attribute
+      const allVideos = document.querySelectorAll('video[data-jaw-preview-video]');
+      
+      let videoInContainer: HTMLVideoElement | null = null;
+      const videosToRemove: HTMLVideoElement[] = [];
+      
+      allVideos.forEach((video) => {
+        const videoElement = video as HTMLVideoElement;
+        if (container.contains(videoElement)) {
+          videoInContainer = videoElement;
+        } else {
+          // Video is in wrong container - mark for removal
+          videosToRemove.push(videoElement);
+        }
+      });
+
+      // If no video in our container, move the first one we find
+      if (!videoInContainer && allVideos.length > 0) {
+        const videoToMove = allVideos[0] as HTMLVideoElement;
+        // Remove from current parent (check if it's actually a child first)
+        if (videoToMove.parentElement && videoToMove.parentElement.contains(videoToMove)) {
+          videoToMove.parentElement.removeChild(videoToMove);
+        }
+        // Add to our container
+        container.appendChild(videoToMove);
+        videoInContainer = videoToMove;
+      }
+
+      // Remove duplicate videos (check if they're actually children first)
+      videosToRemove.forEach(video => {
+        if (video.parentElement && video.parentElement.contains(video)) {
+          video.parentElement.removeChild(video);
+        }
+      });
+
+      // Ensure video in our container is properly styled
+      if (videoInContainer) {
+        videoInContainer.style.display = 'block';
+        videoInContainer.style.position = 'absolute';
+        videoInContainer.style.opacity = '1';
+        videoInContainer.style.width = '100%';
+        videoInContainer.style.height = '100%';
+        videoInContainer.style.objectFit = 'cover';
+        videoInContainer.style.top = '0';
+        videoInContainer.style.left = '0';
+        videoInContainer.style.right = '0';
+        videoInContainer.style.bottom = '0';
+        videoInContainer.style.zIndex = '1';
+        videoInContainer.style.borderRadius = '0';
+      }
+
+      // Ensure container is full screen and visible
+      (container as any).style.position = 'absolute';
+      (container as any).style.top = '0';
+      (container as any).style.left = '0';
+      (container as any).style.right = '0';
+      (container as any).style.bottom = '0';
+      (container as any).style.width = '100%';
+      (container as any).style.height = '100%';
+      (container as any).style.zIndex = '1';
+      (container as any).style.display = 'block';
+      (container as any).style.visibility = 'visible';
+      (container as any).style.opacity = '1';
+    };
+
+    // Run immediately and periodically (increased frequency to 200ms)
+    moveVideoToContainer();
+    const interval = setInterval(moveVideoToContainer, 200);
+
+    return () => clearInterval(interval);
+  }, [previewContainerId, hasCamera, previewRef]);
 
   const blowState = blowDetector.current.update(
     isOpen || false,
@@ -352,21 +542,44 @@ export function BalloonInflateGame({ onBack, onComplete, requiredRounds = TOTAL_
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#FFB6C1', '#FFC0CB', '#FFD1DC', '#FFE4E1']}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <View style={styles.playArea}>
+        {/* Full Screen Camera Preview */}
+        {hasCamera && (
+          <View style={styles.fullScreenCamera}>
+            {Platform.OS === 'web' ? (
+              <View
+                ref={previewRef}
+                style={[
+                  StyleSheet.absoluteFill, 
+                  { 
+                    backgroundColor: '#000000',
+                  }
+                ]}
+                nativeID={previewContainerId}
+                collapsable={false}
+              >
+                {!isDetecting && (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#FFFFFF', fontSize: 16 }}>Loading camera...</Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              jawDetection.device && Camera && (
+                <Camera
+                  style={StyleSheet.absoluteFill}
+                  device={jawDetection.device}
+                  isActive={gameState === 'playing' || gameState === 'calibration'}
+                  frameProcessor={jawDetection.frameProcessor}
+                  frameProcessorFps={30}
+                />
+              )
+            )}
+          </View>
+        )}
 
-      {/* Camera Preview */}
-      {Platform.OS === 'web' && previewContainerId && (
-        <View
-          nativeID={previewContainerId}
-          style={StyleSheet.absoluteFillObject}
-        />
-      )}
-
-      {/* Game Overlay */}
-      <View style={styles.overlay}>
+        {/* Overlay UI Elements */}
+        <View style={styles.overlayContainer}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={onBack} style={styles.backButton}>
@@ -512,6 +725,7 @@ export function BalloonInflateGame({ onBack, onComplete, requiredRounds = TOTAL_
             <Text style={styles.errorText}>{jawError}</Text>
           </View>
         )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -520,10 +734,21 @@ export function BalloonInflateGame({ onBack, onComplete, requiredRounds = TOTAL_
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000000',
   },
-  overlay: {
+  playArea: {
     flex: 1,
     position: 'relative',
+  },
+  fullScreenCamera: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+    backgroundColor: '#000000',
+  },
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    pointerEvents: 'box-none', // Allow touches to pass through to camera
   },
   header: {
     flexDirection: 'row',

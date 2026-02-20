@@ -26,6 +26,17 @@ import {
 } from 'react-native';
 import Svg, { Circle, Defs, G, Path, RadialGradient, Stop } from 'react-native-svg';
 
+// Conditional import for VisionCamera
+let Camera: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    const visionCamera = require('react-native-vision-camera');
+    Camera = visionCamera.Camera;
+  } catch (e) {
+    console.warn('react-native-vision-camera not available:', e);
+  }
+}
+
 type Props = {
   onBack: () => void;
   onComplete?: () => void;
@@ -78,6 +89,7 @@ export function WindmillSpinGame({ onBack, onComplete, requiredRounds = TOTAL_RO
   // Web-only properties (type assertion needed)
   const protrusion = (jawDetection as any).protrusion as number | undefined;
   const previewContainerId = (jawDetection as any).previewContainerId as string | undefined;
+  const previewRef = useRef<View>(null);
 
   // Game state
   const [gameState, setGameState] = useState<'calibration' | 'countdown' | 'playing' | 'roundComplete' | 'gameComplete'>('calibration');
@@ -235,7 +247,10 @@ export function WindmillSpinGame({ onBack, onComplete, requiredRounds = TOTAL_RO
       setShowRoundSuccess(false);
       if (currentRound < requiredRounds) {
         setCurrentRound(prev => prev + 1);
-        startCalibration();
+        // Add a small delay before starting calibration to prevent immediate auto-start
+        setTimeout(() => {
+          startCalibration();
+        }, 500);
       } else {
         finishGame();
       }
@@ -286,11 +301,29 @@ export function WindmillSpinGame({ onBack, onComplete, requiredRounds = TOTAL_RO
   }, [roundResults, totalStars, onComplete, requiredRounds]);
 
   // Check for face detection to start countdown
+  // Use a ref to track if we've already triggered countdown for this calibration phase
+  const calibrationStartedRef = useRef(false);
+  
   useEffect(() => {
-    if (gameState === 'calibration' && isDetecting && hasCamera) {
-      setTimeout(() => {
-        startCountdown();
-      }, 1000);
+    if (gameState === 'calibration') {
+      // Reset the flag when entering calibration
+      calibrationStartedRef.current = false;
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    if (gameState === 'calibration' && isDetecting && hasCamera && !calibrationStartedRef.current) {
+      calibrationStartedRef.current = true;
+      // Add a longer delay (2 seconds) to give user time to see the calibration screen
+      const timeoutId = setTimeout(() => {
+        // Use a ref check to ensure we're still in calibration state
+        // This prevents starting countdown if state changed during the delay
+        if (calibrationStartedRef.current) {
+          startCountdown();
+        }
+      }, 2000);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [gameState, isDetecting, hasCamera, startCountdown]);
 
@@ -343,21 +376,44 @@ export function WindmillSpinGame({ onBack, onComplete, requiredRounds = TOTAL_RO
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={['#FFD700', '#FFA500', '#FF8C00']}
-        style={StyleSheet.absoluteFillObject}
-      />
+      <View style={styles.playArea}>
+        {/* Full Screen Camera Preview */}
+        {hasCamera && (
+          <View style={styles.fullScreenCamera}>
+            {Platform.OS === 'web' ? (
+              <View
+                ref={previewRef}
+                style={[
+                  StyleSheet.absoluteFill, 
+                  { 
+                    backgroundColor: '#000000',
+                  }
+                ]}
+                nativeID={previewContainerId}
+                collapsable={false}
+              >
+                {!isDetecting && (
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#FFFFFF', fontSize: 16 }}>Loading camera...</Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              jawDetection.device && Camera && (
+                <Camera
+                  style={StyleSheet.absoluteFill}
+                  device={jawDetection.device}
+                  isActive={gameState === 'playing' || gameState === 'calibration'}
+                  frameProcessor={jawDetection.frameProcessor}
+                  frameProcessorFps={30}
+                />
+              )
+            )}
+          </View>
+        )}
 
-      {/* Camera Preview */}
-      {Platform.OS === 'web' && previewContainerId && (
-        <View
-          nativeID={previewContainerId}
-          style={StyleSheet.absoluteFillObject}
-        />
-      )}
-
-      {/* Game Overlay */}
-      <View style={styles.overlay}>
+        {/* Overlay UI Elements */}
+        <View style={styles.overlayContainer}>
         {/* Header */}
         <View style={styles.header}>
           <Pressable onPress={onBack} style={styles.backButton}>
@@ -503,6 +559,7 @@ export function WindmillSpinGame({ onBack, onComplete, requiredRounds = TOTAL_RO
             <Text style={styles.errorText}>{jawError}</Text>
           </View>
         )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -511,10 +568,21 @@ export function WindmillSpinGame({ onBack, onComplete, requiredRounds = TOTAL_RO
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#000000',
   },
-  overlay: {
+  playArea: {
     flex: 1,
     position: 'relative',
+  },
+  fullScreenCamera: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+    backgroundColor: '#000000',
+  },
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 10,
+    pointerEvents: 'box-none', // Allow touches to pass through to camera
   },
   header: {
     flexDirection: 'row',

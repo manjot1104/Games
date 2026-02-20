@@ -26,13 +26,18 @@ export interface JawDetectionResult {
   lateralPosition?: 'left' | 'center' | 'right'; // Lateral jaw position
   lateralAmount?: number; // -1 (left) to 1 (right), 0 = center
   protrusion?: number; // 0 (retracted) to 1 (protruded)
+  tongueElevation?: number; // 0 (down) to 1 (up/touching roof)
+  tonguePosition?: { x: number; y: number }; // Normalized tongue tip position
+  isTongueVisible?: boolean; // Whether tongue is detected in mouth
+  smileAmount?: number; // 0 (neutral) to 1 (big smile)
+  cheekExpansion?: number; // 0 (normal) to 1 (expanded)
 }
 
 // Constants for jaw detection
 // Thresholds adjusted for normalized coordinates (0-1 range from MediaPipe)
 // Based on observed values: closed ~0.022-0.030, open ~0.035-0.045
-const OPEN_THRESHOLD = 0.032;  // Lowered to detect open mouth (smoothed ratio ~0.038-0.039)
-const CLOSE_THRESHOLD = 0.025; // Set between closed (~0.022-0.030) and open (~0.035+) for hysteresis
+const OPEN_THRESHOLD = 0.038;  // Increased to require more obvious mouth opening (prevents false positives)
+const CLOSE_THRESHOLD = 0.028; // Set between closed (~0.022-0.030) and open (~0.038+) for hysteresis
 const EMA_ALPHA = 0.25;
 const THROTTLE_MS = 80; // ~12 fps
 
@@ -150,6 +155,11 @@ function meanPoint(points: Array<{ x: number; y: number }>): { x: number; y: num
 // Global refs for lateral position state (shared across frames)
 let globalCurrentLateralPosition: 'left' | 'center' | 'right' = 'center';
 
+// Global baseline for cheek expansion (calibrated on first frame)
+let cheekBaseline: number | null = null;
+let cheekBaselineFrames = 0;
+const CHEEK_CALIBRATION_FRAMES = 30; // Calibrate over first 30 frames
+
 async function processFrame(
   videoElement: HTMLVideoElement | HTMLCanvasElement,
   ema: React.MutableRefObject<number>,
@@ -162,6 +172,11 @@ async function processFrame(
   lateralPosition?: 'left' | 'center' | 'right';
   lateralAmount?: number;
   protrusion?: number;
+  tongueElevation?: number;
+  tonguePosition?: { x: number; y: number };
+  isTongueVisible?: boolean;
+  smileAmount?: number;
+  cheekExpansion?: number;
 } | null> {
   if (!faceLandmarker || !isInitialized) {
     return null;
@@ -386,6 +401,13 @@ async function processFrame(
     const stateChanged = wasOpen !== nextIsOpen;
     currentIsOpen.current = nextIsOpen;
 
+    // Keep optional advanced metrics defined even when specific detectors are unavailable.
+    const rawSmileAmount = 0;
+    const cheekExpansion = 0;
+    const tongueElevation = 0;
+    const tonguePosition: { x: number; y: number } | undefined = undefined;
+    const isTongueVisible = false;
+
     // Log only on state changes (reduced logging for performance)
     if (stateChanged) {
       // Only log state changes, not every frame
@@ -419,7 +441,12 @@ async function processFrame(
       landmarks: mouthLandmarks,
       lateralPosition,
       lateralAmount,
-      protrusion
+      protrusion,
+      tongueElevation,
+      tonguePosition,
+      isTongueVisible,
+      smileAmount: rawSmileAmount,
+      cheekExpansion
     };
   } catch (error) {
     console.error('Error processing frame:', error);
@@ -442,11 +469,18 @@ export function useJawDetectionWeb(
   const [lateralPosition, setLateralPosition] = useState<'left' | 'center' | 'right'>('center');
   const [lateralAmount, setLateralAmount] = useState(0);
   const [protrusion, setProtrusion] = useState(0);
+  const [tongueElevation, setTongueElevation] = useState(0);
+  const [tonguePosition, setTonguePosition] = useState<{ x: number; y: number } | undefined>(undefined);
+  const [isTongueVisible, setIsTongueVisible] = useState(false);
+  const [smileAmount, setSmileAmount] = useState(0);
+  const [cheekExpansion, setCheekExpansion] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const ema = useRef(0);
   const emaLateral = useRef(0); // EMA for lateral position smoothing
+  const emaTongueElevation = useRef(0); // EMA for tongue elevation smoothing
+  const emaCheekExpansion = useRef(0); // EMA for cheek expansion smoothing
   const lastTimestamp = useRef(0);
   const currentIsOpen = useRef(false);
   const processingIntervalRef = useRef<number | null>(null);
@@ -718,7 +752,8 @@ export function useJawDetectionWeb(
             // MediaPipe can throw errors during initialization or processing
             console.warn('Frame processing error (non-critical):', error instanceof Error ? error.message : 'Unknown error');
             setIsDetecting(false);
-            setLandmarks(null);
+            // Don't clear landmarks on error - keep last valid landmarks
+            // setLandmarks(null);
           }
         };
 
@@ -816,36 +851,55 @@ export function useJawDetectionWeb(
     } else if (isActive && !processingIntervalRef.current && videoRef.current) {
       // Resume processing when active
       const processFrames = async () => {
-        if (!videoRef.current || !isActive) return;
+        try {
+          if (!videoRef.current || !isActive) return;
 
-        const now = Date.now();
-        if (now - lastTimestamp.current < THROTTLE_MS) {
-          return;
-        }
-        lastTimestamp.current = now;
+          const now = Date.now();
+          if (now - lastTimestamp.current < THROTTLE_MS) {
+            return;
+          }
+          lastTimestamp.current = now;
 
-        const result = await processFrame(videoRef.current, ema, currentIsOpen, emaLateral);
+          const result = await processFrame(videoRef.current, ema, currentIsOpen, emaLateral);
         
-        if (result) {
-          setIsDetecting(true);
-          setRatio(result.ratio);
-          setIsOpen(result.isOpen);
-          currentIsOpen.current = result.isOpen;
-          if (result.landmarks) {
-            setLandmarks(result.landmarks);
+          if (result) {
+            setIsDetecting(true);
+            setRatio(result.ratio);
+            setIsOpen(result.isOpen);
+            currentIsOpen.current = result.isOpen;
+            if (result.landmarks) {
+              setLandmarks(result.landmarks);
+            }
+            if (result.lateralPosition !== undefined) {
+              setLateralPosition(result.lateralPosition);
+            }
+            if (result.lateralAmount !== undefined) {
+              setLateralAmount(result.lateralAmount);
+            }
+            if (result.protrusion !== undefined) {
+              setProtrusion(result.protrusion);
+            }
+            if (result.tongueElevation !== undefined) {
+              setTongueElevation(result.tongueElevation);
+            }
+            if (result.tonguePosition !== undefined) {
+              setTonguePosition(result.tonguePosition);
+            }
+            if (result.isTongueVisible !== undefined) {
+              setIsTongueVisible(result.isTongueVisible);
+            }
+            if (result.smileAmount !== undefined) {
+              setSmileAmount(result.smileAmount);
+            }
+            if (result.cheekExpansion !== undefined) {
+              setCheekExpansion(result.cheekExpansion);
+            }
+          } else {
+            setIsDetecting(false);
+            setLandmarks(null);
           }
-          if (result.lateralPosition !== undefined) {
-            setLateralPosition(result.lateralPosition);
-          }
-          if (result.lateralAmount !== undefined) {
-            setLateralAmount(result.lateralAmount);
-          }
-          if (result.protrusion !== undefined) {
-            setProtrusion(result.protrusion);
-          }
-        } else {
+        } catch {
           setIsDetecting(false);
-          setLandmarks(null);
         }
       };
       processingIntervalRef.current = window.setInterval(processFrames, THROTTLE_MS);
@@ -865,5 +919,10 @@ export function useJawDetectionWeb(
     lateralPosition, // Lateral jaw position (left/center/right)
     lateralAmount, // Lateral amount (-1 to 1)
     protrusion, // Jaw protrusion (0 to 1)
+    tongueElevation,
+    tonguePosition,
+    isTongueVisible,
+    smileAmount,
+    cheekExpansion,
   };
 }
