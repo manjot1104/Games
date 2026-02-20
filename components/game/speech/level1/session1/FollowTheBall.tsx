@@ -7,21 +7,21 @@ import RoundSuccessAnimation from '@/components/game/RoundSuccessAnimation';
 import { advanceTherapyProgress, logGameAndAward } from '@/utils/api';
 import { BallPosition, EyeTrackingResult, isEyeTrackingAvailable } from '@/utils/eyeTracking';
 import { stopAllSpeech } from '@/utils/soundPlayer';
-import { speak as speakTTS, clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
+import { clearScheduledSpeech, DEFAULT_TTS_RATE } from '@/utils/tts';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import Animated, {
-    Easing,
-    runOnJS,
-    useAnimatedReaction,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSpring,
-    withTiming,
+  Easing,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

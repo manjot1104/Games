@@ -85,6 +85,7 @@ const FREE_ACCESS_IDS = [
   'dev_local_tester', // Fallback from utils/api.ts for localhost
   'manjot1104@gmail.com', // Added for free subscription access
   'nonavi080@gmail.com', // Added for free subscription access
+
   // Add employee/boss Auth0 IDs here:
   // 'auth0|your_boss_id_here',
   // 'auth0|employee1_id_here',
