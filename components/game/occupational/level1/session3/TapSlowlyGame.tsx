@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -71,6 +71,7 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [isLit, setIsLit] = useState(false);
   const [blinkInterval, setBlinkInterval] = useState(INITIAL_BLINK_INTERVAL);
   const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
@@ -129,65 +130,12 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => clearInterval(interval);
   }, [blinkInterval, done, glowAnim]);
 
-  // Handle circle tap
+  // Handle circle tap - ONLY when circle is lit (showing TAP NOW)
   const handleTap = useCallback(async () => {
     if (done) return;
 
-    const now = Date.now();
-    const wasJustLit = isLit;
-
-    if (wasJustLit) {
-      // Correct tap - only when lit
-      setConsecutiveCorrect((prev) => {
-        const newCount = prev + 1;
-
-        // Increase speed after CORRECT_TAPS_FOR_SPEED_UP correct taps
-        if (newCount >= CORRECT_TAPS_FOR_SPEED_UP) {
-          setBlinkInterval((current) => Math.max(MIN_BLINK_INTERVAL, current - SPEED_INCREASE));
-          setConsecutiveCorrect(0); // Reset counter
-        }
-
-        return newCount;
-      });
-
-      setScore((s) => {
-        const newScore = s + 1;
-
-        // Success animation
-        Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 1.2,
-            duration: 150,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 150,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        if (newScore >= TOTAL_TAPS_REQUIRED) {
-          setTimeout(() => {
-            endGame(newScore);
-          }, 500);
-        }
-
-        return newScore;
-      });
-
-      setIsLit(false);
-      glowAnim.setValue(0);
-
-      try {
-        await playSuccess();
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch {}
-
-      setLastTapTime(now);
-    } else {
+    // ONLY accept tap when circle is currently lit (showing TAP NOW)
+    if (!isLit) {
       // Wrong tap - tapped when not lit
       setMissed(true);
       setConsecutiveCorrect(0); // Reset consecutive correct count
@@ -223,10 +171,65 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       try {
         await playError();
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        speakTTS('Wait for it to light up!', 0.78 );
+        speakTTS('Wait for it to light up!', 0.78).catch(() => {});
       } catch {}
+      return; // Exit early - don't increase score
     }
-  }, [done, isLit, scaleAnim, glowAnim, shakeAnim, playSuccess, playError]);
+
+    // Correct tap - circle is lit (showing TAP NOW)
+    const now = Date.now();
+
+    // Correct tap - only when lit
+    setConsecutiveCorrect((prev) => {
+      const newCount = prev + 1;
+
+      // Increase speed after CORRECT_TAPS_FOR_SPEED_UP correct taps
+      if (newCount >= CORRECT_TAPS_FOR_SPEED_UP) {
+        setBlinkInterval((current) => Math.max(MIN_BLINK_INTERVAL, current - SPEED_INCREASE));
+        setConsecutiveCorrect(0); // Reset counter
+      }
+
+      return newCount;
+    });
+
+    setScore((s) => {
+      const newScore = s + 1;
+
+      // Success animation
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.2,
+          duration: 150,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 150,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      if (newScore >= TOTAL_TAPS_REQUIRED) {
+        setTimeout(() => {
+          endGame(newScore);
+        }, 500);
+      }
+
+      return newScore;
+    });
+
+    setIsLit(false);
+    glowAnim.setValue(0);
+
+    try {
+      await playSuccess();
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {}
+
+    setLastTapTime(now);
+  }, [done, isLit, scaleAnim, glowAnim, shakeAnim, playSuccess, playError, endGame]);
 
   // End game
   const endGame = useCallback(
@@ -235,9 +238,14 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const xp = finalScore * 12; // 12 XP per correct tap
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -253,8 +261,6 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log tap slowly game:', e);
       }
-
-      speakTTS('Great slow control!', 0.78 );
     },
     [router],
   );
@@ -268,58 +274,31 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Calculate speed percentage (faster = higher percentage)
   const speedPercentage = Math.round(((INITIAL_BLINK_INTERVAL - blinkInterval) / (INITIAL_BLINK_INTERVAL - MIN_BLINK_INTERVAL)) * 100);
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>⏱️</Text>
-            <Text style={styles.resultTitle}>Excellent rhythm control!</Text>
-            <Text style={styles.resultSubtitle}>
-              You tapped {finalStats.correct} out of {finalStats.total} times correctly.
-            </Text>
-            <Text style={styles.resultSubtitle}>
-              Final speed: {speedPercentage}% faster
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onHome={() => {
-                stopAllSpeech();
-                cleanupSounds();
-                onBack?.();
-              }}
-              onPlayAgain={() => {
-                setScore(0);
-                setBlinkInterval(INITIAL_BLINK_INTERVAL);
-                setConsecutiveCorrect(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                setIsLit(false);
-                glowAnim.setValue(0);
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Excellent Rhythm Control!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   // Glow animation style
@@ -358,47 +337,47 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       </View>
 
       <View style={styles.playArea}>
-        <Pressable onPress={handleTap} style={styles.tapArea}>
+        <Animated.View
+          style={[
+            styles.circleContainer,
+            {
+              transform: [{ scale: scaleAnim }],
+            },
+            shakeStyle,
+          ]}
+        >
+          {/* Glow effect */}
           <Animated.View
             style={[
-              styles.circleContainer,
+              styles.glowEffect,
               {
-                transform: [{ scale: scaleAnim }],
+                width: CIRCLE_SIZE + 60,
+                height: CIRCLE_SIZE + 60,
+                borderRadius: (CIRCLE_SIZE + 60) / 2,
               },
-              shakeStyle,
+              glowStyle,
+            ]}
+          />
+
+          {/* Main circle - Pressable only on the circle itself */}
+          <Pressable 
+            onPress={handleTap} 
+            style={[
+              styles.circle,
+              {
+                width: CIRCLE_SIZE,
+                height: CIRCLE_SIZE,
+                borderRadius: CIRCLE_SIZE / 2,
+                backgroundColor: isLit ? '#22C55E' : '#3B82F6',
+              },
             ]}
           >
-            {/* Glow effect */}
-            <Animated.View
-              style={[
-                styles.glowEffect,
-                {
-                  width: CIRCLE_SIZE + 60,
-                  height: CIRCLE_SIZE + 60,
-                  borderRadius: (CIRCLE_SIZE + 60) / 2,
-                },
-                glowStyle,
-              ]}
-            />
-
-            {/* Main circle */}
-            <View
-              style={[
-                styles.circle,
-                {
-                  width: CIRCLE_SIZE,
-                  height: CIRCLE_SIZE,
-                  borderRadius: CIRCLE_SIZE / 2,
-                  backgroundColor: isLit ? '#22C55E' : '#3B82F6',
-                },
-              ]}
-            >
-              <View style={styles.circleInner} />
-              {isLit && (
-                <Text style={styles.tapText}>TAP NOW!</Text>
-              )}
-            </View>
-          </Animated.View>
+            <View style={styles.circleInner} />
+            {isLit && (
+              <Text style={styles.tapText}>TAP NOW!</Text>
+            )}
+          </Pressable>
+        </Animated.View>
 
           {/* Sparkle burst on correct tap */}
           {score > 0 && isLit && (
@@ -407,13 +386,12 @@ const TapSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </View>
           )}
 
-          {/* Miss indicator */}
-          {missed && (
-            <View style={styles.missIndicator}>
-              <Text style={styles.missText}>Wait for it to light up! ⏳</Text>
-            </View>
-          )}
-        </Pressable>
+        {/* Miss indicator */}
+        {missed && (
+          <View style={styles.missIndicator}>
+            <Text style={styles.missText}>Wait for it to light up! ⏳</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.footerBox}>
@@ -477,12 +455,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-  },
-  tapArea: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
     position: 'relative',
   },
   circleContainer: {

@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -80,6 +80,7 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [isTooFast, setIsTooFast] = useState(false);
   const [speed, setSpeed] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Animation values
   const barX = useSharedValue(20);
@@ -105,10 +106,15 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const xp = finalScore * 18; // 18 XP per successful slow drag
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setRoundActive(false);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -124,8 +130,6 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log drag slowly game:', e);
       }
-
-      speakTTS('Great slow dragging!', 0.78 );
     },
     [router],
   );
@@ -310,52 +314,31 @@ const DragSlowlyGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Speed meter color
   const speedMeterColor = isTooFast ? '#EF4444' : speed > SLOW_TARGET ? '#F59E0B' : '#22C55E';
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🐌</Text>
-            <Text style={styles.resultTitle}>Slow drag master!</Text>
-            <Text style={styles.resultSubtitle}>
-              You completed {finalStats.correct} slow drags out of {finalStats.total}!
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setScore(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                setProgress(0);
-                setSpeed(0);
-                smoothedSpeedRef.current = 0;
-                setRoundActive(true);
-                barX.value = startX.value;
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Slow Control Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (

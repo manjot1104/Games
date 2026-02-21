@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -145,8 +145,13 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
         xp,
       });
       setLogTimestamp(timestamp);
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     } catch (error) {
       console.error('Failed to save game result:', error);
+      // Still show congratulations even if logging fails
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     }
   }, [done]);
 
@@ -211,7 +216,6 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
     starY.value = margin + Math.random() * (100 - margin * 2);
 
     // Reset star first
-    starSize.value = INITIAL_STAR_SIZE;
     starOpacity.value = 1;
     starScale.value = 1;
 
@@ -250,7 +254,12 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
       }
     );
 
-    starSize.value = withSequence(shrinkToMedium, shrinkToSmallest);
+    // Start animation from INITIAL_STAR_SIZE using withSequence
+    starSize.value = withSequence(
+      withTiming(INITIAL_STAR_SIZE, { duration: 0 }), // Set initial size immediately
+      shrinkToMedium,
+      shrinkToSmallest
+    );
 
     animationRef.current = { stop: () => {
       starSize.value = withTiming(MIN_STAR_SIZE, { duration: 0 });
@@ -396,35 +405,48 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      // Safe fallback: try to go back, but catch errors
+      try {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/Games');
+        }
+      } catch (error) {
+        try {
+          router.replace('/(tabs)/Games');
+        } catch (e) {
+          console.warn('Navigation error:', e);
+        }
+      }
     }
   }, [onBack, router]);
 
-  if (done && finalStats) {
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ResultCard
-            correct={finalStats.correct}
-            total={finalStats.total}
-            xp={finalStats.xp}
-            onPlayAgain={() => {
-              setDone(false);
-              setRound(1);
-              setScore(0);
-              setFinalStats(null);
-              setLogTimestamp(null);
-              startRound();
-            }}
-            onBack={handleBack}
-            timestamp={logTimestamp || undefined}
-          />
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Timing Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (
@@ -445,21 +467,22 @@ const TapWhenStarIsSmallestGame: React.FC<{ onBack?: () => void }> = ({ onBack }
 
       {/* Play area */}
       <View style={styles.playArea}>
-        <Pressable
-          onPress={handleStarTap}
-          style={styles.playAreaPressable}
-          disabled={!roundActive || done}
+        {/* Star with Pressable - only taps on star count */}
+        <Animated.View
+          style={[
+            styles.star,
+            starAnimatedStyle,
+            starPositionStyle,
+          ]}
         >
-          <Animated.View
-            style={[
-              styles.star,
-              starAnimatedStyle,
-              starPositionStyle,
-            ]}
+          <Pressable
+            onPress={handleStarTap}
+            style={styles.starPressable}
+            disabled={!roundActive || done}
           >
             <Text style={styles.starText}>⭐</Text>
-          </Animated.View>
-        </Pressable>
+          </Pressable>
+        </Animated.View>
 
         {/* Feedback */}
         {showFeedback && lastResult && (
@@ -534,12 +557,14 @@ const styles = StyleSheet.create({
     position: 'relative',
     margin: 20,
   },
-  playAreaPressable: {
-    flex: 1,
-    width: '100%',
-  },
   star: {
     position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  starPressable: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },

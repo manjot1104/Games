@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -79,6 +79,7 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [targetPosition, setTargetPosition] = useState({ x: 50, y: 50 }); // percentage
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Animation values
   const scale = useSharedValue(1);
@@ -131,9 +132,14 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const xp = finalScore * 12; // 12 XP per target
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -149,8 +155,6 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log shrinking target game:', e);
       }
-
-      speakTTS('Excellent precision!', 0.78 );
     },
     [router],
   );
@@ -258,40 +262,31 @@ const ShrinkingTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     top: `${sparkleY.value}%`,
   }));
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient
-          colors={['#FEF3C7', '#FDE68A', '#FCD34D']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={styles.resultContainer}>
-          <ResultCard
-            correct={finalStats.correct}
-            total={finalStats.total}
-            xpAwarded={finalStats.xp}
-            accuracy={accuracyPct}
-            logTimestamp={logTimestamp}
-            onHome={() => {
-              stopAllSpeech();
-              cleanupSounds();
-              onBack?.();
-            }}
-            onPlayAgain={() => {
-              setScore(0);
-              setCurrentSize(INITIAL_SIZE);
-              setMissCount(0);
-              setDone(false);
-              setFinalStats(null);
-              setLogTimestamp(null);
-              spawnTarget();
-            }}
-          />
-        </View>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Excellent Precision!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   const currentColor = COLORS[score % COLORS.length];

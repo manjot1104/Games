@@ -9,7 +9,7 @@ const GameLogSchema = new Schema(
         'tap','match','sort','emoji','quiz',
         'follow-ball','movingTarget','pop','tapAndHold','multiTap',
         'smallCircleTap','tapOnlySmall','shrinkingTarget','trackThenTap','multipleSmallTargets',
-        'tapSlowly','tapFast','slowThenFast','tapWithSound','raceTheDot',
+        'tapSlowly','tapFast','slowThenFast','raceTheDot',
         'holdTheButton','growTheBalloon','launchRocket','squishTheJelly','holdTheLight',
         'dragBallToGoal','followTheLine','dragAnimalHome','dragSlowly','puzzlePieceDrag',
         'tapTheNumbers','tapLightsInOrder','followTheArrows','tapColoursInOrder',
@@ -17,7 +17,7 @@ const GameLogSchema = new Schema(
         'matchShapeToOutline','tinyDotTap','tapTheCenterOfTheTarget','movingSmallTarget',
         'tapOnlyTheSmallestShape','tapTheHiddenSmallObject','shrinkingCircleTap',
         'tapWhenStarIsSmallest','shrinkStopTap','multipleShrinkingTargets','shrinkingObjectMovement',
-        'pinchToPop','pinchAndDrag','twoFingerSimultaneousTap','pinchToResize','pinchToOpenTreasureBox',
+        'pinchToPop','twoFingerSimultaneousTap','pinchToResize','pinchToOpenTreasureBox',
     
         // Speech / new ones from navdeep
         'follow-my-point','point-to-object-appears','tap-the-pointed-object','moving-arm-pointing',

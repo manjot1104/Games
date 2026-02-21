@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -87,6 +87,7 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
   const [showSequence, setShowSequence] = useState(true);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Animation values
   const upGlow = useSharedValue(0);
@@ -111,10 +112,15 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const xp = finalScore * 18; // 18 XP per successful sequence
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setRoundActive(false);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -130,8 +136,6 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log follow the arrows game:', e);
       }
-
-      speakTTS('Great direction following!', 0.78 );
     },
     [router],
   );
@@ -147,21 +151,21 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return newSequence;
   }, [round]);
 
-  // Show sequence animation
-  useEffect(() => {
-    if (done) return;
-    
-    // Always show sequence when round changes or on initial load
-    const newSequence = generateSequence();
-    setSequence(newSequence);
-    setCurrentSequenceIndex(0);
+  // Function to show sequence animation (can be called anytime)
+  const showSequenceAnimation = useCallback((sequenceToShow: ArrowDirection[]) => {
     setShowSequence(true);
     setRoundActive(false);
+    
+    // Reset all glows
+    upGlow.value = 0;
+    downGlow.value = 0;
+    leftGlow.value = 0;
+    rightGlow.value = 0;
 
     // Animate sequence
     let index = 0;
     const showNext = () => {
-      if (index >= newSequence.length) {
+      if (index >= sequenceToShow.length) {
         setShowSequence(false);
         setRoundActive(true);
         try {
@@ -170,7 +174,7 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         return;
       }
 
-      const direction = newSequence[index];
+      const direction = sequenceToShow[index];
       const glowAnim = direction === 'up' ? upGlow : direction === 'down' ? downGlow : direction === 'left' ? leftGlow : rightGlow;
       
       glowAnim.value = withSequence(
@@ -183,12 +187,23 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     };
 
     setTimeout(showNext, 500);
+  }, [upGlow, downGlow, leftGlow, rightGlow]);
+
+  // Show sequence animation on round change
+  useEffect(() => {
+    if (done) return;
+    
+    // Always show sequence when round changes or on initial load
+    const newSequence = generateSequence();
+    setSequence(newSequence);
+    setCurrentSequenceIndex(0);
+    showSequenceAnimation(newSequence);
     
     return () => {
       stopAllSpeech();
       cleanupSounds();
     };
-  }, [round, generateSequence, done, upGlow, downGlow, leftGlow, rightGlow]);
+  }, [round, generateSequence, done, showSequenceAnimation]);
 
   // Handle tap
   const handleTap = useCallback(async (direction: ArrowDirection) => {
@@ -258,16 +273,13 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         speakTTS('Watch the sequence again!', 0.78 );
       } catch {}
 
-      // Show sequence again
-      setShowSequence(true);
-      setRoundActive(false);
+      // Show sequence again - replay the same sequence
+      setIsShaking(false);
       setTimeout(() => {
-        setShowSequence(false);
-        setRoundActive(true);
-        setIsShaking(false);
-      }, 2000);
+        showSequenceAnimation(sequence);
+      }, 500);
     }
-  }, [roundActive, done, isShaking, showSequence, currentSequenceIndex, sequence, playSuccess, playError, upScale, downScale, leftScale, rightScale, upX, downX, leftX, rightX, endGame]);
+  }, [roundActive, done, isShaking, showSequence, currentSequenceIndex, sequence, playSuccess, playError, upScale, downScale, leftScale, rightScale, upX, downX, leftX, rightX, endGame, showSequenceAnimation]);
 
   const handleBack = useCallback(() => {
     stopAllSpeech();
@@ -316,57 +328,31 @@ const FollowTheArrowsGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   // Get expected direction for highlighting
   const expectedDirection = sequence[currentSequenceIndex];
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>➡️</Text>
-            <Text style={styles.resultTitle}>Arrow master!</Text>
-            <Text style={styles.resultSubtitle}>
-              You completed {finalStats.correct} sequences out of {finalStats.total}!
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setScore(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                setCurrentSequenceIndex(0);
-                setRoundActive(true);
-                upGlow.value = 0;
-                downGlow.value = 0;
-                leftGlow.value = 0;
-                rightGlow.value = 0;
-                upScale.value = 1;
-                downScale.value = 1;
-                leftScale.value = 1;
-                rightScale.value = 1;
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Arrow Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (

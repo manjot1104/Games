@@ -92,9 +92,29 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   // Initial instruction - only once
   useEffect(() => {
-    try {
-      speakTTS('Tap and hold the button for 2 seconds. Don\'t let go!', 0.78 );
-    } catch {}
+    let mounted = true;
+    
+    const initializeGame = async () => {
+      try {
+        // Wait for TTS to initialize and start speaking
+        await speakTTS('Tap and hold the button for 2 seconds. Don\'t let go!', 0.78);
+        // Add a small delay to ensure TTS has started speaking
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        console.warn('TTS initialization error:', error);
+      }
+    };
+
+    initializeGame();
+
+    return () => {
+      mounted = false;
+      try {
+        stopTTS();
+      } catch (e) {
+        // Ignore errors
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
@@ -437,11 +457,11 @@ const TapAndHoldGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               ]}
               disabled={!roundActive || isComplete}
             >
-              <Text style={styles.buttonText}>
+              <Text style={styles.buttonText} selectable={false}>
                 {isComplete ? '✓' : isHolding ? 'Hold!' : 'Tap & Hold'}
               </Text>
               {isHolding && !isComplete && (
-                <Text style={styles.progressText}>
+                <Text style={styles.progressText} selectable={false}>
                   {Math.round(holdProgress * 100)}%
                 </Text>
               )}
@@ -564,6 +584,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    // Prevent text selection on mobile/web
+    ...(Platform.OS === 'web' && { userSelect: 'none' as any }),
   },
   progressRingBg: {
     position: 'absolute',
@@ -614,18 +636,24 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
+    // Prevent text selection on mobile
+    ...(Platform.OS === 'web' && { userSelect: 'none' as any }),
   },
   buttonText: {
     fontSize: 24,
     fontWeight: '800',
     color: '#FFFFFF',
     marginBottom: 4,
+    // Prevent text selection
+    ...(Platform.OS === 'web' && { userSelect: 'none' as any }),
   },
   progressText: {
     fontSize: 18,
     fontWeight: '700',
     color: '#FFFFFF',
     opacity: 0.9,
+    // Prevent text selection
+    ...(Platform.OS === 'web' && { userSelect: 'none' as any }),
   },
   footerBox: {
     marginBottom: 20,

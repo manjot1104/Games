@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -88,6 +88,7 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
   const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
   const [showSequence, setShowSequence] = useState(true);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Animation values for each color
   const redGlow = useSharedValue(0);
@@ -109,10 +110,15 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       const xp = finalScore * 18; // 18 XP per successful sequence
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setRoundActive(false);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -128,8 +134,6 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
       } catch (e) {
         console.error('Failed to log tap colours in order game:', e);
       }
-
-      speakTTS('Great color sequencing!', 0.78 );
     },
     [router],
   );
@@ -144,21 +148,23 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
     return newSequence;
   }, []);
 
-  // Show sequence animation
-  useEffect(() => {
-    if (done) return;
-    
-    // Always show sequence when round changes or on initial load
-    const newSequence = generateSequence();
-    setSequence(newSequence);
-    setCurrentSequenceIndex(0);
+  // Function to show sequence animation (can be called anytime)
+  const showSequenceAnimation = useCallback((sequenceToShow: ColorType[]) => {
     setShowSequence(true);
     setRoundActive(false);
+    
+    // Reset all glows and scales
+    redGlow.value = 0;
+    greenGlow.value = 0;
+    blueGlow.value = 0;
+    redScale.value = 1;
+    greenScale.value = 1;
+    blueScale.value = 1;
 
     // Animate sequence
     let index = 0;
     const showNext = () => {
-      if (index >= newSequence.length) {
+      if (index >= sequenceToShow.length) {
         setShowSequence(false);
         setRoundActive(true);
         try {
@@ -167,7 +173,7 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         return;
       }
 
-      const color = newSequence[index];
+      const color = sequenceToShow[index];
       const glowAnim = color === 'red' ? redGlow : color === 'green' ? greenGlow : blueGlow;
       const scaleAnim = color === 'red' ? redScale : color === 'green' ? greenScale : blueScale;
       
@@ -187,12 +193,23 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
     };
 
     setTimeout(showNext, 500);
+  }, [redGlow, greenGlow, blueGlow, redScale, greenScale, blueScale]);
+
+  // Show sequence animation on round change
+  useEffect(() => {
+    if (done) return;
+    
+    // Always show sequence when round changes or on initial load
+    const newSequence = generateSequence();
+    setSequence(newSequence);
+    setCurrentSequenceIndex(0);
+    showSequenceAnimation(newSequence);
     
     return () => {
       stopAllSpeech();
       cleanupSounds();
     };
-  }, [round, generateSequence, done, redGlow, greenGlow, blueGlow]);
+  }, [round, generateSequence, done, showSequenceAnimation]);
 
   // Handle tap
   const handleTap = useCallback(async (color: ColorType) => {
@@ -262,16 +279,13 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
         speakTTS('Watch the sequence again!', 0.78 );
       } catch {}
 
-      // Show sequence again
-      setShowSequence(true);
-      setRoundActive(false);
+      // Show sequence again - replay the same sequence
+      setIsShaking(false);
       setTimeout(() => {
-        setShowSequence(false);
-        setRoundActive(true);
-        setIsShaking(false);
-      }, 2000);
+        showSequenceAnimation(sequence);
+      }, 500);
     }
-  }, [roundActive, done, isShaking, showSequence, currentSequenceIndex, sequence, playSuccess, playError, redScale, greenScale, blueScale, redX, greenX, blueX, endGame]);
+  }, [roundActive, done, isShaking, showSequence, currentSequenceIndex, sequence, playSuccess, playError, redScale, greenScale, blueScale, redX, greenX, blueX, endGame, showSequenceAnimation]);
 
   const handleBack = useCallback(() => {
     stopAllSpeech();
@@ -350,55 +364,31 @@ const TapColoursInOrderGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =>
   const positions = ['left', 'center', 'right'];
   const shuffledPositions = [...positions].sort(() => Math.random() - 0.5);
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🎨</Text>
-            <Text style={styles.resultTitle}>Color master!</Text>
-            <Text style={styles.resultSubtitle}>
-              You completed {finalStats.correct} color sequences out of {finalStats.total}!
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setScore(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                setCurrentSequenceIndex(0);
-                setRoundActive(true);
-                redGlow.value = 0;
-                greenGlow.value = 0;
-                blueGlow.value = 0;
-                redScale.value = 1;
-                greenScale.value = 1;
-                blueScale.value = 1;
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Color Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (

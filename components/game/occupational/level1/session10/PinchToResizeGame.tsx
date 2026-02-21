@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -77,6 +77,7 @@ const PinchToResizeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [roundActive, setRoundActive] = useState(false);
   const [lastResult, setLastResult] = useState<'hit' | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -148,8 +149,13 @@ const PinchToResizeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         xp,
       });
       setLogTimestamp(timestamp);
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     } catch (error) {
       console.error('Failed to save game result:', error);
+      // Still show congratulations even if logging fails
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     }
   }, [done]);
 
@@ -363,35 +369,48 @@ const PinchToResizeGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      // Safe fallback: try to go back, but catch errors
+      try {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/Games');
+        }
+      } catch (error) {
+        try {
+          router.replace('/(tabs)/Games');
+        } catch (e) {
+          console.warn('Navigation error:', e);
+        }
+      }
     }
   }, [onBack, router]);
 
-  if (done && finalStats) {
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ResultCard
-            correct={finalStats.correct}
-            total={finalStats.total}
-            xp={finalStats.xp}
-            onPlayAgain={() => {
-              setDone(false);
-              setRound(1);
-              setScore(0);
-              setFinalStats(null);
-              setLogTimestamp(null);
-              startRound();
-            }}
-            onBack={handleBack}
-            timestamp={logTimestamp || undefined}
-          />
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Resize Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (

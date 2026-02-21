@@ -111,11 +111,33 @@ const MovingTargetTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [xAnim, scaleAnim]);
 
   useEffect(() => {
-    try {
-      speakTTS('Watch the slow balloon and tap it before it reaches the other side!', 0.78 );
-    } catch {}
-    startRound();
+    let mounted = true;
+    
+    const initializeGame = async () => {
+      try {
+        // Wait for TTS to initialize and start speaking
+        await speakTTS('Watch the slow balloon and tap it before it reaches the other side!', 0.78);
+        // Add a small delay to ensure TTS has started speaking before game begins
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        if (mounted) {
+          startRound();
+        }
+      } catch (error) {
+        console.warn('TTS initialization error:', error);
+        // Even if TTS fails, start the game after a short delay
+        if (mounted) {
+          setTimeout(() => {
+            if (mounted) startRound();
+          }, 500);
+        }
+      }
+    };
+
+    initializeGame();
+
     return () => {
+      mounted = false;
       currentAnimRef.current?.stop();
       // Cleanup: Stop speech when component unmounts
       try {

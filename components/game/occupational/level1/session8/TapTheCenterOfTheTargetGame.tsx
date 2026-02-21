@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -78,6 +78,7 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
   const [targetPosition, setTargetPosition] = useState<{ x: number; y: number } | null>(null);
   const [lastResult, setLastResult] = useState<TapResult | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   const playSuccess = useSoundEffect(SUCCESS_SOUND);
   const playError = useSoundEffect(ERROR_SOUND);
@@ -112,10 +113,15 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
       const xp = finalCenterTaps * 15 + edgeTaps * 5; // 15 XP for center, 5 for edge
       const accuracy = (finalCenterTaps / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalCenterTaps, total, xp });
       setDone(true);
       setRoundActive(false);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -131,8 +137,6 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
       } catch (e) {
         console.error('Failed to log tap the center of the target game:', e);
       }
-
-      speakTTS('Great precision!', 0.78 );
     },
     [router, edgeTaps],
   );
@@ -380,9 +384,36 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
           await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           speakTTS('Try again!', 0.78 );
         } catch {}
+        
+        // Miss - don't advance round, just reset and try again
+        setTimeout(() => {
+          setShowFeedback(false);
+          feedbackOpacity.setValue(0);
+          setRoundActive(true);
+          roundActiveRef.current = true;
+          // Restart center glow animation
+          centerGlow.setValue(0);
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(centerGlow, {
+                toValue: 1,
+                duration: 1000,
+                easing: Easing.inOut(Easing.ease),
+                useNativeDriver: true,
+              }),
+              Animated.timing(centerGlow, {
+                toValue: 0,
+                duration: 1000,
+                easing: Easing.inOut(Easing.ease),
+                useNativeDriver: true,
+              }),
+            ]),
+          ).start();
+        }, 1500);
+        return; // Don't proceed to next round logic
       }
 
-      // Next round or finish
+      // Next round or finish (only for center or edge taps)
       if (roundRef.current >= TOTAL_ROUNDS) {
         setTimeout(() => {
           endGame(result === 'center' ? centerTapsRef.current + 1 : centerTapsRef.current);
@@ -432,50 +463,31 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
     onBack?.();
   }, [onBack]);
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🎯</Text>
-            <Text style={styles.resultTitle}>Precision master!</Text>
-            <Text style={styles.resultSubtitle}>
-              Center taps: {finalStats.correct} • Edge taps: {edgeTaps} • Misses: {misses}
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setCenterTaps(0);
-                setEdgeTaps(0);
-                setMisses(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                startRound();
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Precision Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   const centerGlowOpacity = centerGlow.interpolate({
@@ -574,21 +586,31 @@ const TapTheCenterOfTheTargetGame: React.FC<{ onBack?: () => void }> = ({ onBack
                       speakTTS('Try the center dot!', 0.78 );
                     } catch {}
 
-                    // Next round or finish
-                    if (roundRef.current >= TOTAL_ROUNDS) {
-                      setTimeout(() => {
-                        endGame(centerTapsRef.current);
-                      }, 1500);
-                    } else {
-                      setTimeout(() => {
-                        setShowFeedback(false);
-                        feedbackOpacity.setValue(0);
-                        setRound((r) => r + 1);
-                        setTimeout(() => {
-                          startRound();
-                        }, 300);
-                      }, 1500);
-                    }
+                    // Miss - don't advance round, just reset and try again
+                    setTimeout(() => {
+                      setShowFeedback(false);
+                      feedbackOpacity.setValue(0);
+                      setRoundActive(true);
+                      roundActiveRef.current = true;
+                      // Restart center glow animation
+                      centerGlow.setValue(0);
+                      Animated.loop(
+                        Animated.sequence([
+                          Animated.timing(centerGlow, {
+                            toValue: 1,
+                            duration: 1000,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                          }),
+                          Animated.timing(centerGlow, {
+                            toValue: 0,
+                            duration: 1000,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                          }),
+                        ]),
+                      ).start();
+                    }, 1500);
                   }}
                   style={styles.outerRingPressable}
                   disabled={!roundActive || done}

@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -77,6 +77,7 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isOffTrack, setIsOffTrack] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Line path (start to end)
   const lineStartX = useSharedValue(15);
@@ -102,10 +103,15 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const xp = finalScore * 18; // 18 XP per successful follow
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setRoundActive(false);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -121,8 +127,6 @@ const FollowTheLineGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log follow the line game:', e);
       }
-
-      speakTTS('Great line following!', 0.78 );
     },
     [router],
   );

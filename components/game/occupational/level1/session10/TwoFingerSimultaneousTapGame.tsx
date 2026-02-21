@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -32,7 +32,7 @@ const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.
 const ERROR_SOUND = 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg';
 const TOTAL_ROUNDS = 8;
 const TARGET_SIZE = 120;
-const MAX_TAP_DELAY = 200; // Maximum time between taps (ms)
+const MAX_TAP_DELAY = 400; // Maximum time between taps (ms) - increased for better detection
 
 const useSoundEffect = (uri: string) => {
   const soundRef = useRef<ExpoAudio.Sound | null>(null);
@@ -77,6 +77,7 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [roundActive, setRoundActive] = useState(false);
   const [lastResult, setLastResult] = useState<'hit' | 'miss' | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -147,8 +148,13 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
         xp,
       });
       setLogTimestamp(timestamp);
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     } catch (error) {
       console.error('Failed to save game result:', error);
+      // Still show congratulations even if logging fails
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     }
   }, [done]);
 
@@ -254,8 +260,24 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
     if (!roundActiveRef.current || done) return;
 
     const now = Date.now();
+    const firstTapTime = firstTapTimeRef.current;
+    const firstTapTarget = firstTapTargetRef.current;
 
-    if (firstTapTimeRef.current === null) {
+    // Check if this is truly simultaneous (within 50ms) - handle race condition
+    if (firstTapTime !== null && now - firstTapTime < 50) {
+      // Very close taps - check if they're on different targets
+      if (firstTapTarget !== target) {
+        // Success! Both taps happened almost simultaneously on different targets
+        if (tapTimeoutRef.current) {
+          clearTimeout(tapTimeoutRef.current);
+          tapTimeoutRef.current = null;
+        }
+        runOnJS(handleSuccess)();
+        return;
+      }
+    }
+
+    if (firstTapTime === null) {
       // First tap
       firstTapTimeRef.current = now;
       firstTapTargetRef.current = target;
@@ -266,7 +288,7 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
       }, MAX_TAP_DELAY);
     } else {
       // Second tap
-      const timeDiff = now - firstTapTimeRef.current;
+      const timeDiff = now - firstTapTime;
 
       if (tapTimeoutRef.current) {
         clearTimeout(tapTimeoutRef.current);
@@ -275,7 +297,7 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
 
       // Check if taps are on different targets and within time limit
       if (
-        firstTapTargetRef.current !== target &&
+        firstTapTarget !== target &&
         timeDiff <= MAX_TAP_DELAY
       ) {
         // Success!
@@ -434,35 +456,48 @@ const TwoFingerSimultaneousTapGame: React.FC<{ onBack?: () => void }> = ({ onBac
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      // Safe fallback: try to go back, but catch errors
+      try {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/Games');
+        }
+      } catch (error) {
+        try {
+          router.replace('/(tabs)/Games');
+        } catch (e) {
+          console.warn('Navigation error:', e);
+        }
+      }
     }
   }, [onBack, router]);
 
-  if (done && finalStats) {
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ResultCard
-            correct={finalStats.correct}
-            total={finalStats.total}
-            xp={finalStats.xp}
-            onPlayAgain={() => {
-              setDone(false);
-              setRound(1);
-              setScore(0);
-              setFinalStats(null);
-              setLogTimestamp(null);
-              startRound();
-            }}
-            onBack={handleBack}
-            timestamp={logTimestamp || undefined}
-          />
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Coordination Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (

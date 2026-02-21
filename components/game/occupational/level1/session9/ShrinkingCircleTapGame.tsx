@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { speak as speakTTS } from '@/utils/tts';
@@ -145,8 +145,13 @@ const ShrinkingCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
         xp,
       });
       setLogTimestamp(timestamp);
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     } catch (error) {
       console.error('Failed to save game result:', error);
+      // Still show congratulations even if logging fails
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     }
   }, [done]);
 
@@ -418,35 +423,50 @@ const ShrinkingCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      // Safe fallback: try to go back, but catch errors
+      try {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          // If can't go back, navigate to a safe route
+          router.replace('/(tabs)/Games');
+        }
+      } catch (error) {
+        // If navigation fails, try to navigate to Games tab
+        try {
+          router.replace('/(tabs)/Games');
+        } catch (e) {
+          console.warn('Navigation error:', e);
+        }
+      }
     }
   }, [onBack, router]);
 
-  if (done && finalStats) {
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ResultCard
-            correct={finalStats.correct}
-            total={finalStats.total}
-            xp={finalStats.xp}
-            onPlayAgain={() => {
-              setDone(false);
-              setRound(1);
-              setScore(0);
-              setFinalStats(null);
-              setLogTimestamp(null);
-              startRound();
-            }}
-            onBack={handleBack}
-            timestamp={logTimestamp || undefined}
-          />
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Precision Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (
@@ -472,32 +492,26 @@ const ShrinkingCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) =
 
       {/* Play area */}
       <View style={styles.playArea}>
-        <Pressable
-          onPress={handleCircleTap}
-          style={styles.playAreaPressable}
-          disabled={!roundActive || done}
+        {/* Circle with Pressable - only taps on circle count */}
+        <Animated.View
+          style={[
+            styles.circleContainer,
+            circlePositionStyle,
+          ]}
         >
-          {/* Circle with separate Pressable for direct tap */}
-          <Animated.View
-            style={[
-              styles.circleContainer,
-              circlePositionStyle,
-            ]}
+          <Pressable
+            onPress={handleCircleTap}
+            style={styles.circlePressable}
+            disabled={!roundActive || done}
           >
-            <Pressable
-              onPress={handleCircleTap}
-              style={styles.circlePressable}
-              disabled={!roundActive || done}
-            >
-              <Animated.View
-                style={[
-                  styles.circle,
-                  circleAnimatedStyle,
-                ]}
-              />
-            </Pressable>
-          </Animated.View>
-        </Pressable>
+            <Animated.View
+              style={[
+                styles.circle,
+                circleAnimatedStyle,
+              ]}
+            />
+          </Pressable>
+        </Animated.View>
 
         {/* Feedback */}
         {showFeedback && lastResult && (

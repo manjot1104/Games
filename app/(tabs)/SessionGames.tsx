@@ -363,7 +363,6 @@ import RaceTheDotGame from '@/components/game/occupational/level1/session3/RaceT
 import SlowThenFastGame from '@/components/game/occupational/level1/session3/SlowThenFastGame';
 import TapFastGame from '@/components/game/occupational/level1/session3/TapFastGame';
 import TapSlowlyGame from '@/components/game/occupational/level1/session3/TapSlowlyGame';
-import TapWithSoundGame from '@/components/game/occupational/level1/session3/TapWithSoundGame';
 
 // Occupational Therapy Level 1 Session 4
 import GrowTheBalloonGame from '@/components/game/occupational/level1/session4/GrowTheBalloonGame';
@@ -407,7 +406,6 @@ import ShrinkStopTapGame from '@/components/game/occupational/level1/session9/Sh
 import TapWhenStarIsSmallestGame from '@/components/game/occupational/level1/session9/TapWhenStarIsSmallestGame';
 
 // Occupational Therapy Level 1 Session 10
-import PinchAndDragGame from '@/components/game/occupational/level1/session10/PinchAndDragGame';
 import PinchToOpenTreasureBoxGame from '@/components/game/occupational/level1/session10/PinchToOpenTreasureBoxGame';
 import PinchToPopGame from '@/components/game/occupational/level1/session10/PinchToPopGame';
 import PinchToResizeGame from '@/components/game/occupational/level1/session10/PinchToResizeGame';
@@ -677,7 +675,6 @@ type GameKey =
   | 'tap-slowly'
   | 'tap-fast'
   | 'slow-then-fast'
-  | 'tap-with-sound'
   | 'race-the-dot'
   | 'hold-the-button'
   | 'grow-the-balloon'
@@ -709,7 +706,6 @@ type GameKey =
   | 'multiple-shrinking-targets'
   | 'shrinking-object-movement'
   | 'pinch-to-pop'
-  | 'pinch-and-drag'
   | 'two-finger-simultaneous-tap'
   | 'pinch-to-resize'
   | 'pinch-to-open-treasure-box'
@@ -1009,11 +1005,7 @@ export default function SessionGamesScreen() {
   const isSlowThenFastAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 3;
 
-  // Level 1 Session 3 Game 4: Tap With Sound - available for OT Level 1 Session 3 ONLY
-  const isTapWithSoundAvailable =
-    therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 3;
-
-  // Level 1 Session 3 Game 5: Race The Dot - available for OT Level 1 Session 3 ONLY
+  // Level 1 Session 3 Game 4: Race The Dot - available for OT Level 1 Session 3 ONLY
   const isRaceTheDotAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 3;
 
@@ -1137,11 +1129,7 @@ export default function SessionGamesScreen() {
   const isPinchToPopAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 10;
 
-  // Level 1 Session 10 Game 2: Pinch and Drag - available for OT Level 1 Session 10
-  const isPinchAndDragAvailable =
-    therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 10;
-
-  // Level 1 Session 10 Game 3: Two-Finger Simultaneous Tap - available for OT Level 1 Session 10
+  // Level 1 Session 10 Game 2: Two-Finger Simultaneous Tap - available for OT Level 1 Session 10
   const isTwoFingerSimultaneousTapAvailable =
     therapyId === 'occupational' && levelNumber === 1 && sessionNumber === 10;
 
@@ -2057,14 +2045,6 @@ export default function SessionGamesScreen() {
       available: isSlowThenFastAvailable,
     },
     {
-      id: 'tap-with-sound',
-      title: 'Tap With Sound',
-      emoji: '🥁',
-      description: 'Listen to the drum beat and tap with it! Start slow, then tap fast. Build rhythm and motor synchronization.',
-      color: '#3B82F6',
-      available: isTapWithSoundAvailable,
-    },
-    {
       id: 'race-the-dot',
       title: 'Race The Dot',
       emoji: '🏁',
@@ -2311,14 +2291,6 @@ export default function SessionGamesScreen() {
       description: 'Use two fingers to pinch the balloon and pop it! Build pinch strength and two-finger coordination.',
       color: '#EF4444',
       available: isPinchToPopAvailable,
-    },
-    {
-      id: 'pinch-and-drag',
-      title: 'Pinch and Drag',
-      emoji: '🎯',
-      description: 'Pinch the object and drag it to the goal! Build pinch stability and drag coordination.',
-      color: '#3B82F6',
-      available: isPinchAndDragAvailable,
     },
     {
       id: 'two-finger-simultaneous-tap',
@@ -4703,10 +4675,6 @@ export default function SessionGamesScreen() {
     return <SlowThenFastGame onBack={() => setCurrentGame('menu')} />;
   }
 
-  if (currentGame === 'tap-with-sound') {
-    return <TapWithSoundGame onBack={() => setCurrentGame('menu')} />;
-  }
-
   if (currentGame === 'race-the-dot') {
     return <RaceTheDotGame onBack={() => setCurrentGame('menu')} />;
   }
@@ -4829,10 +4797,6 @@ export default function SessionGamesScreen() {
 
   if (currentGame === 'pinch-to-pop') {
     return <PinchToPopGame onBack={() => setCurrentGame('menu')} />;
-  }
-
-  if (currentGame === 'pinch-and-drag') {
-    return <PinchAndDragGame onBack={() => setCurrentGame('menu')} />;
   }
 
   if (currentGame === 'two-finger-simultaneous-tap') {
@@ -6137,7 +6101,6 @@ export default function SessionGamesScreen() {
                   if (game.id === 'tap-slowly') setCurrentGame('tap-slowly');
                   if (game.id === 'tap-fast') setCurrentGame('tap-fast');
                   if (game.id === 'slow-then-fast') setCurrentGame('slow-then-fast');
-                  if (game.id === 'tap-with-sound') setCurrentGame('tap-with-sound');
                   if (game.id === 'race-the-dot') setCurrentGame('race-the-dot');
                   if (game.id === 'hold-the-button') setCurrentGame('hold-the-button');
                   if (game.id === 'grow-the-balloon') setCurrentGame('grow-the-balloon');
@@ -6169,7 +6132,6 @@ export default function SessionGamesScreen() {
                   if (game.id === 'multiple-shrinking-targets') setCurrentGame('multiple-shrinking-targets');
                   if (game.id === 'shrinking-object-movement') setCurrentGame('shrinking-object-movement');
                   if (game.id === 'pinch-to-pop') setCurrentGame('pinch-to-pop');
-                  if (game.id === 'pinch-and-drag') setCurrentGame('pinch-and-drag');
                   if (game.id === 'two-finger-simultaneous-tap') setCurrentGame('two-finger-simultaneous-tap');
                   if (game.id === 'pinch-to-resize') setCurrentGame('pinch-to-resize');
                   if (game.id === 'pinch-to-open-treasure-box') setCurrentGame('pinch-to-open-treasure-box');

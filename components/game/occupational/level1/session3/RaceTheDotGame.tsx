@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -29,8 +29,8 @@ import Animated, {
 const SUCCESS_SOUND = 'https://actions.google.com/sounds/v1/cartoon/balloon_pop.ogg';
 const GOAL_SOUND = 'https://actions.google.com/sounds/v1/cartoon/pop.ogg';
 const TOTAL_ROUNDS = 10;
-const SLOW_SPEED = 2; // pixels per tap (slow movement)
-const FAST_SPEED = 8; // pixels per tap (fast movement)
+const SLOW_SPEED = 30; // pixels per tap (10% per tap - 30/300 = 10%)
+const FAST_SPEED = 30; // pixels per tap (10% per tap - 30/300 = 10%)
 const GOAL_DISTANCE = 300; // pixels to reach goal
 const SLOW_ROUNDS = 5; // First 5 rounds are slow
 const FAST_ROUNDS = 5; // Last 5 rounds are fast
@@ -82,6 +82,7 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [dotPosition, setDotPosition] = useState(0); // Position along path (0 to GOAL_DISTANCE)
   const [isFastMode, setIsFastMode] = useState(false);
   const [showGoal, setShowGoal] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Animation values
   const dotX = useSharedValue(50); // Start at 50% of screen width
@@ -199,9 +200,14 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const xp = finalScore * 15; // 15 XP per successful round
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -217,8 +223,6 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log race the dot game:', e);
       }
-
-      speakTTS('Great racing!', 0.78 );
     },
     [router],
   );
@@ -262,48 +266,31 @@ const RaceTheDotGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     top: `${sparkleY.value}%`,
   }));
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🏁</Text>
-            <Text style={styles.resultTitle}>Race complete!</Text>
-            <Text style={styles.resultSubtitle}>
-              You reached the goal {finalStats.correct} out of {finalStats.total} times!
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setScore(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                startRound();
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Race Complete!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (

@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -77,6 +77,7 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [roundActive, setRoundActive] = useState(true);
   const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Animation values for each circle
   const circle1Scale = useSharedValue(1);
@@ -95,10 +96,15 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const xp = finalScore * 18; // 18 XP per successful sequence
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setRoundActive(false);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -114,8 +120,6 @@ const TapTheNumbersGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log tap the numbers game:', e);
       }
-
-      speakTTS('Great sequencing!', 0.78 );
     },
     [router],
   );

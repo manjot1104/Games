@@ -1,4 +1,4 @@
-import ResultCard from '@/components/game/ResultCard';
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -77,6 +77,7 @@ const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
   const [roundActive, setRoundActive] = useState(false);
   const [targetShape, setTargetShape] = useState<ShapeType | null>(null);
   const [showingTarget, setShowingTarget] = useState(true);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [shapes, setShapes] = useState<ShapeType[]>([]);
   const [isShaking, setIsShaking] = useState(false);
 
@@ -94,10 +95,15 @@ const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
       const xp = finalScore * 15; // 15 XP per correct tap
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setRoundActive(false);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -113,8 +119,6 @@ const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
       } catch (e) {
         console.error('Failed to log tap the shape I show you game:', e);
       }
-
-      speakTTS('Great job!', 0.78 );
     },
     [router],
   );
@@ -273,48 +277,31 @@ const TapTheShapeIShowYouGame: React.FC<{ onBack?: () => void }> = ({ onBack }) 
     onBack?.();
   }, [onBack]);
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>🎯</Text>
-            <Text style={styles.resultTitle}>Shape master!</Text>
-            <Text style={styles.resultSubtitle}>
-              You matched {finalStats.correct} shapes out of {finalStats.total}!
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setScore(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                startRound();
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Shape Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   const shakeTranslateX = shakeAnim.interpolate({

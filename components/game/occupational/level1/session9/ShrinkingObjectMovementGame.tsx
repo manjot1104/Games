@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -82,6 +82,7 @@ const ShrinkingObjectMovementGame: React.FC<{ onBack?: () => void }> = ({ onBack
   const [lastResult, setLastResult] = useState<'hit' | 'miss' | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [sparkleKey, setSparkleKey] = useState(0);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [playAreaLayout, setPlayAreaLayout] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
 
   // Animation values
@@ -153,8 +154,13 @@ const ShrinkingObjectMovementGame: React.FC<{ onBack?: () => void }> = ({ onBack
         xp,
       });
       setLogTimestamp(timestamp);
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     } catch (error) {
       console.error('Failed to save game result:', error);
+      // Still show congratulations even if logging fails
+      setShowCongratulations(true);
+      speakTTS('Amazing work! You completed the game!', 0.78);
     }
   }, [done]);
 
@@ -310,10 +316,17 @@ const ShrinkingObjectMovementGame: React.FC<{ onBack?: () => void }> = ({ onBack
     const tapDistance = Math.sqrt(
       Math.pow(locationX - objectCenterX, 2) + Math.pow(locationY - objectCenterY, 2)
     );
-    const tapThreshold = Math.max(currentSize / 2 + 50, 60); // More forgiving threshold, minimum 60px
+    // More forgiving threshold - especially when object is small
+    // When object is smallest (30px), threshold will be at least 70px for easier tapping
+    const tapThreshold = Math.max(currentSize / 2 + 55, 70);
+    
+    // Check if object is at smallest size (within tolerance)
+    // Allow tolerance for animation timing - user should tap when object is smallest
+    // Increased tolerance to 30px to account for animation timing and visual perception
+    const isAtSmallestSize = currentSize <= MIN_SIZE + 30;
 
-    if (tapDistance <= tapThreshold) {
-      // Hit!
+    if (tapDistance <= tapThreshold && isAtSmallestSize) {
+      // Hit! - Only count if tapped on object AND object is at smallest size
       setLastResult('hit');
       setShowFeedback(true);
       setRoundActive(false);
@@ -361,7 +374,13 @@ const ShrinkingObjectMovementGame: React.FC<{ onBack?: () => void }> = ({ onBack
         timeoutRefs.current.push(timeout1);
       }
     } else {
-      // Miss
+      // Miss - either tap was outside object OR object wasn't at smallest size yet
+      if (tapDistance <= tapThreshold && !isAtSmallestSize) {
+        // Tap was on object but too early - give specific feedback
+        try {
+          speakTTS('Wait until it is smallest!', 0.78);
+        } catch {}
+      }
       handleMiss();
     }
   }, [done, playAreaLayout, objectSize, objectScale, objectOpacity, feedbackOpacity, sparkleX, sparkleY, playSuccess, endGame, startRound, handleMiss]);
@@ -459,35 +478,48 @@ const ShrinkingObjectMovementGame: React.FC<{ onBack?: () => void }> = ({ onBack
     if (onBack) {
       onBack();
     } else {
-      router.back();
+      // Safe fallback: try to go back, but catch errors
+      try {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/Games');
+        }
+      } catch (error) {
+        try {
+          router.replace('/(tabs)/Games');
+        } catch (e) {
+          console.warn('Navigation error:', e);
+        }
+      }
     }
   }, [onBack, router]);
 
-  if (done && finalStats) {
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <ResultCard
-            correct={finalStats.correct}
-            total={finalStats.total}
-            xp={finalStats.xp}
-            onPlayAgain={() => {
-              setDone(false);
-              setRound(1);
-              setScore(0);
-              setFinalStats(null);
-              setLogTimestamp(null);
-              startRound();
-            }}
-            onBack={handleBack}
-            timestamp={logTimestamp || undefined}
-          />
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Dynamic Targeting Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (

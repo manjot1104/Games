@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -71,6 +71,7 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [isLit, setIsLit] = useState(false);
   const [lastBlinkTime, setLastBlinkTime] = useState<number>(0);
   const [responseTimes, setResponseTimes] = useState<number[]>([]);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Animation values
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -135,9 +136,14 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
         : 0;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -154,63 +160,62 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log tap fast game:', e);
       }
-
-      speakTTS('Great speed!', 0.78 );
     },
     [router, responseTimes],
   );
 
-  // Handle circle tap
+  // Handle circle tap - ONLY when circle is lit (orange and showing TAP)
   const handleTap = useCallback(async () => {
     if (done) return;
 
-    const now = Date.now();
-    const timeSinceBlink = now - lastBlinkTime;
-    const wasJustLit = isLit || timeSinceBlink < RESPONSE_WINDOW;
-
-    if (wasJustLit) {
-      // Correct tap - fast response
-      const responseTime = timeSinceBlink;
-      setResponseTimes((prev) => [...prev, responseTime]);
-
-      setScore((s) => {
-        const newScore = s + 1;
-
-        // Success animation
-        Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 1.2,
-            duration: 100,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 100,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        if (newScore >= TOTAL_TAPS_REQUIRED) {
-          setTimeout(() => {
-            endGame(newScore);
-          }, 500);
-        }
-
-        return newScore;
-      });
-
-      try {
-        await playSuccess();
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } catch {}
-    } else {
-      // Wrong tap - tapped when not lit
+    // ONLY accept tap when circle is currently lit (orange and showing TAP)
+    if (!isLit) {
+      // Wrong tap - tapped when not lit (circle is red, not orange)
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        speakTTS('Wait for the circle to turn orange!', 0.78).catch(() => {});
       } catch {}
+      return; // Exit early - don't increase score
     }
+
+    // Correct tap - circle is lit (orange and showing TAP)
+    const now = Date.now();
+    const timeSinceBlink = now - lastBlinkTime;
+    const responseTime = timeSinceBlink;
+    setResponseTimes((prev) => [...prev, responseTime]);
+
+    setScore((s) => {
+      const newScore = s + 1;
+
+      // Success animation
+      Animated.sequence([
+        Animated.timing(scaleAnim, {
+          toValue: 1.2,
+          duration: 100,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 100,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      if (newScore >= TOTAL_TAPS_REQUIRED) {
+        setTimeout(() => {
+          endGame(newScore);
+        }, 500);
+      }
+
+      return newScore;
+    });
+
+    try {
+      await playSuccess();
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
   }, [done, isLit, lastBlinkTime, scaleAnim, playSuccess, endGame]);
 
   const handleBack = useCallback(() => {
@@ -234,56 +239,30 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
       : 0;
 
+    // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+    // This is the ONLY completion screen - no ResultCard needed for OT games
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>⚡</Text>
-            <Text style={styles.resultTitle}>Lightning fast!</Text>
-            <Text style={styles.resultSubtitle}>
-              You tapped {finalStats.correct} out of {finalStats.total} times quickly.
-            </Text>
-            {avgResponseTime > 0 && (
-              <Text style={styles.resultSubtitle}>
-                Average response: {avgResponseTime}ms
-              </Text>
-            )}
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onHome={() => {
-                stopAllSpeech();
-                cleanupSounds();
-                onBack?.();
-              }}
-              onPlayAgain={() => {
-                setScore(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                setIsLit(false);
-                setResponseTimes([]);
-                glowAnim.setValue(0);
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Lightning Fast!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (
@@ -303,58 +282,57 @@ const TapFastGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       </View>
 
       <View style={styles.playArea}>
-        <Pressable onPress={handleTap} style={styles.tapArea}>
+        <Animated.View
+          style={[
+            styles.circleContainer,
+            {
+              transform: [{ scale: scaleAnim }],
+            },
+          ]}
+        >
+          {/* Glow effect */}
           <Animated.View
             style={[
-              styles.circleContainer,
+              styles.glowEffect,
               {
-                transform: [{ scale: scaleAnim }],
+                width: CIRCLE_SIZE + 60,
+                height: CIRCLE_SIZE + 60,
+                borderRadius: (CIRCLE_SIZE + 60) / 2,
+              },
+              glowStyle,
+            ]}
+          />
+
+          {/* Main circle - Pressable only on the circle itself */}
+          <Pressable 
+            onPress={handleTap} 
+            style={[
+              styles.circle,
+              {
+                width: CIRCLE_SIZE,
+                height: CIRCLE_SIZE,
+                borderRadius: CIRCLE_SIZE / 2,
+                backgroundColor: isLit ? '#F59E0B' : '#EF4444',
+                borderWidth: isLit ? 4 : 2,
+                borderColor: isLit ? '#FCD34D' : '#DC2626',
               },
             ]}
           >
-            {/* Glow effect */}
-            <Animated.View
-              style={[
-                styles.glowEffect,
-                {
-                  width: CIRCLE_SIZE + 60,
-                  height: CIRCLE_SIZE + 60,
-                  borderRadius: (CIRCLE_SIZE + 60) / 2,
-                },
-                glowStyle,
-              ]}
-            />
+            <View style={styles.circleInner} />
+            {isLit && (
+              <View style={styles.tapTextContainer}>
+                <Text style={styles.tapText}>TAP!</Text>
+              </View>
+            )}
+          </Pressable>
+        </Animated.View>
 
-            {/* Main circle */}
-            <View
-              style={[
-                styles.circle,
-                {
-                  width: CIRCLE_SIZE,
-                  height: CIRCLE_SIZE,
-                  borderRadius: CIRCLE_SIZE / 2,
-                  backgroundColor: isLit ? '#F59E0B' : '#EF4444',
-                  borderWidth: isLit ? 4 : 2,
-                  borderColor: isLit ? '#FCD34D' : '#DC2626',
-                },
-              ]}
-            >
-              <View style={styles.circleInner} />
-              {isLit && (
-                <View style={styles.tapTextContainer}>
-                  <Text style={styles.tapText}>TAP!</Text>
-                </View>
-              )}
-            </View>
-          </Animated.View>
-
-          {/* Sparkle burst on tap */}
-          {score > 0 && isLit && (
-            <View style={styles.sparkleContainer} pointerEvents="none">
-              <SparkleBurst />
-            </View>
-          )}
-        </Pressable>
+        {/* Sparkle burst on tap */}
+        {score > 0 && isLit && (
+          <View style={styles.sparkleContainer} pointerEvents="none">
+            <SparkleBurst />
+          </View>
+        )}
       </View>
 
       <View style={styles.footerBox}>
@@ -419,13 +397,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  tapArea: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
   circleContainer: {
     position: 'relative',
     justifyContent: 'center',
@@ -476,6 +447,7 @@ const styles = StyleSheet.create({
     top: '50%',
     left: '50%',
     transform: [{ translateX: -20 }, { translateY: -20 }],
+    pointerEvents: 'none',
   },
   footerBox: {
     paddingVertical: 14,

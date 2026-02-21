@@ -83,6 +83,33 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     startGlow();
   }, [round, startGlow]);
 
+  // Initial TTS instruction when game opens
+  useEffect(() => {
+    let mounted = true;
+    
+    const initializeGame = async () => {
+      try {
+        // Wait for TTS to initialize and start speaking
+        await speakTTS('Tap the BIG RED CIRCLE. Look! The red circle is glowing. Tap the red circle!', 0.78);
+        // Add a small delay to ensure TTS has started speaking
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        console.warn('TTS initialization error:', error);
+      }
+    };
+
+    initializeGame();
+
+    return () => {
+      mounted = false;
+      try {
+        stopTTS();
+      } catch (e) {
+        // Ignore errors
+      }
+    };
+  }, []);
+
   const triggerShake = () => {
     shakeAnim.setValue(0);
     Animated.sequence([
@@ -109,15 +136,20 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     ]).start();
   };
 
-  const nextRound = () => {
+  const nextRound = async () => {
     // randomize red circle position
     const newPos: ShapePosition = Math.random() > 0.5 ? "left" : "right";
     setRedPosition(newPos);
     setRound((r) => r + 1);
     setIsDisabled(false);
     try {
-      speakTTS('Look! The red circle is glowing. Tap the red circle!', 0.78 );
-    } catch {}
+      // Wait for TTS to complete before allowing next interaction
+      await speakTTS('Look! The red circle is glowing. Tap the red circle!', 0.78);
+      // Small delay to ensure TTS has started
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } catch (error) {
+      console.warn('TTS error in nextRound:', error);
+    }
   };
 
   const playSuccessSound = useSoundEffect(SUCCESS_SOUND);
@@ -150,7 +182,8 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setDone(true);
       setShowCongratulations(true);
       
-      speakTTS('Amazing work! You completed the game!', 0.78 );
+      // Speak completion message (don't await to avoid blocking)
+      speakTTS('Amazing work! You completed the game!', 0.78).catch(() => {});
 
       // Log game in background (don't wait for it)
       try {
@@ -172,8 +205,8 @@ const TapRedCircleGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
 
     // small delay before next round
-    setTimeout(() => {
-      nextRound();
+    setTimeout(async () => {
+      await nextRound();
     }, 500);
   };
 

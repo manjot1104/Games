@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -75,6 +75,7 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
   const [sparkleKey, setSparkleKey] = useState(0);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   // Animation values
   const targetX = useSharedValue(50);
@@ -136,9 +137,14 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const xp = finalScore * 12; // 12 XP per target
       const accuracy = 100; // All targets are correct if popped
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -154,8 +160,6 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log small circle tap game:', e);
       }
-
-      speakTTS('Great precision!', 0.78 );
     },
     [router],
   );
@@ -196,51 +200,31 @@ const SmallCircleTapGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     opacity: opacity.value,
   }));
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <LinearGradient
-            colors={['#FFFFFF', '#EFF6FF']}
-            style={styles.resultCard}
-          >
-            <Text style={{ fontSize: 72, marginBottom: 20 }}>🎯✨</Text>
-            <Text style={styles.resultTitle}>Excellent Precision! 🎉</Text>
-            <Text style={styles.resultSubtitle}>
-              You tapped {finalStats.correct} out of {finalStats.total} targets! ⭐
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setScore(0);
-                setTargetsLeft(TARGETS_TO_POP);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                spawnTarget();
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </LinearGradient>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Excellent Precision!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (

@@ -1,5 +1,5 @@
+import CongratulationsScreen from '@/components/game/CongratulationsScreen';
 import { SparkleBurst } from '@/components/game/FX';
-import ResultCard from '@/components/game/ResultCard';
 import { logGameAndAward, recordGame } from '@/utils/api';
 import { cleanupSounds, stopAllSpeech } from '@/utils/soundPlayer';
 import { Audio as ExpoAudio } from 'expo-av';
@@ -76,6 +76,7 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [done, setDone] = useState(false);
   const [finalStats, setFinalStats] = useState<{ correct: number; total: number; xp: number } | null>(null);
   const [logTimestamp, setLogTimestamp] = useState<string | null>(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
   const [glowProgress, setGlowProgress] = useState(0);
   const [isFlickering, setIsFlickering] = useState(false);
@@ -113,45 +114,63 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     const updateProgress = () => {
       if (!isPressedRef.current || isFlickeringRef.current) return;
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / HOLD_DURATION_MS, TOO_LATE_THRESHOLD);
+      // Stop at 100% (1.0) - don't go beyond
+      const progress = Math.min(elapsed / HOLD_DURATION_MS, 1.0);
       setGlowProgress(progress);
       glowProgressRef.current = progress; // Update ref for immediate access
 
-      // Glow from 0 to 1 (or beyond for flicker)
+      // Glow from 0 to 1 (stop at 100%)
       const glowValue = Math.min(progress, 1);
       bulbGlow.value = withTiming(glowValue, {
         duration: 50,
         easing: Easing.out(Easing.ease),
       });
 
-      if (progress >= TOO_LATE_THRESHOLD) {
-        // Held too long - flicker!
-        setIsFlickering(true);
-        isFlickeringRef.current = true;
-        flickerOpacity.value = withRepeat(
-          withSequence(
-            withTiming(0.3, { duration: 100, easing: Easing.ease }),
-            withTiming(1, { duration: 100, easing: Easing.ease }),
-          ),
-          5,
-          false,
+      // When reaching exactly 100%, automatically increase score
+      if (progress >= 1.0 && !isFlickeringRef.current) {
+        // Stop the progress loop
+        if (progressTimerRef.current) {
+          clearTimeout(progressTimerRef.current);
+          progressTimerRef.current = null;
+        }
+        
+        // Automatically trigger success
+        setIsPressed(false);
+        isPressedRef.current = false;
+        setRoundActive(false);
+        
+        bulbScale.value = withSequence(
+          withTiming(1.2, { duration: 200, easing: Easing.out(Easing.ease) }),
+          withTiming(1, { duration: 200, easing: Easing.in(Easing.ease) }),
         );
 
-        try {
-          playFlicker();
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-          speakTTS('Release now!', 0.78 );
-        } catch {}
+        // Record position for sparkle
+        sparkleX.value = 50;
+        sparkleY.value = 50;
 
-        setTimeout(() => {
-          setIsFlickering(false);
-          isFlickeringRef.current = false;
-          setGlowProgress(0);
-          glowProgressRef.current = 0;
-          bulbGlow.value = 0;
-          flickerOpacity.value = 1;
-        }, 2000);
-      } else {
+        playSuccess().catch(() => {});
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
+        setScore((s) => {
+          const newScore = s + 1;
+          if (newScore >= TOTAL_ROUNDS) {
+            setTimeout(() => {
+              endGame(newScore);
+            }, 1000);
+          } else {
+            setTimeout(() => {
+              setRound((r) => r + 1);
+              setGlowProgress(0);
+              glowProgressRef.current = 0;
+              bulbGlow.value = 0;
+              bulbScale.value = 1;
+              setRoundActive(true);
+            }, 1000);
+          }
+          return newScore;
+        });
+      } else if (progress < 1.0) {
+        // Continue updating until 100%
         progressTimerRef.current = setTimeout(updateProgress, 50);
       }
     };
@@ -166,10 +185,15 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const xp = finalScore * 17; // 17 XP per perfect hold
       const accuracy = (finalScore / total) * 100;
 
+      // Set all states together FIRST (like CatchTheBouncingStar)
       setFinalStats({ correct: finalScore, total, xp });
       setDone(true);
       setRoundActive(false);
+      setShowCongratulations(true);
+      
+      speakTTS('Amazing work! You completed the game!', 0.78);
 
+      // Log game in background (don't wait for it)
       try {
         await recordGame(xp);
         const result = await logGameAndAward({
@@ -185,8 +209,6 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } catch (e) {
         console.error('Failed to log hold the light game:', e);
       }
-
-      speakTTS('Perfect lighting!', 0.78 );
     },
     [router],
   );
@@ -202,19 +224,16 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       progressTimerRef.current = null;
     }
 
-    if (isFlickeringRef.current) {
-      // If flickering, reset after delay
-      setTimeout(() => {
-        setRoundActive(true);
-      }, 2000);
-      return;
-    }
-
     // Use ref value for accurate progress reading
     const progress = glowProgressRef.current;
 
-    if (progress >= PERFECT_WINDOW_START && progress <= 1) {
-      // Perfect release - bulb shines fully!
+    // If already at 100%, score was already increased automatically
+    if (progress >= 1.0) {
+      return; // Already handled in updateProgress
+    }
+
+    if (progress >= PERFECT_WINDOW_START && progress < 1.0) {
+      // Perfect release between 90% and 100% - bulb shines fully!
       setRoundActive(false); // Disable input during animation
       
       bulbScale.value = withSequence(
@@ -324,55 +343,31 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return '#FCD34D'; // Full bright yellow
   };
 
-  // Result screen
-  if (done && finalStats) {
-    const accuracyPct = Math.round((finalStats.correct / finalStats.total) * 100);
+  // ---------- Congratulations screen FIRST (like CatchTheBouncingStar) ----------
+  // This is the ONLY completion screen - no ResultCard needed for OT games
+  if (showCongratulations && done && finalStats) {
     return (
-      <SafeAreaView style={styles.container}>
-        <TouchableOpacity onPress={handleBack} style={styles.backChip}>
-          <Text style={styles.backChipText}>← Back</Text>
-        </TouchableOpacity>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 24,
-          }}
-        >
-          <View style={styles.resultCard}>
-            <Text style={{ fontSize: 64, marginBottom: 16 }}>💡</Text>
-            <Text style={styles.resultTitle}>Light master!</Text>
-            <Text style={styles.resultSubtitle}>
-              You lit {finalStats.correct} bulbs perfectly out of {finalStats.total}!
-            </Text>
-            <ResultCard
-              correct={finalStats.correct}
-              total={finalStats.total}
-              xpAwarded={finalStats.xp}
-              accuracy={accuracyPct}
-              logTimestamp={logTimestamp}
-              onPlayAgain={() => {
-                setRound(1);
-                setScore(0);
-                setDone(false);
-                setFinalStats(null);
-                setLogTimestamp(null);
-                setGlowProgress(0);
-                glowProgressRef.current = 0;
-                setIsFlickering(false);
-                isFlickeringRef.current = false;
-                setRoundActive(true);
-                bulbGlow.value = 0;
-                bulbScale.value = 1;
-                flickerOpacity.value = 1;
-              }}
-            />
-            <Text style={styles.savedText}>Saved! XP updated ✅</Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+      <CongratulationsScreen
+        message="Light Master!"
+        showButtons={true}
+        onContinue={() => {
+          // Continue - go back to games (no ResultCard screen needed)
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+        onHome={() => {
+          stopAllSpeech();
+          cleanupSounds();
+          onBack?.();
+        }}
+      />
     );
+  }
+
+  // Prevent any rendering when game is done but congratulations hasn't shown yet
+  if (done && finalStats && !showCongratulations) {
+    return null; // Wait for showCongratulations to be set
   }
 
   return (
@@ -414,7 +409,7 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {/* Light bulb */}
           <Animated.View style={[styles.bulbContainer, bulbStyle]}>
             <View style={styles.bulb}>
-              <Text style={styles.bulbEmoji}>💡</Text>
+              <Text selectable={false} style={styles.bulbEmoji}>💡</Text>
             </View>
             <View style={styles.bulbBase} />
           </Animated.View>
@@ -429,7 +424,7 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {/* Brightness indicator */}
           {isPressed && !isFlickering && (
             <View style={styles.brightnessIndicator}>
-              <Text style={styles.brightnessText}>
+              <Text selectable={false} style={styles.brightnessText}>
                 {Math.round(glowProgress * 100)}% bright
               </Text>
             </View>
@@ -438,14 +433,14 @@ const HoldTheLightGame: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {/* Flicker indicator */}
           {isFlickering && (
             <View style={styles.flickerIndicator}>
-              <Text style={styles.flickerText}>Release now! ⚡</Text>
+              <Text selectable={false} style={styles.flickerText}>Release now! ⚡</Text>
             </View>
           )}
 
           {/* Instruction */}
           {!isPressed && !isFlickering && (
             <View style={styles.instructionBox}>
-              <Text style={styles.instructionText}>
+              <Text selectable={false} style={styles.instructionText}>
                 Press and hold to glow! ✨
               </Text>
             </View>
@@ -522,6 +517,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    userSelect: 'none', // For web - prevent text selection
   },
   glowContainer: {
     position: 'absolute',
@@ -551,6 +547,7 @@ const styles = StyleSheet.create({
   },
   bulbEmoji: {
     fontSize: 80,
+    userSelect: 'none', // For web
   },
   bulbBase: {
     width: 40,
@@ -576,6 +573,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '700',
+    userSelect: 'none', // For web
   },
   flickerIndicator: {
     position: 'absolute',
@@ -594,6 +592,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '800',
+    userSelect: 'none', // For web
   },
   instructionBox: {
     position: 'absolute',
@@ -612,6 +611,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '800',
+    userSelect: 'none', // For web
   },
   footerBox: {
     paddingVertical: 14,
