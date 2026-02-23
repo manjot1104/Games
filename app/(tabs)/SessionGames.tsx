@@ -476,9 +476,10 @@ import MirrorLineDrawGame from '@/components/game/occupational/level2/session10/
 import MirrorMazeGame from '@/components/game/occupational/level2/session10/MirrorMazeGame';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { fetchTherapyProgress, getSubscriptionStatus, type SubscriptionStatus, type TherapyProgress } from '@/utils/api';
 
 type GameKey =
   | 'menu'
@@ -814,10 +815,34 @@ export default function SessionGamesScreen() {
   }>();
 
   const [currentGame, setCurrentGame] = React.useState<GameKey>('menu');
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [therapyProgress, setTherapyProgress] = useState<TherapyProgress | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const therapyId = params.therapy || 'speech';
   const levelNumber = params.level ? parseInt(params.level, 10) : 1;
   const sessionNumber = params.session ? parseInt(params.session, 10) : 1;
+
+  // Fetch subscription status and therapy progress
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [subStatus, progress] = await Promise.all([
+          getSubscriptionStatus(),
+          fetchTherapyProgress(),
+        ]);
+        setSubscriptionStatus(subStatus);
+        const therapy = progress.therapies.find(t => t.therapy === therapyId);
+        setTherapyProgress(therapy || null);
+      } catch (error) {
+        console.error('[SessionGames] Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [therapyId, levelNumber, sessionNumber]);
 
   // Handle social stories (daily-activities) differently - show videos instead of games
   if (therapyId === 'daily-activities') {
@@ -4571,6 +4596,51 @@ export default function SessionGamesScreen() {
     },
   ];
 
+  // FOR TESTING: Set to true to force progressive unlocking even for free access users
+  const FORCE_PROGRESSIVE_UNLOCK = true; // Changed to true for testing
+
+  // Check for free access
+  const isFreeAccess = FORCE_PROGRESSIVE_UNLOCK 
+    ? false 
+    : (subscriptionStatus 
+      ? (subscriptionStatus.isFreeAccess === true || subscriptionStatus.status === 'free')
+      : false);
+
+  // Get completed games for current session
+  const currentSessionProgress = therapyProgress?.levels
+    ?.find(l => l.levelNumber === levelNumber)
+    ?.sessions.find(s => s.sessionNumber === sessionNumber);
+  const completedGames = currentSessionProgress?.completedGames || [];
+
+  // Helper function to check if a game is unlocked
+  const isGameUnlocked = (gameId: string, gameIndex: number): boolean => {
+    // Free access users have everything unlocked
+    if (isFreeAccess) {
+      return true;
+    }
+    
+    // First game is always unlocked
+    if (gameIndex === 0) {
+      return true;
+    }
+    
+    // Get available games for current session
+    const availableGames = GAMES.filter(game => game.available);
+    
+    // A game is unlocked if the previous game is completed
+    const previousGame = availableGames[gameIndex - 1];
+    if (!previousGame) {
+      return false;
+    }
+    
+    // Check if previous game is in completedGames
+    const previousGameCompleted = completedGames.includes(previousGame.id);
+    
+    console.log(`[GAME UNLOCK] Game ${gameId} (index ${gameIndex}): Previous game ${previousGame.id} completed: ${previousGameCompleted}, unlocked: ${previousGameCompleted}`);
+    
+    return previousGameCompleted;
+  };
+
   // ---------- Game render switches ----------
 
   if (currentGame === 'follow-ball') {
@@ -6060,14 +6130,23 @@ export default function SessionGamesScreen() {
               </Text>
             </View>
           ) : (
-            GAMES.filter(game => game.available).map((game) => (
+            GAMES.filter(game => game.available).map((game, index) => {
+              const unlocked = isGameUnlocked(game.id, index);
+              const isLocked = !unlocked;
+              
+              return (
               <TouchableOpacity
                 key={game.id}
                 style={[
                   styles.gameCard,
-                  { borderColor: game.color },
+                  { borderColor: isLocked ? '#E5E7EB' : game.color },
+                  isLocked && styles.gameCardDisabled,
                 ]}
                 onPress={() => {
+                  if (isLocked) {
+                    Alert.alert('Locked', 'Complete the previous game to unlock this game.');
+                    return;
+                  }
                   if (game.id === 'follow-ball') setCurrentGame('follow-ball');
                   if (game.id === 'catch-star') setCurrentGame('catch-star');
                   if (game.id === 'slow-to-fast') setCurrentGame('slow-to-fast');
@@ -6430,23 +6509,30 @@ export default function SessionGamesScreen() {
                 <Text style={styles.gameEmoji}>{game.emoji}</Text>
               </View>
               <View style={styles.gameContent}>
-                <Text style={styles.gameTitle}>
+                <Text style={[styles.gameTitle, isLocked && styles.gameTitleDisabled]}>
                   {game.title}
                 </Text>
-                <Text style={styles.gameDescription}>
+                <Text style={[styles.gameDescription, isLocked && { color: '#9CA3AF' }]}>
                   {game.description}
                 </Text>
               </View>
-              <View
-                style={[
-                  styles.playBadge,
-                  { backgroundColor: `${game.color}20` },
-                ]}
-              >
-                <Ionicons name="play" size={20} color={game.color} />
-              </View>
+              {isLocked ? (
+                <View style={[styles.lockBadge, { backgroundColor: '#F1F5F9' }]}>
+                  <Ionicons name="lock-closed" size={18} color="#9CA3AF" />
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.playBadge,
+                    { backgroundColor: `${game.color}20` },
+                  ]}
+                >
+                  <Ionicons name="play" size={20} color={game.color} />
+                </View>
+              )}
             </TouchableOpacity>
-          )))}
+            );
+            }))}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -6524,6 +6610,13 @@ const styles = StyleSheet.create({
   gameCardDisabled: {
     opacity: 0.6,
     borderColor: '#E5E7EB',
+  },
+  lockBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   gameIcon: {
     width: 64,

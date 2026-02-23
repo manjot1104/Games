@@ -23,9 +23,23 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Therapy Avatar website URL
 const THERAPY_AVATAR_URL = 'https://therapy-avatar.vercel.app';
+
+// FOR TESTING: Set to true to force progressive unlocking even for free access users
+// Set to false in production
+// IMPORTANT: Set this to true to test progressive unlocking with non-free-access users
+const FORCE_PROGRESSIVE_UNLOCK = true; // Changed to true for testing
+
+// Helper function to convert hex to rgba
+const hexToRgba = (hex: string, alpha: number): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
 
 const THERAPIES = [
   { id: 'speech', label: 'Speech Therapy', desc: 'Improve communication and speech skills', color: '#2563EB', icon: 'mic' },
@@ -252,6 +266,7 @@ export default function TherapyProgressScreen() {
                     therapy={progressMap.get(selectedTherapy)}
                     onSelectLevel={handleSelectLevel}
                     onBack={() => setMode('therapies')}
+                    subscriptionStatus={subscriptionStatus}
                   />
                 )}
               </>
@@ -268,6 +283,7 @@ export default function TherapyProgressScreen() {
                     level={currentLevelObj}
                     saving={saving}
                     onComplete={handleCompleteSession}
+                    subscriptionStatus={subscriptionStatus}
                   />
                 )}
               </>
@@ -294,14 +310,20 @@ function Header({ mode, onBack, showBack }: { mode: ViewMode; onBack: () => void
       : 'Select a session to start playing games';
 
   return (
-    <View style={{ marginBottom: 16 }}>
-      {showBack && (
-        <TouchableOpacity onPress={onBack} style={{ marginBottom: 8 }}>
-          <Text style={{ color: '#2563EB', fontWeight: '700' }}>← Back</Text>
-        </TouchableOpacity>
-      )}
-      <Text style={{ fontSize: 26, fontWeight: '900', color: '#0F172A' }}>{title}</Text>
-      <Text style={{ marginTop: 4, color: '#475569', lineHeight: 20 }}>{subtitle}</Text>
+    <View style={styles.headerContainer}>
+      <View style={styles.headerTop}>
+        {showBack && (
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={20} color="#2563EB" />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+        )}
+        <View style={styles.menuButton}>
+          <Ionicons name="menu" size={24} color="#1E293B" />
+        </View>
+      </View>
+      <Text style={styles.headerTitle}>{title}</Text>
+      <Text style={styles.headerSubtitle}>{subtitle}</Text>
     </View>
   );
 }
@@ -323,20 +345,37 @@ function TherapyGrid({
         const progress = progressMap.get(t.id);
         const currentLevel = progress?.currentLevel ?? 1;
         const currentSession = progress?.currentSession ?? 1;
+        const iconGradientColors = [hexToRgba(t.color, 0.2), hexToRgba(t.color, 0.08)];
+        const borderColor = hexToRgba(t.color, 0.3);
+        const badgeBgColor = hexToRgba(t.color, 0.15);
+        
         return (
           <TouchableOpacity
             key={t.id}
-            style={[styles.therapyCard, { borderColor: t.color }]}
-            activeOpacity={0.9}
+            style={[styles.therapyCard, { borderColor }]}
+            activeOpacity={0.85}
             onPress={() => onSelect(t.id)}
             disabled={saving}
           >
-            <View style={styles.therapyIconWrap}>
-              <Ionicons name={t.icon as any} size={32} color={t.color} />
+            <LinearGradient
+              colors={iconGradientColors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.therapyIconWrap}
+            >
+              <Ionicons name={t.icon as any} size={36} color={t.color} />
+            </LinearGradient>
+            <View style={styles.therapyContent}>
+              <Text style={styles.therapyTitle}>{t.label}</Text>
+              <Text style={styles.therapyDesc}>{t.desc}</Text>
+              <View style={styles.therapyMetaContainer}>
+                <View style={[styles.progressBadge, { backgroundColor: badgeBgColor }]}>
+                  <Text style={[styles.therapyMeta, { color: t.color }]}>
+                    Level {currentLevel} • Session {currentSession}
+                  </Text>
+                </View>
+              </View>
             </View>
-            <Text style={styles.therapyTitle}>{t.label}</Text>
-            <Text style={styles.therapyDesc}>{t.desc}</Text>
-            <Text style={styles.therapyMeta}>Level {currentLevel} · Session {currentSession}</Text>
           </TouchableOpacity>
         );
       })}
@@ -349,33 +388,120 @@ function LevelsGrid({
   therapy,
   onSelectLevel,
   onBack,
+  subscriptionStatus,
 }: {
   therapyMeta: { id: string; label: string; color: string };
   therapy?: TherapyProgress;
   onSelectLevel: (level: number, unlocked: boolean) => void;
   onBack: () => void;
+  subscriptionStatus: SubscriptionStatus | null;
 }) {
   const levels = therapy?.levels || [];
   const currentLevel = therapy?.currentLevel ?? 1;
+  // Check for free access: either isFreeAccess flag or status === 'free'
+  // Default to false (locked) if subscriptionStatus is null
+  // FORCE_PROGRESSIVE_UNLOCK overrides free access for testing
+  const isFreeAccess = FORCE_PROGRESSIVE_UNLOCK 
+    ? false 
+    : (subscriptionStatus 
+      ? (subscriptionStatus.isFreeAccess === true || subscriptionStatus.status === 'free')
+      : false);
+  
+  console.log('=== LEVELS GRID DEBUG ===');
+  console.log('[LevelsGrid] subscriptionStatus:', subscriptionStatus);
+  console.log('[LevelsGrid] FORCE_PROGRESSIVE_UNLOCK:', FORCE_PROGRESSIVE_UNLOCK);
+  console.log('[LevelsGrid] isFreeAccess:', isFreeAccess);
+  console.log('[LevelsGrid] isFreeAccess check:', {
+    hasStatus: !!subscriptionStatus,
+    isFreeAccessFlag: subscriptionStatus?.isFreeAccess,
+    statusValue: subscriptionStatus?.status,
+    forceProgressive: FORCE_PROGRESSIVE_UNLOCK,
+    calculated: isFreeAccess,
+    willUseProgressiveUnlock: !isFreeAccess
+  });
+  console.log('[LevelsGrid] levels count:', levels.length);
+  console.log('[LevelsGrid] levels data:', levels.map(l => ({
+    levelNumber: l.levelNumber,
+    session10: {
+      completed: l.sessions.find(s => s.sessionNumber === 10)?.completed,
+      completedGames: l.sessions.find(s => s.sessionNumber === 10)?.completedGames?.length ?? 0
+    }
+  })));
+
+  // Helper function to check if a level is unlocked
+  const isLevelUnlocked = (levelNumber: number): boolean => {
+    // Free access users have everything unlocked
+    if (isFreeAccess) {
+      console.log(`[UNLOCK] Level ${levelNumber}: Free access - UNLOCKED`);
+      return true;
+    }
+    
+    // Level 1 is always unlocked (for non-free-access users too)
+    if (levelNumber === 1) {
+      console.log(`[UNLOCK] Level ${levelNumber}: Level 1 - UNLOCKED (always)`);
+      return true;
+    }
+    
+    // For non-free-access users, check progressive unlock
+    // A level is unlocked ONLY if the previous level's last session (session 10) has at least one completed game
+    const previousLevel = levels.find(l => l.levelNumber === levelNumber - 1);
+    if (!previousLevel) {
+      console.log(`[UNLOCK] Level ${levelNumber}: Previous level not found - LOCKED`);
+      return false;
+    }
+    
+    const lastSession = previousLevel.sessions.find(s => s.sessionNumber === 10);
+    if (!lastSession) {
+      console.log(`[UNLOCK] Level ${levelNumber}: Previous level session 10 not found - LOCKED`);
+      return false;
+    }
+    
+    const hasCompletedGames = (lastSession.completedGames?.length ?? 0) > 0;
+    const isCompleted = lastSession.completed ?? false;
+    const unlocked = isCompleted || hasCompletedGames;
+    
+    console.log(`[UNLOCK] Level ${levelNumber}: Previous level last session - completed: ${isCompleted}, games: ${lastSession.completedGames?.length ?? 0}, unlocked: ${unlocked}`);
+    
+    // Explicitly return false if not unlocked (default to locked)
+    if (!unlocked) {
+      console.log(`[UNLOCK] Level ${levelNumber}: LOCKED - need to complete Level ${levelNumber - 1} Session 10 first`);
+      return false;
+    }
+    
+    return true;
+  };
+
   return (
     <View style={{ gap: 12 }}>
       <TouchableOpacity onPress={onBack}>
         <Text style={{ color: '#2563EB', fontWeight: '700' }}>← Back to Therapies</Text>
       </TouchableOpacity>
-      <View style={[styles.banner, { borderColor: therapyMeta.color }]}>
-        <View style={[styles.iconBadge, { backgroundColor: `${therapyMeta.color}20` }]}>
+      <View style={[styles.banner, { borderColor: hexToRgba(therapyMeta.color, 0.3) }]}>
+        <LinearGradient
+          colors={[hexToRgba(therapyMeta.color, 0.2), hexToRgba(therapyMeta.color, 0.1)]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.iconBadge}
+        >
           <Ionicons name="medkit-outline" size={22} color={therapyMeta.color} />
-        </View>
+        </LinearGradient>
         <View style={{ flex: 1 }}>
           <Text style={styles.bannerTitle}>{therapyMeta.label}</Text>
           <Text style={styles.bannerSubtitle}>10 sessions available</Text>
         </View>
       </View>
       <Text style={styles.sectionTitle}>Levels</Text>
+      {isFreeAccess && (
+        <View style={{ padding: 8, backgroundColor: '#FEF3C7', borderRadius: 8, marginBottom: 12 }}>
+          <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '600' }}>
+            ⚠️ Free Access Mode: All levels unlocked
+          </Text>
+        </View>
+      )}
       <View style={styles.grid}>
         {levels.map((lvl) => {
-          // Unlock all levels
-          const unlocked = true;
+          const unlocked = isLevelUnlocked(lvl.levelNumber);
+          console.log(`[LevelsGrid] Rendering Level ${lvl.levelNumber}: unlocked=${unlocked}, isFreeAccess=${isFreeAccess}`);
           return (
             <TouchableOpacity
               key={lvl.levelNumber}
@@ -385,7 +511,13 @@ function LevelsGrid({
                 unlocked && lvl.levelNumber === currentLevel ? { borderColor: therapyMeta.color } : null,
               ]}
               activeOpacity={unlocked ? 0.9 : 1}
-              onPress={() => onSelectLevel(lvl.levelNumber, unlocked)}
+              onPress={() => {
+                if (!unlocked) {
+                  Alert.alert('Locked', 'Complete the previous level to unlock this level.');
+                  return;
+                }
+                onSelectLevel(lvl.levelNumber, unlocked);
+              }}
             >
               <Text style={[styles.levelTitle, !unlocked && styles.lockedText]}>Level {lvl.levelNumber}</Text>
               <Text style={[styles.levelSubtitle, !unlocked && styles.lockedText]}>10 sessions available</Text>
@@ -409,35 +541,116 @@ function SessionsGrid({
   level,
   saving,
   onComplete,
+  subscriptionStatus,
 }: {
   therapyMeta: { id: string; label: string; color: string };
   therapy: TherapyProgress;
   level: TherapyProgress['levels'][number];
   saving: boolean;
   onComplete: (therapyId: string, levelNumber: number, sessionNumber: number) => void;
+  subscriptionStatus: SubscriptionStatus | null;
 }) {
   const router = useRouter();
+  // Check for free access: either isFreeAccess flag or status === 'free'
+  // Default to false (locked) if subscriptionStatus is null
+  // FORCE_PROGRESSIVE_UNLOCK overrides free access for testing
+  const isFreeAccess = FORCE_PROGRESSIVE_UNLOCK 
+    ? false 
+    : (subscriptionStatus 
+      ? (subscriptionStatus.isFreeAccess === true || subscriptionStatus.status === 'free')
+      : false);
+  
+  console.log('=== SESSIONS GRID DEBUG ===');
+  console.log('[SessionsGrid] subscriptionStatus:', subscriptionStatus);
+  console.log('[SessionsGrid] FORCE_PROGRESSIVE_UNLOCK:', FORCE_PROGRESSIVE_UNLOCK);
+  console.log('[SessionsGrid] isFreeAccess:', isFreeAccess);
+  console.log('[SessionsGrid] isFreeAccess check:', {
+    hasStatus: !!subscriptionStatus,
+    isFreeAccessFlag: subscriptionStatus?.isFreeAccess,
+    statusValue: subscriptionStatus?.status,
+    forceProgressive: FORCE_PROGRESSIVE_UNLOCK,
+    calculated: isFreeAccess,
+    willUseProgressiveUnlock: !isFreeAccess
+  });
+  console.log('[SessionsGrid] level:', level.levelNumber);
+  console.log('[SessionsGrid] sessions count:', level.sessions.length);
+  console.log('[SessionsGrid] sessions data:', level.sessions.map(s => ({
+    sessionNumber: s.sessionNumber,
+    completed: s.completed,
+    completedGames: s.completedGames?.length ?? 0,
+    completedGamesList: s.completedGames
+  })));
+
+  // Helper function to check if a session is unlocked
+  const isSessionUnlocked = (sessionNumber: number): boolean => {
+    // Free access users have everything unlocked
+    if (isFreeAccess) {
+      console.log(`[UNLOCK] Session ${sessionNumber}: Free access - UNLOCKED`);
+      return true;
+    }
+    
+    // Session 1 is always unlocked (for non-free-access users too)
+    if (sessionNumber === 1) {
+      console.log(`[UNLOCK] Session ${sessionNumber}: Session 1 - UNLOCKED (always)`);
+      return true;
+    }
+    
+    // For non-free-access users, check progressive unlock
+    // A session is unlocked ONLY if the previous session has at least one completed game
+    const previousSession = level.sessions.find(s => s.sessionNumber === sessionNumber - 1);
+    if (!previousSession) {
+      console.log(`[UNLOCK] Session ${sessionNumber}: Previous session not found - LOCKED`);
+      return false;
+    }
+    
+    const hasCompletedGames = (previousSession.completedGames?.length ?? 0) > 0;
+    const isCompleted = previousSession.completed ?? false;
+    const unlocked = isCompleted || hasCompletedGames;
+    
+    console.log(`[UNLOCK] Session ${sessionNumber}: Previous session (${sessionNumber - 1}) - completed: ${isCompleted}, games: ${previousSession.completedGames?.length ?? 0}, unlocked: ${unlocked}`);
+    
+    // Explicitly return false if not unlocked (default to locked)
+    if (!unlocked) {
+      console.log(`[UNLOCK] Session ${sessionNumber}: LOCKED - need to complete Session ${sessionNumber - 1} first`);
+      return false;
+    }
+    
+    return true;
+  };
+
   return (
     <View style={{ gap: 12 }}>
       <TouchableOpacity onPress={() => {}}>
         <Text style={{ color: '#2563EB', fontWeight: '700' }}>← Back to {therapyMeta.label}</Text>
       </TouchableOpacity>
-      <View style={[styles.banner, { borderColor: therapyMeta.color }]}>
-        <View style={[styles.iconBadge, { backgroundColor: `${therapyMeta.color}20` }]}>
+      <View style={[styles.banner, { borderColor: hexToRgba(therapyMeta.color, 0.3) }]}>
+        <LinearGradient
+          colors={[hexToRgba(therapyMeta.color, 0.2), hexToRgba(therapyMeta.color, 0.1)]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.iconBadge}
+        >
           <Ionicons name="calendar-outline" size={22} color={therapyMeta.color} />
-        </View>
+        </LinearGradient>
         <View style={{ flex: 1 }}>
           <Text style={styles.bannerTitle}>{therapyMeta.label} - Level {level.levelNumber}</Text>
           <Text style={styles.bannerSubtitle}>Select a session to start playing games</Text>
         </View>
       </View>
       <Text style={styles.sectionTitle}>Sessions</Text>
+      {isFreeAccess && (
+        <View style={{ padding: 8, backgroundColor: '#FEF3C7', borderRadius: 8, marginBottom: 12 }}>
+          <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '600' }}>
+            ⚠️ Free Access Mode: All sessions unlocked
+          </Text>
+        </View>
+      )}
       <View style={styles.grid}>
         {level.sessions.map((sess) => {
-          // Unlock all sessions
-          const unlocked = true;
+          const unlocked = isSessionUnlocked(sess.sessionNumber);
           const completed = sess.completed;
           const labelColor = unlocked ? '#0F172A' : '#9CA3AF';
+          console.log(`[SessionsGrid] Rendering Session ${sess.sessionNumber}: unlocked=${unlocked}, isFreeAccess=${isFreeAccess}, completed=${completed}, games=${sess.completedGames?.length ?? 0}`);
           return (
             <TouchableOpacity
               key={sess.sessionNumber}
@@ -448,9 +661,12 @@ function SessionsGrid({
               ]}
               activeOpacity={unlocked ? 0.9 : 1}
               onPress={() => {
-                if (!unlocked) return;
+                if (!unlocked) {
+                  Alert.alert('Locked', 'Complete the previous session to unlock this session.');
+                  return;
+                }
                 
-                // Navigate to any session (all unlocked)
+                // Navigate to unlocked session
                 router.push({
                   pathname: '/(tabs)/SessionGames',
                   params: {
@@ -492,7 +708,7 @@ function SessionsGrid({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -503,7 +719,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6B7280',
   },
-  content: { padding: 16, paddingBottom: 32 },
+  content: { padding: 20, paddingBottom: 32 },
   initButton: {
     marginTop: 12,
     alignSelf: 'flex-start',
@@ -517,68 +733,174 @@ const styles = StyleSheet.create({
   },
   initButtonText: { color: '#fff', fontWeight: '800' },
   loading: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
+  headerContainer: {
+    marginBottom: 24,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+  },
+  backText: {
+    color: '#2563EB',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.5,
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: '#64748B',
+    lineHeight: 24,
+    fontWeight: '500',
+  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 16,
   },
   therapyCard: {
-    width: '48%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 2,
+    width: '47.5%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1.5,
     borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  therapyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  therapyContent: {
+    flex: 1,
+  },
+  therapyTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 8,
+    letterSpacing: -0.3,
+  },
+  therapyDesc: {
+    color: '#64748B',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+    fontWeight: '500',
+  },
+  therapyMetaContainer: {
+    marginTop: 'auto',
+  },
+  progressBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  therapyMeta: {
+    fontWeight: '700',
+    fontSize: 13,
+    letterSpacing: 0.2,
+  },
+  banner: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
-  therapyIconWrap: {
+  bannerTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: -0.3,
+  },
+  bannerSubtitle: {
+    color: '#64748B',
+    marginTop: 4,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  iconBadge: {
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: '#EFF6FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  therapyTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-  therapyDesc: { color: '#475569', marginTop: 6, lineHeight: 18 },
-  therapyMeta: { marginTop: 10, fontWeight: '700', color: '#2563EB' },
-  banner: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  bannerTitle: { fontSize: 20, fontWeight: '900', color: '#0F172A' },
-  bannerSubtitle: { color: '#475569', marginTop: 2 },
-  iconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A', marginTop: 8, marginBottom: 4 },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 12,
+    marginBottom: 8,
+    letterSpacing: -0.3,
+  },
   levelCard: {
-    width: '48%',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 2,
-    backgroundColor: '#fff',
+    width: '47.5%',
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1.5,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   sessionCard: {
-    width: '48%',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 2,
-    backgroundColor: '#fff',
+    width: '47.5%',
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1.5,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   cardUnlocked: {
     borderColor: '#E2E8F0',
@@ -587,15 +909,25 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     backgroundColor: '#F8FAFC',
   },
-  levelTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
-  levelSubtitle: { color: '#475569', marginTop: 4 },
+  levelTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: -0.2,
+  },
+  levelSubtitle: {
+    color: '#64748B',
+    marginTop: 6,
+    fontSize: 13,
+    fontWeight: '500',
+  },
   lockedText: { color: '#9CA3AF' },
   lockBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     backgroundColor: '#F1F5F9',
     borderRadius: 10,
     alignSelf: 'flex-start',
@@ -603,9 +935,9 @@ const styles = StyleSheet.create({
   completeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     backgroundColor: '#ECFEFF',
     borderRadius: 10,
     alignSelf: 'flex-start',
